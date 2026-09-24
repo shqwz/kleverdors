@@ -1,0 +1,16 @@
+# OS / IDE noise
+.DS_Store
+.idea/
+
+# Joomla runtime state - regenerated automatically, not source
+public_html/cache/
+public_html/tmp/
+public_html/logs/
+public_html/administrator/cache/
+public_html/administrator/logs/
+
+# Contains DB credentials and the Joomla secret key in plain text -
+# never commit this. A sample is kept alongside for reference instead.
+public_html/configuration.php
+public_html/configuration.php.prod.bak
+public_html/configuration.php.*.bak

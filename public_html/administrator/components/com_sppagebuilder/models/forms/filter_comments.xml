@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" label="JSEARCH_FILTER" description="" hint="JSEARCH_FILTER" />
+        <field name="published" type="status" label="JOPTION_SELECT_PUBLISHED"
+            description="JOPTION_SELECT_PUBLISHED_DESC" onchange="this.form.submit();">
+            <option value="">JOPTION_SELECT_PUBLISHED</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <field name="fullordering" type="list" label="COM_SPPAGEBUILDER_COMMENT_LIST_FULL_ORDERING"
+            description="COM_SPPAGEBUILDER_COMMENT_LIST_FULL_ORDERING_DESC" default="a.name ASC"
+            onchange="this.form.submit();">
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.ordering ASC">JGRID_HEADING_ORDERING_ASC</option>
+            <option value="a.ordering DESC">JGRID_HEADING_ORDERING_DESC</option>
+            <option value="a.published ASC">JSTATUS_ASC</option>
+            <option value="a.published DESC">JSTATUS_DESC</option>
+            <option value="a.content ASC">COM_SPPAGEBUILDER_COMMENT_CONTENT_ASC</option>
+            <option value="a.content DESC">COM_SPPAGEBUILDER_COMMENT_CONTENT_DESC</option>
+        </field>
+        <field name="limit" type="limitbox" label="COM_SPPAGEBUILDER_COMMENT_LIST_LIMIT"
+            description="COM_SPPAGEBUILDER_COMMENT_LIST_LIMIT_DESC" default="25" class="input-mini"
+            onchange="this.form.submit();" />
+    </fields>
+</form>
+	

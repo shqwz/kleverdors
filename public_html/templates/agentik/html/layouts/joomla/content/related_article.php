@@ -1,0 +1,63 @@
+<?php 
+
+/**
+ * @package Helix Ultimate Framework
+ * @author JoomShaper https://www.joomshaper.com
+ * @copyright Copyright (c) 2010 - 2025 JoomShaper
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or Later
+*/
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Version;
+
+$item = $displayData;
+
+$item->enableOpenGraph = false;
+$params = $item->params;
+$info = $params->get('info_block_position', 0);
+$attribs = json_decode($item->attribs ?? "");
+HTMLHelper::addIncludePath(JPATH_COMPONENT . '/helpers/html');
+$article_format = (isset($attribs->helix_ultimate_article_format) && $attribs->helix_ultimate_article_format) ? $attribs->helix_ultimate_article_format : 'standard';
+
+$version = new Version();
+$JoomlaVersion = $version->getShortVersion();
+?>
+<div class="article">
+    <?php if($article_format === 'gallery') : ?>
+        <?php echo LayoutHelper::render('joomla.content.blog.gallery', array('attribs' => $attribs, 'id' => $item->id)); ?>
+    <?php elseif($article_format === 'video') : ?>
+        <?php echo LayoutHelper::render('joomla.content.blog.video', array('attribs' => $attribs)); ?>
+    <?php elseif($article_format === 'audio') : ?>
+        <?php echo LayoutHelper::render('joomla.content.blog.audio', array('attribs' => $attribs)); ?>
+    <?php else: ?>
+        <a href="<?php echo Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($item->slug, $item->catid, $item->language) : ContentHelperRoute::getArticleRoute($item->slug, $item->catid, $item->language)); ?>">
+            <?php echo LayoutHelper::render('joomla.content.full_image', $item); ?>
+        </a>
+
+        
+    <?php endif; ?>
+
+    <div class="article-information-wrapper">
+        <div class="article-information">
+
+            <div class="article-meta">
+                <span class="category"><?php echo $item->category;?></span>
+            </div>
+
+            <?php echo LayoutHelper::render('joomla.content.blog_style_default_item_title', $item); ?>
+            
+            <?php if ($item->introtext): ?>
+                <div class="intro-text">
+                    <?php echo $item->introtext; ?>
+                </div>
+            <?php endif ?>
+
+            <a href="<?php echo Route::_(version_compare($JoomlaVersion, '4.0.0', '>=') ? Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($item->slug, $item->catid, $item->language) : ContentHelperRoute::getArticleRoute($item->slug, $item->catid, $item->language)); ?>" class="btn readmore"><?php echo Text::_('HELIX_ULTIMATE_READ_MORE') ?></a>
+        </div>
+    </div>            
+</div>

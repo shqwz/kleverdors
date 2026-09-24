@@ -1,0 +1,165 @@
+:root {
+    --jt-cookie-offset: 16px;
+    --jt-cookie-top-offset: 90px;
+    --jt-cookie-bg: #ffffff;
+    --jt-cookie-text: #1c2b4a;
+    --jt-cookie-link: #1f4bb8;
+    --jt-cookie-button-bg: #17326e;
+    --jt-cookie-button-text: #ffffff;
+}
+
+.jt-cookie-notice {
+    box-sizing: border-box;
+    display: block;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--jt-cookie-bg);
+    color: var(--jt-cookie-text);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 420px;
+    width: calc(100% - 30px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+    border: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.jt-cookie-notice,
+.jt-cookie-notice *,
+.jt-cookie-notice *::before,
+.jt-cookie-notice *::after {
+    box-sizing: border-box;
+}
+
+.jt-cookie-notice.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.jt-cookie-layout {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.jt-cookie-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.jt-cookie-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: inherit;
+    margin: 0 0 4px;
+}
+
+.jt-cookie-message {
+    font-size: 14px;
+    line-height: 1.6;
+    color: inherit;
+}
+
+.jt-cookie-link {
+    color: var(--jt-cookie-link);
+    text-decoration: underline;
+}
+
+.jt-cookie-link:hover {
+    opacity: 0.85;
+}
+
+.jt-cookie-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.jt-cookie-button {
+    appearance: none;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    line-height: 1.2;
+    cursor: pointer;
+    background: var(--jt-cookie-button-bg);
+    color: var(--jt-cookie-button-text);
+    font-weight: 500;
+}
+
+.jt-cookie-button:hover {
+    opacity: 0.94;
+}
+
+.jt-cookie-close {
+    appearance: none;
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    margin: 2px 0 0 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23171717'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 1rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.jt-cookie-close:hover {
+    opacity: 1;
+}
+
+.jt-pos-br {
+    right: var(--jt-cookie-offset);
+    bottom: var(--jt-cookie-offset);
+}
+
+.jt-pos-bl {
+    left: var(--jt-cookie-offset);
+    bottom: var(--jt-cookie-offset);
+}
+
+.jt-pos-tr {
+    right: var(--jt-cookie-offset);
+    top: var(--jt-cookie-top-offset);
+}
+
+.jt-pos-tl {
+    left: var(--jt-cookie-offset);
+    top: var(--jt-cookie-top-offset);
+}
+
+.jt-pos-bc {
+    left: 50%;
+    bottom: var(--jt-cookie-offset);
+    transform: translateX(-50%);
+}
+
+@media (max-width: 576px) {
+    :root {
+        --jt-cookie-top-offset: 75px;
+        --jt-cookie-offset: 10px;
+    }
+
+    .jt-cookie-notice {
+        max-width: none;
+        width: calc(100% - 20px);
+        padding: 18px;
+    }
+
+    .jt-cookie-layout {
+        gap: 10px;
+    }
+}

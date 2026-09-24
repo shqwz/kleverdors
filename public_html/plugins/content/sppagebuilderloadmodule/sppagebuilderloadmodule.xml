@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="content" method="upgrade">
+	<name>plg_sppagebuilder_loadmodule</name>
+	<author>JoomShaper</author>
+	<creationDate>2024-10</creationDate>
+	<copyright>(C) 2024 joomshaper.com.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>support@joomshaper.com</authorEmail>
+	<authorUrl>joomshaper.com</authorUrl>
+	<version>6.2.3</version>
+	<description>PLG_SPPAGEBUILDER_LOADMODULE_XML_DESCRIPTION</description>
+	<namespace path="src">JoomShaper\Plugin\Content\Sppagebuilderloadmodule</namespace>
+	<files>
+		<folder plugin="sppagebuilderloadmodule">services</folder>
+		<folder>src</folder>
+	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB.plg_content_sppagebuilderloadmodule.ini</language>
+		<language tag="en-GB">language/en-GB.plg_content_sppagebuilderloadmodule.sys.ini</language>
+	</languages>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+					name="style"
+					type="list"
+					label="PLG_SPPAGEBUILDER_LOADMODULE_FIELD_STYLE_LABEL"
+					default="none"
+					validate="options"
+					>
+					<option value="none">PLG_SPPAGEBUILDER_LOADMODULE_FIELD_VALUE_RAW</option>
+					<option value="html5">PLG_SPPAGEBUILDER_LOADMODULE_FIELD_VALUE_DIVS</option>
+					<option value="table">PLG_SPPAGEBUILDER_LOADMODULE_FIELD_VALUE_TABLE</option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

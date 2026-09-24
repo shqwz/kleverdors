@@ -1,0 +1,1406 @@
+{
+  "recipes": {
+    "title": "Recipes",
+    "alias": "recipes", 
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Image",
+        "type": "image",
+        "required": 0,
+        "default_value": ""
+      },
+      {
+        "name": "Description",
+        "type": "text",
+        "required": 0,
+        "is_textarea": 1
+      },
+      {
+        "name": "Ingredients",
+        "type": "rich-text",
+        "required": 0
+      },
+      {
+        "name": "Cooking Instructions",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0
+      },
+      {
+        "name": "Nutritional Information",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0
+      },
+      {
+        "name": "Preparation Time",
+        "type": "text",
+        "required": 0
+      }
+    ]
+  },
+  "events": {
+    "title": "Events",
+    "alias": "events",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter event title"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter event description"
+      },
+      {
+        "name": "Start Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 1,
+        "placeholder": "Select start date and time"
+      },
+      {
+        "name": "End Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select end date and time"
+      },
+      {
+        "name": "Location",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter event location"
+      },
+      {
+        "name": "Address",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "Enter full address"
+      },
+      {
+        "name": "Event Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "In Person",
+            "value": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
+          {
+            "label": "Virtual", 
+            "value": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "label": "Hybrid",
+            "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select event type"
+      },
+      {
+        "name": "Registration Link",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter registration URL"
+      },
+      {
+        "name": "Maximum Attendees",
+        "type": "number",
+        "number_format": "integer",
+        "required": 0,
+        "placeholder": "Enter maximum number of attendees"
+      },
+      {
+        "name": "Price",
+        "type": "number",
+        "number_format": "decimal",
+        "required": 0,
+        "placeholder": "Enter event price"
+      },
+      {
+        "name": "Featured Image",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload featured image"
+      },
+      {
+        "name": "Contact Email",
+        "type": "email",
+        "required": 0,
+        "placeholder": "Enter contact email"
+      },
+      {
+        "name": "Contact Phone",
+        "type": "phone",
+        "required": 0,
+        "placeholder": "Enter contact phone number"
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "Testimonials",
+    "alias": "testimonials",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter client name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Client Image",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload client photo"
+      },
+      {
+        "name": "Testimonial",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter client testimonial"
+      },
+      {
+        "name": "Company",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter company name"
+      },
+      {
+        "name": "Position",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter job position"
+      },
+      {
+        "name": "Rating",
+        "type": "number",
+        "number_format": "integer",
+        "required": 0,
+        "placeholder": "Rate from 1-5"
+      },
+      {
+        "name": "Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 0,
+        "placeholder": "Select testimonial date"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "services": {
+    "title": "Services",
+    "alias": "services",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter service name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Service Image",
+        "type": "image",
+        "required": 0
+      },
+      {
+        "name": "Short Description",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 1,
+        "placeholder": "Enter brief service description"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter full service description"
+      },
+      {
+        "name": "Price",
+        "type": "number",
+        "number_format": "decimal",
+        "required": 0,
+        "placeholder": "Enter service price"
+      },
+      {
+        "name": "Duration",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter service duration"
+      },
+      {
+        "name": "Category",
+        "type": "option",
+        "options": [
+          {
+            "label": "Consulting",
+            "value": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "label": "Development", 
+            "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+          },
+          {
+            "label": "Design",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          },
+          {
+            "label": "Support",
+            "value": "a6e4f7c1-4711-4c1d-b349-394e2c14c3f2"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select service category"
+      },
+      {
+        "name": "Features",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "List service features"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      },
+      {
+        "name": "Order Link",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter order/booking URL"
+      }
+    ]
+  },
+  "team_members": {
+    "title": "Team Members",
+    "alias": "team-members",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter team member name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Profile Image",
+        "type": "image",
+        "required": 0
+      },
+      {
+        "name": "Position",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter job title"
+      },
+      {
+        "name": "Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "Staff",
+            "value": "8f7e6d5c-4321-4xyz-9876-543210abcdef"
+          },
+          {
+            "label": "Contributor",
+            "value": "7c6d5e4f-5678-4xyz-8765-432109fedcba"
+          },
+          {
+            "label": "Author",
+            "value": "12345678-90ab-cdef-1234-567890abcdef"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select team member type"
+      },
+      {
+        "name": "Department",
+        "type": "option",
+        "options": [
+          {
+            "label": "Management",
+            "value": "8f7e6d5c-4321-4xyz-9876-543210abcdef"
+          },
+          {
+            "label": "Sales",
+            "value": "7c6d5e4f-5678-4xyz-8765-432109fedcba"
+          },
+          {
+            "label": "Development",
+            "value": "6b5a4c3d-8901-4xyz-7654-321098badcfe"
+          },
+          {
+            "label": "Design",
+            "value": "5a4b3c2d-2345-4xyz-6543-210987cbafed"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select department"
+      },
+      {
+        "name": "Bio",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter team member biography"
+      },
+      {
+        "name": "Email",
+        "type": "email",
+        "required": 0,
+        "placeholder": "Enter work email"
+      },
+      {
+        "name": "Phone",
+        "type": "phone",
+        "required": 0,
+        "placeholder": "Enter work phone number"
+      },
+      {
+        "name": "LinkedIn",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter LinkedIn profile URL"
+      },
+      {
+        "name": "Start Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 0,
+        "placeholder": "Select start date"
+      }
+    ]
+  },
+  "projects": {
+    "title": "Projects",
+    "alias": "projects",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter project name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Image",
+        "type": "image",
+        "required": 0
+      },
+      {
+        "name": "Short Description",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 1,
+        "placeholder": "Enter brief project overview"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter detailed project description"
+      },
+      {
+        "name": "Client",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter client name"
+      },
+      {
+        "name": "Status",
+        "type": "option",
+        "options": [
+          {
+            "label": "In Progress",
+            "value": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          },
+          {
+            "label": "Completed",
+            "value": "04c6e90f-a605-4d19-a4f3-d74c6c8d6ad6"
+          },
+          {
+            "label": "On Hold",
+            "value": "8b9c4e1d-c6a5-4c37-8a2f-b95e1d52c362"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select project status"
+      },
+      {
+        "name": "Category",
+        "type": "option",
+        "options": [
+          {
+            "label": "Web Development",
+            "value": "7d9f1a2b-3c4e-5d6f-8g9h-0i1j2k3l4m5n"
+          },
+          {
+            "label": "Mobile App",
+            "value": "2a3b4c5d-6e7f-8g9h-0i1j-2k3l4m5n6o7p"
+          },
+          {
+            "label": "Design",
+            "value": "9h8g7f6e-5d4c-3b2a-1m9n-8o7p6q5r4s3t"
+          },
+          {
+            "label": "Consulting",
+            "value": "4s5t6u7v-8w9x-0y1z-2a3b-4c5d6e7f8g9h"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select project category"
+      },
+      {
+        "name": "Start Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 0,
+        "placeholder": "Select project start date"
+      },
+      {
+        "name": "End Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 0,
+        "placeholder": "Select project completion date"
+      },
+      {
+        "name": "Technologies",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "List technologies used"
+      },
+      {
+        "name": "Project URL",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter project/demo URL"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "announcements": {
+    "title": "Announcements",
+    "alias": "announcements",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter announcement title"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Content",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter announcement content"
+      },
+      {
+        "name": "Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "General",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Important",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "Urgent",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select announcement type"
+      },
+      {
+        "name": "Publication Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 1,
+        "placeholder": "Select publication date and time"
+      },
+      {
+        "name": "Expiry Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select expiry date and time"
+      },
+      {
+        "name": "Featured Image",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload featured image"
+      },
+      {
+        "name": "Target Audience",
+        "type": "option",
+        "options": [
+          {
+            "label": "All Users",
+            "value": "8f7e6d5c-4321-4xyz-9876-543210abcdef"
+          },
+          {
+            "label": "Staff Only",
+            "value": "7c6d5e4f-5678-4xyz-8765-432109fedcba"
+          },
+          {
+            "label": "Members Only",
+            "value": "6b5a4c3d-8901-4xyz-7654-321098badcfe"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select target audience"
+      },
+      {
+        "name": "External Link",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter related link URL"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "locations": {
+    "title": "Locations",
+    "alias": "locations",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter location name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Address",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 1,
+        "placeholder": "Enter full address"
+      },
+      {
+        "name": "City",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter city"
+      },
+      {
+        "name": "State/Province",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter state or province"
+      },
+      {
+        "name": "Postal Code",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter postal/zip code"
+      },
+      {
+        "name": "Country",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter country"
+      },
+      {
+        "name": "Phone",
+        "type": "phone",
+        "required": 0,
+        "placeholder": "Enter location phone number"
+      },
+      {
+        "name": "Email",
+        "type": "email",
+        "required": 0,
+        "placeholder": "Enter location email"
+      },
+      {
+        "name": "Hours of Operation",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter business hours"
+      },
+      {
+        "name": "Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "Headquarters",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Branch Office",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "Retail Store",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          },
+          {
+            "label": "Warehouse",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select location type"
+      },
+      {
+        "name": "Featured Image",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload location image"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter location description"
+      },
+      {
+        "name": "Amenities",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "List available amenities"
+      },
+      {
+        "name": "Google Maps Link",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter Google Maps URL"
+      },
+      {
+        "name": "Active",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "directories": {
+    "title": "Directories",
+    "alias": "directories",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter business/organization name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Logo",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload business logo"
+      },
+      {
+        "name": "Category",
+        "type": "option",
+        "options": [
+          {
+            "label": "Restaurant",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Retail",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "Professional Services",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          },
+          {
+            "label": "Healthcare",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select business category"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter business description"
+      },
+      {
+        "name": "Address",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 1,
+        "placeholder": "Enter full address"
+      },
+      {
+        "name": "Phone",
+        "type": "phone",
+        "required": 1,
+        "placeholder": "Enter business phone"
+      },
+      {
+        "name": "Email",
+        "type": "email",
+        "required": 0,
+        "placeholder": "Enter business email"
+      },
+      {
+        "name": "Website",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter business website URL"
+      },
+      {
+        "name": "Business Hours",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter operating hours"
+      },
+      {
+        "name": "Social Media",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "Enter social media links"
+      },
+      {
+        "name": "Featured Images",
+        "type": "image",
+        "required": 0
+      },
+      {
+        "name": "Services Offered",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "List main services/products"
+      }
+    ]
+  },
+  "listings": {
+    "title": "Listings",
+    "alias": "listings",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter listing title"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Category",
+        "type": "option",
+        "options": [
+          {
+            "label": "For Sale",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "For Rent",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "Services",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          },
+          {
+            "label": "Jobs",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select listing category"
+      },
+      {
+        "name": "Price",
+        "type": "number",
+        "number_format": "decimal",
+        "required": 1,
+        "placeholder": "Enter price"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter detailed description"
+      },
+      {
+        "name": "Images",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload listing images"
+      },
+      {
+        "name": "Location",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter location"
+      },
+      {
+        "name": "Contact Name",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter contact person's name"
+      },
+      {
+        "name": "Contact Phone",
+        "type": "phone",
+        "required": 1,
+        "placeholder": "Enter contact phone number"
+      },
+      {
+        "name": "Contact Email",
+        "type": "email",
+        "required": 0,
+        "placeholder": "Enter contact email"
+      },
+      {
+        "name": "Condition",
+        "type": "option",
+        "options": [
+          {
+            "label": "New",
+            "value": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "label": "Like New",
+            "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+          },
+          {
+            "label": "Good",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          },
+          {
+            "label": "Fair",
+            "value": "a6e4f7c1-4711-4c1d-b349-394e2c14c3f2"
+          }
+        ],
+        "required": 0,
+        "placeholder": "Select item condition"
+      },
+      {
+        "name": "Publication Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 1,
+        "placeholder": "Select publication date"
+      },
+      {
+        "name": "Expiry Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select expiry date"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      },
+      {
+        "name": "Status",
+        "type": "option",
+        "options": [
+          {
+            "label": "Available",
+            "value": "8f7e6d5c-4321-4xyz-9876-543210abcdef"
+          },
+          {
+            "label": "Pending",
+            "value": "7c6d5e4f-5678-4xyz-8765-432109fedcba"
+          },
+          {
+            "label": "Sold",
+            "value": "6b5a4c3d-8901-4xyz-7654-321098badcfe"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select listing status"
+      }
+    ]
+  },
+  "profiles": {
+    "title": "Profiles",
+    "alias": "profiles",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter full name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Profile Picture",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload profile picture"
+      },
+      {
+        "name": "Bio",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter brief biography"
+      },
+      {
+        "name": "Email",
+        "type": "email",
+        "required": 1,
+        "placeholder": "Enter email address"
+      },
+      {
+        "name": "Phone",
+        "type": "phone",
+        "required": 0,
+        "placeholder": "Enter phone number"
+      },
+      {
+        "name": "Location",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter city/country"
+      },
+      {
+        "name": "Occupation",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter current occupation"
+      },
+      {
+        "name": "Skills",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "List your key skills"
+      },
+      {
+        "name": "Interests",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "List your interests/hobbies"
+      },
+      {
+        "name": "Website",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter personal website URL"
+      },
+      {
+        "name": "Social Media Links",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "Enter social media profile URLs"
+      },
+      {
+        "name": "Account Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "Personal",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Professional",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "Business",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select account type"
+      },
+      {
+        "name": "Join Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 0,
+        "placeholder": "Select join date"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "alias": "campaigns",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter campaign name"
+      },
+      {
+        "name": "Alias",
+        "type": "alias",
+        "required": 1
+      },
+      {
+        "name": "Campaign Image",
+        "type": "image",
+        "required": 0,
+        "placeholder": "Upload campaign banner/image"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter campaign description"
+      },
+      {
+        "name": "Campaign Type",
+        "type": "option",
+        "options": [
+          {
+            "label": "Email",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Social Media",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "PPC/Ads",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          },
+          {
+            "label": "Event",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select campaign type"
+      },
+      {
+        "name": "Start Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 1,
+        "placeholder": "Select campaign start date"
+      },
+      {
+        "name": "End Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select campaign end date"
+      },
+      {
+        "name": "Target Audience",
+        "type": "text",
+        "is_textarea": 1,
+        "required": 0,
+        "placeholder": "Describe target audience"
+      },
+      {
+        "name": "Budget",
+        "type": "number",
+        "number_format": "decimal",
+        "required": 0,
+        "placeholder": "Enter campaign budget"
+      },
+      {
+        "name": "Goals",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter campaign objectives and KPIs"
+      },
+      {
+        "name": "Status",
+        "type": "option",
+        "options": [
+          {
+            "label": "Draft",
+            "value": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "label": "Active",
+            "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+          },
+          {
+            "label": "Paused",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          },
+          {
+            "label": "Completed",
+            "value": "a6e4f7c1-4711-4c1d-b349-394e2c14c3f2"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select campaign status"
+      },
+      {
+        "name": "Channel",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter distribution channels"
+      },
+      {
+        "name": "Landing Page",
+        "type": "link",
+        "required": 0,
+        "placeholder": "Enter campaign landing page URL"
+      },
+      {
+        "name": "Tracking Code",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter tracking/UTM codes"
+      },
+      {
+        "name": "Results",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter campaign results and metrics"
+      },
+      {
+        "name": "Featured",
+        "type": "switch",
+        "required": 0
+      }
+    ]
+  },
+  "tickets": {
+    "title": "Tickets",
+    "alias": "tickets",
+    "fields": [
+      {
+        "name": "Title",
+        "type": "title",
+        "required": 1,
+        "placeholder": "Enter ticket subject"
+      },
+      {
+        "name": "Alias",
+        "type": "alias", 
+        "required": 1,
+        "placeholder": "Enter URL-friendly alias or leave empty for auto-generation"
+      },
+      {
+        "name": "Description",
+        "type": "rich-text",
+        "required": 1,
+        "placeholder": "Enter ticket description"
+      },
+      {
+        "name": "Priority",
+        "type": "option",
+        "options": [
+          {
+            "label": "Low",
+            "value": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          {
+            "label": "Medium",
+            "value": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+          },
+          {
+            "label": "High",
+            "value": "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
+          },
+          {
+            "label": "Critical",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select ticket priority"
+      },
+      {
+        "name": "Status",
+        "type": "option",
+        "options": [
+          {
+            "label": "Open",
+            "value": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          {
+            "label": "In Progress",
+            "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+          },
+          {
+            "label": "Pending",
+            "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+          },
+          {
+            "label": "Resolved",
+            "value": "a6e4f7c1-4711-4c1d-b349-394e2c14c3f2"
+          },
+          {
+            "label": "Closed",
+            "value": "b7e4f7c1-4711-4c1d-b349-394e2c14c3f3"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select ticket status"
+      },
+      {
+        "name": "Category",
+        "type": "option",
+        "options": [
+          {
+            "label": "Technical Support",
+            "value": "8f7e6d5c-4321-4xyz-9876-543210abcdef"
+          },
+          {
+            "label": "Billing",
+            "value": "7c6d5e4f-5678-4xyz-8765-432109fedcba"
+          },
+          {
+            "label": "Feature Request",
+            "value": "6b5a4c3d-8901-4xyz-7654-321098badcfe"
+          },
+          {
+            "label": "Bug Report",
+            "value": "5a4b3c2d-2345-4xyz-6543-210987cbafed"
+          }
+        ],
+        "required": 1,
+        "placeholder": "Select ticket category"
+      },
+      {
+        "name": "Assigned To",
+        "type": "text",
+        "required": 0,
+        "placeholder": "Enter assignee name"
+      },
+      {
+        "name": "Submitter Name",
+        "type": "text",
+        "required": 1,
+        "placeholder": "Enter submitter name"
+      },
+      {
+        "name": "Submitter Email",
+        "type": "email",
+        "required": 1,
+        "placeholder": "Enter submitter email"
+      },
+      {
+        "name": "Submission Date",
+        "type": "date-time",
+        "required": 1,
+        "show_time": 1,
+        "placeholder": "Select submission date and time"
+      },
+      {
+        "name": "Due Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select due date and time"
+      },
+      {
+        "name": "Resolution Date",
+        "type": "date-time",
+        "required": 0,
+        "show_time": 1,
+        "placeholder": "Select resolution date and time"
+      },
+      {
+        "name": "Resolution Notes",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter resolution details"
+      },
+      {
+        "name": "Internal Notes",
+        "type": "rich-text",
+        "required": 0,
+        "placeholder": "Enter internal notes"
+      }
+    ]
+  }
+}

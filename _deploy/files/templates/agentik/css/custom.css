@@ -1,0 +1,51 @@
+/**
+ * Site-specific CSS overrides for the Agentik template.
+ * Loaded unconditionally by templates/agentik/index.php.
+ */
+
+/*
+ * Hero slider (SP Page Builder "js_slideshow" addon): make sure a touch
+ * that starts on the slide image is always treated as page scroll, never
+ * as a slide-drag gesture, and that the image can't be picked up as a
+ * native drag-ghost. Works together with templates/agentik/js/custom.js,
+ * which removes the addon's own drag handlers - this is the CSS-level
+ * backstop so the gesture never fights the page scroll even for the
+ * instant before/if that JS runs.
+ */
+.sppb-addon-sp-slider .sp-slider-outer-stage,
+.sppb-addon-sp-slider .sp-item,
+.sppb-addon-sp-slider img {
+	touch-action: pan-y;
+	-webkit-user-drag: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/*
+ * Sticky header: kill the layout shift when the header goes solid.
+ *
+ * .sticky-header-placeholder is the first element inside .body-innerwrapper,
+ * sitting above #sp-header. main.js grows it from 0 to the header's height
+ * (via jQuery .height(), an inline style) the instant the scroll threshold
+ * is crossed, and shrinks it back on the way up.
+ *
+ * In the stock Helix pattern that placeholder is needed, because there the
+ * header starts in normal flow and only becomes position:fixed on scroll -
+ * something has to fill the gap it leaves behind. Agentik, however, styles
+ * #sp-header as position:fixed at ALL times (see theme.scss "// Header"),
+ * so the header never occupies flow space in either state and the
+ * placeholder compensates for nothing. All it does is inject 50px at the
+ * very top of the document - which is already scrolled off-screen by then -
+ * pushing every section below down by that amount in a single frame. That
+ * is the "page jumps down when the header turns white" effect.
+ *
+ * Pinning it to 0 removes the shift outright. It does not change what the
+ * header overlaps: a fixed header covers whatever is under it at the
+ * current scroll position regardless of padding at the top of the document.
+ *
+ * !important is required because main.js keeps rewriting the inline height
+ * on every scroll event.
+ */
+.sticky-header-placeholder {
+	height: 0 !important;
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<fields name="profileimage">
+		<fieldset
+			name="profileimage"
+			label="PLG_USER_PROFILEIMAGE_SLIDER_LABEL"
+			description="PLG_USER_PROFILEIMAGE_SLIDER_DESC"
+		>
+			<field
+				name="profile_image"
+				type="file"
+				label="PLG_USER_PROFILEIMAGE_FIELD_PROFILE_IMAGE_LABEL"
+				description="PLG_USER_PROFILEIMAGE_FIELD_PROFILE_IMAGE_DESC"
+				accept="image/*"
+				class="input-large"
+			/>
+		</fieldset>
+	</fields>
+</form> 

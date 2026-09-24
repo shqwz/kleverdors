@@ -1,0 +1,2644 @@
+/**
+ * Site-specific CSS overrides for the Agentik template.
+ * Loaded unconditionally by templates/agentik/index.php.
+ */
+
+/*
+ * Hero slider (SP Page Builder "js_slideshow" addon): make sure a touch
+ * that starts on the slide image is always treated as page scroll, never
+ * as a slide-drag gesture, and that the image can't be picked up as a
+ * native drag-ghost. Works together with templates/agentik/js/custom.js,
+ * which removes the addon's own drag handlers - this is the CSS-level
+ * backstop so the gesture never fights the page scroll even for the
+ * instant before/if that JS runs.
+ */
+.sppb-addon-sp-slider .sp-slider-outer-stage,
+.sppb-addon-sp-slider .sp-item,
+.sppb-addon-sp-slider img {
+	touch-action: pan-y;
+	-webkit-user-drag: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/*
+ * Sticky header: kill the layout shift when the header goes solid.
+ *
+ * .sticky-header-placeholder is the first element inside .body-innerwrapper,
+ * sitting above #sp-header. main.js grows it from 0 to the header's height
+ * (via jQuery .height(), an inline style) the instant the scroll threshold
+ * is crossed, and shrinks it back on the way up.
+ *
+ * In the stock Helix pattern that placeholder is needed, because there the
+ * header starts in normal flow and only becomes position:fixed on scroll -
+ * something has to fill the gap it leaves behind. Agentik, however, styles
+ * #sp-header as position:fixed at ALL times (see theme.scss "// Header"),
+ * so the header never occupies flow space in either state and the
+ * placeholder compensates for nothing. All it does is inject 50px at the
+ * very top of the document - which is already scrolled off-screen by then -
+ * pushing every section below down by that amount in a single frame. That
+ * is the "page jumps down when the header turns white" effect.
+ *
+ * Pinning it to 0 removes the shift outright. It does not change what the
+ * header overlaps: a fixed header covers whatever is under it at the
+ * current scroll position regardless of padding at the top of the document.
+ *
+ * !important is required because main.js keeps rewriting the inline height
+ * on every scroll event.
+ */
+.sticky-header-placeholder {
+	height: 0 !important;
+}
+
+/*
+ * Hero: fill the viewport.
+ *
+ * The slideshow addon writes a fixed pixel height onto .sp-slider-outer-stage
+ * from its data-height-* attributes (800px on xl, 680px on lg/md, 670px sm,
+ * 650px xs). On any screen taller than that the hero stopped short and left a
+ * white band under it - e.g. 680px of hero in a 768px window.
+ *
+ * The stage is the element that drives the height: the slides, their
+ * backgrounds and the section itself all follow it, so overriding this one
+ * rule is enough. !important is required because the value is an inline style
+ * the addon's JS rewrites on load and on every resize.
+ *
+ * dvh comes second so browsers that understand it win: on phones 100vh is
+ * measured against the viewport *without* the retracting address bar, which
+ * makes the hero taller than the screen and pushes the thumbnails out of view.
+ */
+.hero-wrap .sp-slider-outer-stage {
+	height: 100vh !important;
+	height: 100dvh !important;
+}
+
+/*
+ * Header contrast over the hero (paired with initAdaptiveHeader in custom.js).
+ *
+ * custom.js measures how bright each slide is behind the header strip and adds
+ * .header-on-dark to #sp-header while a dark slide is showing. Everything below
+ * is scoped with :not(.header-sticky) so the scrolled-down state - solid white
+ * bar, dark text - always wins.
+ *
+ * Durations match the slider's own 600ms transition, and custom.js keys the
+ * switch off the thumbnail dots - which flip the moment a change starts, not
+ * when the photo lands - so colour and picture change over together.
+ */
+.logo.has-light-logo {
+	position: relative;
+	display: inline-flex;
+}
+
+/*
+ * White twin of the logo, stacked exactly over the original and faded in -
+ * but clipped so it only covers the wordmark.
+ *
+ * The logo is one PNG, 314px wide: the green door mark runs to x=62, then
+ * there is an empty gutter, and "КЛЕВЕРДОРС" starts at x=82. Whitening the
+ * whole file would bleach the door mark too, so the overlay is cut at x=72 -
+ * the middle of that 19px gutter, i.e. 22.9% across. The door mark keeps its
+ * brand colours and shows through from the original underneath; only the
+ * lettering flips to white.
+ */
+.logo .logo-image-light {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: left center;
+	opacity: 0;
+	pointer-events: none;
+	filter: brightness(0) invert(1);
+	-webkit-clip-path: inset(0 0 0 22.9%);
+	clip-path: inset(0 0 0 22.9%);
+	/* Matches the slider's own 600ms transition so the colour lands with the photo. */
+	transition: opacity 0.6s ease;
+}
+
+#sp-header.header-on-dark:not(.header-sticky) .logo .logo-image-light {
+	opacity: 1;
+}
+
+/*
+ * Логотип не перекрашивается целиком.
+ *
+ * У темы ДВА правила гасят цвет знака, рассчитанных на одноцветный логотип:
+ *   #sp-header #sp-logo .logo-image { filter: brightness(0); }
+ *     - работает всегда, в т.ч. на внутренних страницах, у которых нет
+ *       тёмного hero и класс .header-on-dark никогда не появляется - там
+ *       шапка белая с самого начала, и это правило красит знак в чёрный
+ *       ещё до всякой прокрутки;
+ *   #sp-header.header-sticky #sp-logo .logo-image { filter: brightness(0) !important; }
+ *     - то же самое, но когда шапка на главной уже залита белым при скролле.
+ * В знаке зелёные двери, и они уходили в чёрный вместе с буквами вместе
+ * с любым из этих двух правил. Снимаем фильтр в обоих случаях: PNG и так
+ * нарисован чёрными буквами на прозрачном фоне.
+ */
+#sp-header #sp-logo .logo-image,
+#sp-header.header-sticky #sp-logo .logo-image {
+	filter: none !important;
+}
+
+/*
+ * Переход цвета описан БЕЗ оговорки :not(.header-sticky) намеренно.
+ * Раньше он висел только на «прозрачном» состоянии: как только шапка
+ * заливалась белым, правило переставало совпадать, свойство transition
+ * пропадало вместе с ним - и текст перекрашивался в чёрный мгновенно.
+ * Теперь переход принадлежит самим ссылкам и работает в обе стороны.
+ */
+#sp-header .sp-megamenu-parent > li > a,
+#sp-header .sp-megamenu-parent > li > span,
+#sp-header #offcanvas-toggler .burger-icon > span {
+	transition: color 0.45s ease, background-color 0.45s ease;
+}
+
+/*
+ * Сама заливка тоже появляется плавно: у темы на шапке transition: all без
+ * длительности, то есть мгновенно.
+ */
+#sp-header {
+	transition: background-color 0.45s ease, box-shadow 0.45s ease;
+}
+
+/*
+ * ...и заливается шапка одним слоем.
+ *
+ * Тема красит белым и #sp-header, и его .container внутри - а контейнер уже
+ * шапки (1110px против всей ширины) и стоит по центру. Своего перехода у него
+ * нет, поэтому он белел мгновенно, а шапка - за 0.45s: первые полсекунды это
+ * читалось как две отдельные части, белая середина на ещё прозрачных краях.
+ * Фон оставляем только у самой шапки.
+ */
+#sp-header.header-sticky > .container,
+#sp-header.header-sticky > .container > .container-inner {
+	background-color: transparent !important;
+}
+
+#sp-header.header-on-dark:not(.header-sticky) .sp-megamenu-parent > li:not(.active) > a,
+#sp-header.header-on-dark:not(.header-sticky) .sp-megamenu-parent > li > span {
+	color: #fff;
+}
+
+#sp-header.header-on-dark:not(.header-sticky) #offcanvas-toggler .burger-icon > span {
+	background-color: #fff;
+}
+
+/*
+ * Hero headline: same adaptive treatment as the logo.
+ *
+ * The headline is white and sits low over the photo - around 56% down - where
+ * the picture is often brighter than it is up at the header, so it needs its
+ * own reading. custom.js measures that exact rectangle per slide and adds
+ * .hero-text-on-light whenever the photo behind the words is light enough that
+ * white stops holding up.
+ *
+ * Same 600ms as the slide transition, so the words change over with the photo.
+ */
+.hero-wrap .sppb-addon-header .sppb-addon-title {
+	transition: color 0.6s ease;
+}
+
+/*
+ * !important is needed here: SP Page Builder emits its own colour rule scoped
+ * to the addon's generated id (#sppb-addon-3ed34aea-...), which outranks any
+ * class selector. That id is regenerated by the builder, so matching it in
+ * this file would be brittle.
+ */
+.hero-wrap .sppb-addon-header .sppb-addon-title.hero-text-on-light,
+.hero-wrap .sppb-addon-header .sppb-addon-title.hero-text-on-light * {
+	color: #171717 !important;
+}
+
+/*
+ * Hero: лента миниатюр под слайдером убрана по просьбе - слайды листаются
+ * автоматически.
+ *
+ * Именно display:none, а НЕ удаление из разметки: на переключение класса
+ * "active" у этих элементов завязана адаптация шапки (initAdaptiveHeader в
+ * custom.js следит за ними, потому что они меняются в первые 30мс смены кадра,
+ * тогда как сами слайды получают active только через ~700мс). Скрытый элемент
+ * продолжает получать классы, поэтому логотип и заголовок по-прежнему
+ * перекрашиваются вовремя.
+ */
+.hero-wrap .sp-dots {
+	display: none !important;
+}
+
+/*
+ * Карточки коллекций: название и описание налезали друг на друга.
+ *
+ * В шаблоне обе подписи — независимые абсолютные блоки, привязанные к низу
+ * карточки: название на bottom:56px при наведении, описание на bottom:28px.
+ * Между ними заложено 28px, то есть ровно одна строка. Реальные описания
+ * длиннее: у «Классики П» три строки, у «Неоклассики» — шесть, и они
+ * наезжали на название (замер: минус 50px перекрытия).
+ *
+ * Вместо подбора новых фиксированных отступов (они всё равно сломались бы на
+ * другой ширине) выкладываем подписи в один поток внизу карточки: описание
+ * раскрывается и само отодвигает название вверх ровно на свою высоту. Вид и
+ * анимация сохраняются - меняется только способ, которым считается положение.
+ */
+.services-home-variation-2 .services-item-container {
+	/*
+	 * !important: SP Page Builder печатает для каждой карточки инлайновое
+	 * правило по её идентификатору (#sppb-addon-...), а идентификатор сильнее
+	 * любого класса. Идентификатор генерируется конструктором, привязываться
+	 * к нему нельзя.
+	 */
+	display: grid !important;
+	grid-template-rows: 1fr auto auto;
+	align-items: end;
+}
+
+/* Фотография занимает всю карточку и лежит под подписями. */
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-image {
+	grid-row: 1 / -1;
+	grid-column: 1;
+	align-self: stretch;
+}
+
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-text:has(.services-title-text),
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-text:has(.services-description-text) {
+	grid-column: 1;
+	position: static !important;
+	left: auto !important;
+	right: auto !important;
+	bottom: auto !important;
+	top: auto !important;
+	padding: 0 32px;
+	margin: 0;
+	transform: none !important;
+	z-index: 99;
+}
+
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-text:has(.services-title-text) {
+	grid-row: 2;
+	padding-bottom: 8px;
+}
+
+/*
+ * Описание по-прежнему скрыто и разворачивается при наведении. Анимируем
+ * высоту через grid-template-rows у контейнера - так название плавно
+ * поднимается, а не перескакивает.
+ */
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-text:has(.services-description-text) {
+	grid-row: 3;
+	padding-bottom: 20px;
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 0.7s var(--easing, cubic-bezier(0.22, 1, 0.36, 1)),
+	            opacity 0.6s ease, filter 0.6s ease;
+}
+
+.services-home-variation-2 .services-item-container > .addon-root-dynamic-content-text:has(.services-description-text) > * {
+	overflow: hidden;
+	min-height: 0;
+}
+
+.services-home-variation-2 .services-item-container:hover > .addon-root-dynamic-content-text:has(.services-description-text) {
+	grid-template-rows: 1fr;
+}
+
+/* Название больше не нужно двигать отдельно - его поднимает само описание. */
+.services-home-variation-2 .services-item-container:hover > .addon-root-dynamic-content-text:has(.services-title-text) {
+	bottom: auto;
+}
+
+/*
+ * Коллекции «наезжают» скруглённым верхом на hero.
+ *
+ * У .section-radius скругление рисует псевдоэлемент ::before (радиус 50px),
+ * а сама секция начиналась ровно на границе hero, поэтому закругление читалось
+ * как стык двух блоков, а не как наложение.
+ *
+ * Селектор со смежным соседом (.hero-wrap + ...) намеренно узкий: тот же класс
+ * .section-radius носит и секция блога ниже, её трогать не нужно.
+ *
+ * Раньше величину сдвига ограничивали миниатюры слайдера в hero (секция
+ * начинала их перекрывать), но ленту миниатюр убрали - и теперь наезд можно
+ * дать заметный, соразмерный самому радиусу в 50px.
+ */
+.hero-wrap + .sppb-section.section-radius {
+	/*
+	 * !important: конструктор печатает для секции правило по её идентификатору
+	 * (#section-id-...{margin:0 auto}), оно сильнее класса. Перебиваем только
+	 * верхний отступ - боковые auto нужны, они центрируют секцию.
+	 *
+	 * Величина наезда не произвольная: дуга угла спускается от верха секции
+	 * ровно на радиус (80px). Если наезд меньше, её хвост оказывается ниже
+	 * нижней границы hero - в вырезе угла вместо фотографии видно белый фон
+	 * страницы, тонкой полосой вдоль среза. Поэтому наезд = радиус + запас
+	 * на субпиксельный стык.
+	 */
+	margin-top: -84px !important;
+	position: relative;
+	z-index: 2 !important;
+
+	/*
+	 * Ключевое для наложения: у секции есть собственный фон, залитый
+	 * ПРЯМОУГОЛЬНИКОМ без скругления, поверх которого ::before рисует
+	 * скруглённую подложку. Из-за этого в вырезе угла был виден серый
+	 * прямоугольник, а не фотография hero - наложения не читалось.
+	 * Гасим собственный фон: всё оформление даёт ::before, и углы
+	 * становятся по-настоящему прозрачными.
+	 */
+	background-color: transparent !important;
+	background-image: none !important;
+}
+
+/* На телефоне радиус мельче (44px) - наезд считаем от него же. */
+@media (max-width: 767px) {
+	.hero-wrap + .sppb-section.section-radius {
+		margin-top: -48px !important;
+	}
+}
+
+/*
+ * Скругление верхних углов у той же секции коллекций - крупнее.
+ *
+ * Базовые 50px заданы в theme.scss у .section-radius::before (сам блок фона
+ * с закруглением; у секции собственного скругления нет - см. правило выше).
+ * Здесь увеличиваем только для секции сразу после hero: у блога ниже, который
+ * носит тот же класс, радиус остаётся прежним.
+ */
+.hero-wrap + .sppb-section.section-radius::before {
+	border-top-left-radius: 80px;
+	border-top-right-radius: 80px;
+}
+
+@media (max-width: 767px) {
+	.hero-wrap + .sppb-section.section-radius::before {
+		border-top-left-radius: 44px;
+		border-top-right-radius: 44px;
+	}
+}
+
+/*
+ * Hero: точка кадрирования на узком экране.
+ *
+ * В hero теперь один кадр, и он широкий (1672x941): при background-size:cover
+ * на вертикальном экране телефона по бокам срезается больше половины ширины.
+ * По центру (50%) дверь уходила за правый край, и на первом экране оставались
+ * стена с растением - для сайта про двери неудачный кадр.
+ *
+ * Сдвигаем точку к правой трети, чтобы дверь оставалась в кадре. На десктопе
+ * ширины хватает, там сохраняется штатное 50% 50%.
+ */
+@media (max-width: 767px) {
+	.hero-wrap .sp-item .sp-background {
+		background-position: 55% 50% !important;
+	}
+}
+
+/*
+ * Hero: заголовок и подпись под ним.
+ *
+ * Ширину заголовка в теме жёстко ограничивает
+ *   .hero-wrap .hero-caption ... .addon-root-heading:has(.contect) { max-width: 310px }
+ * (theme.scss, "// Hero Section"). Под прежние 20px этого хватало, для
+ * крупной подачи - нет: строка «становятся частью» в 310px не помещается и
+ * рвётся посреди слова. Даём заголовку свою ширину, но намеренно НЕ на весь
+ * экран: текст держится в левой трети кадра и не наезжает на дверь.
+ */
+/*
+ * Селектор намеренно повторяет цепочку из theme.scss
+ *   .hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption)
+ *     .addon-root-heading:has(.contect)
+ * - более короткая запись проигрывает ей по весу, и ширина оставалась 310px.
+ */
+.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-heading:has(.contect) {
+	max-width: 710px;
+}
+
+.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-text-block:has(.hero-subline) {
+	max-width: 640px;
+}
+
+@media (max-width: 1199px) {
+	.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-heading:has(.contect) {
+		/* при 70px полужирном строке «Двери, созданные» нужно ~640px */
+		max-width: 660px;
+	}
+}
+
+@media (max-width: 991px) {
+	.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-heading:has(.contect) {
+		/* хватает, чтобы «Двери, созданные» осталось одной строкой
+		   и заголовок держался в три строки, как на десктопе */
+		max-width: 580px;
+	}
+}
+
+@media (max-width: 767px) {
+	.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-heading:has(.contect),
+	.hero-wrap .hero-caption .sppb-addon-wrapper:has(.contect-caption) .addon-root-text-block:has(.hero-subline) {
+		max-width: 100%;
+	}
+}
+
+/* Абзац подписи не должен тащить собственный нижний отступ. */
+.hero-wrap .hero-caption .hero-subline p {
+	margin: 0;
+}
+
+/*
+ * Чёрная обводка заголовка hero - проба.
+ *
+ * paint-order: stroke fill обязателен: по умолчанию обводка рисуется ПОВЕРХ
+ * заливки и съедает контур внутрь, тонкие засечки serif от этого плывут.
+ * С этим порядком штрих уходит наружу, буква остаётся полной.
+ * Толщину держим долей кегля, иначе на мобильном (38px) обводка, подобранная
+ * под 80px, выглядит вдвое грубее.
+ */
+.hero-wrap .hero-caption .contect,
+.hero-wrap .hero-caption .contect * {
+	-webkit-text-stroke: 0.022em #141414;
+	paint-order: stroke fill;
+}
+
+/*
+ * Воздух между заголовком и подписью. Настройку flex-gap у div-аддона
+ * конструктор в CSS не выводит, поэтому задаём здесь.
+ */
+.hero-wrap .hero-caption .contect-caption {
+	gap: 18px;
+}
+
+@media (max-width: 767px) {
+	.hero-wrap .hero-caption .contect-caption {
+		gap: 14px;
+	}
+}
+
+/*
+ * Коллекции: карточки не должны упираться в края экрана.
+ *
+ * Лента коллекций - горизонтальный скроллер во всю ширину секции
+ * (.services-home-variation-2, overflow-x: auto), у которого нет боковых
+ * отступов, поэтому первая карточка вплотную прилегала к левому краю окна.
+ *
+ * Отступ задаём именно padding'ом самого скроллера, а не margin'ом: у
+ * прокручиваемого элемента padding сохраняется на обоих концах прокрутки,
+ * то есть поля остаются и когда ленту домотали до конца. Margin бы такой
+ * зазор не дал.
+ */
+.services-home-variation-2 {
+	padding-left: 40px;
+	padding-right: 40px;
+}
+
+@media (max-width: 991px) {
+	.services-home-variation-2 {
+		padding-left: 24px;
+		padding-right: 24px;
+	}
+}
+
+@media (max-width: 575px) {
+	.services-home-variation-2 {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+}
+
+/* Курсор подсказывает, что ленту можно тянуть (сама прокрутка - в custom.js). */
+.services-home-variation-2 {
+	cursor: grab;
+}
+
+/*
+ * Заголовки вопросов в FAQ-аккордеоне.
+ *
+ * Шрифт им задан напрямую в theme.scss (.sppb-panel-title), мимо настроек
+ * типографики шаблона, поэтому переключение h1-h6 на общий шрифт их не
+ * затронуло. Правим здесь, а не в theme.scss: файл шаблона перезапишется
+ * при обновлении Agentik.
+ */
+.sppb-addon-accordion:has(.sppb-panel-modern) .sppb-panel-group .sppb-panel-modern .sppb-panel-heading .sppb-panel-title,
+.sppb-addon-accordion .sppb-panel-title,
+.sppb-panel-title {
+	font-family: "Source Serif Pro", serif;
+}
+
+/*
+ * Заголовок блока FAQ живёт в узкой колонке (~23-26% ширины экрана), рядом с
+ * аккордеоном. Единый для сайта Source Serif Pro шире прежнего шрифта, и на
+ * промежуточных ширинах (768-1200px) слово «задаваемые» переставало
+ * помещаться в колонку и наезжало на карточки вопросов.
+ *
+ * Подбирать размер по каждому брейкпоинту здесь бесполезно: колонка тянется
+ * плавно, и между контрольными точками текст всё равно вылезал. Поэтому
+ * размер привязан к ширине окна - 4.2vw держит самое длинное слово внутри
+ * колонки на всём диапазоне, а 64px ограничивают рост на широких экранах.
+ *
+ * Ниже 768px колонка разворачивается на всю ширину, и там работают обычные
+ * размеры из настроек аддона - поэтому правило только для min-width: 768px.
+ */
+@media (min-width: 768px) {
+	/*
+	 * !important: конструктор печатает размер правилом по идентификатору
+	 * аддона (#sppb-addon-...), оно сильнее любого селектора по классам.
+	 */
+	.sppb-section:has(.sppb-addon-accordion) .addon-root-heading .sppb-addon-title {
+		font-size: min(64px, 4.2vw) !important;
+		line-height: 1.06 !important;
+	}
+}
+
+/*
+ * Карточки блока «Индивидуальные решения» (аддоны feature с классом edge-ai -
+ * на сайте их ровно три, это они).
+ *
+ * По макету: сверху заголовок с описанием, под ними рисунок, и все три
+ * рисунка одного размера. В разметке аддона картинка идёт первой, поэтому
+ * меняем порядок флексом, а не правкой шаблона.
+ */
+.sppb-addon-feature.edge-ai .sppb-addon-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.sppb-addon-feature.edge-ai .sppb-media-content {
+	order: 1;
+}
+
+/*
+ * Рамка под рисунок одинаковая у всех карточек: пропорция задана, а не взята
+ * от файла. Присланные рисунки разного формата (два вертикальных, один
+ * горизонтальный), поэтому object-fit: contain - кадрировать нельзя, у
+ * горизонтального срезало бы боковые части конструкции.
+ */
+.sppb-addon-feature.edge-ai .sppb-img-container {
+	order: 2;
+	position: relative;
+	display: block;
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	margin-top: 20px;
+	overflow: hidden;
+}
+
+/*
+ * Картинка выводится абсолютно, а не в потоке. Иначе она задаёт контейнеру
+ * собственную высоту (aspect-ratio для блока - только предпочтительный
+ * размер, содержимое может его перерасти), и вертикальные рисунки делали
+ * свои карточки выше квадратных - размеры снова расходились.
+ */
+.sppb-addon-feature.edge-ai .sppb-img-container img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+/*
+ * Карточка и рисунок должны читаться одним полотном, как в макете: у
+ * присланных рисунков фон rgb(250, 248, 242), а карточка была чисто белой -
+ * на стыке появлялась полоса. Красим карточку в тот же тон.
+ */
+.sppb-addon-feature.edge-ai {
+	background-color: rgb(250, 248, 242);
+}
+
+/*
+ * Три карточки выравниваем по общей сетке: подписи разной длины (у первой
+ * заголовок в две строки), из-за этого рисунки начинались на разной высоте.
+ * Тянем карточку на всю высоту колонки и прижимаем рисунок к низу - тогда
+ * рисунки стоят в одну линию, а разницу забирает воздух под текстом.
+ */
+/* Высоту надо протянуть через все обёртки конструктора, иначе карточка
+   останется по высоте своего текста и прижимать рисунок будет не к чему. */
+.sppb-column:has(.sppb-addon-feature.edge-ai) .sppb-column-addons,
+.sppb-column:has(.sppb-addon-feature.edge-ai) .sppb-addon-wrapper,
+.sppb-column:has(.sppb-addon-feature.edge-ai) .sppb-addon-wrapper > .clearfix,
+.sppb-addon-feature.edge-ai,
+.sppb-addon-feature.edge-ai .sppb-addon-content {
+	height: 100%;
+}
+
+.sppb-addon-feature.edge-ai .sppb-img-container {
+	margin-top: auto;
+}
+
+/* ======================================================================
+ * Блок статистики: веер из белых карточек вокруг кнопки «О производстве».
+ *
+ * Разметка остаётся конструкторской: секция .fan-fact-section, внутри шесть
+ * колонок - пять аддонов animated_number (цифры считаются как раньше) и
+ * кнопка. Всё оформление и раскладка - здесь; в шаблон не лезем, чтобы
+ * правка пережила обновление Agentik.
+ * ====================================================================== */
+
+/*
+ * Неоновое пятно под блоком (розово-персиковый blur в theme.scss) убираем -
+ * по заданию свечений быть не должно.
+ */
+.fan-fact-section::after {
+	display: none !important;
+}
+
+.fan-fact-section {
+	background-color: #fbfbfa;
+	overflow: visible;
+}
+
+/* Сцена: колонки перестают быть сеткой и раскладываются вручную. */
+.fan-fact-section .sppb-row {
+	position: relative;
+	display: block;
+	height: 470px;
+	margin: 0;
+}
+
+.fan-fact-section .sppb-row-column {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 210px;
+	margin-left: -105px;
+	padding: 0;
+
+	/*
+	 * Начальное состояние: карточки почти собраны в центре и лежат друг на
+	 * друге - сдвиг и наклон взяты с коэффициентом 0.12 от конечных.
+	 */
+	transform: translate3d(calc(var(--fan-x, 0px) * 0.12), calc(var(--fan-y, 0px) * 0.12), 0)
+		rotate(calc(var(--fan-r, 0deg) * 0.12)) scale(0.97);
+	opacity: 0;
+	transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1) var(--fan-delay, 0s),
+		opacity 0.6s ease var(--fan-delay, 0s);
+	will-change: transform;
+}
+
+/* Раскрытый веер - класс вешает custom.js, когда блок появляется на экране. */
+.fan-fact-section.fan-open .sppb-row-column {
+	transform: translate3d(var(--fan-x, 0px), var(--fan-y, 0px), 0) rotate(var(--fan-r, 0deg)) scale(1);
+	opacity: 1;
+}
+
+/* Крайние карточки ниже и развёрнуты наружу, средняя стоит ровно. */
+.fan-fact-section .sppb-row-column:nth-child(1) { --fan-x: -466px; --fan-y: 132px; --fan-r: -11deg; --fan-delay: 0.18s; z-index: 1; }
+.fan-fact-section .sppb-row-column:nth-child(2) { --fan-x: -246px; --fan-y: 52px;  --fan-r: -5.5deg; --fan-delay: 0.09s; z-index: 2; }
+.fan-fact-section .sppb-row-column:nth-child(3) { --fan-x: 0px;    --fan-y: 0px;   --fan-r: 0deg;    --fan-delay: 0s;    z-index: 3; }
+.fan-fact-section .sppb-row-column:nth-child(4) { --fan-x: 246px;  --fan-y: 52px;  --fan-r: 5.5deg;  --fan-delay: 0.09s; z-index: 2; }
+.fan-fact-section .sppb-row-column:nth-child(5) { --fan-x: 466px;  --fan-y: 132px; --fan-r: 11deg;   --fan-delay: 0.18s; z-index: 1; }
+
+/* Кнопка - в центре композиции, в просвете между «рукавами» веера. */
+.fan-fact-section .sppb-row-column:nth-child(6) {
+	--fan-x: 0px;
+	--fan-y: 230px;
+	--fan-r: 0deg;
+	--fan-delay: 0.3s;
+	width: auto;
+	margin-left: 0;
+	transform: translate3d(-50%, calc(var(--fan-y) * 0.12), 0) scale(0.97);
+	z-index: 4;
+}
+
+.fan-fact-section.fan-open .sppb-row-column:nth-child(6) {
+	transform: translate3d(-50%, var(--fan-y), 0) scale(1);
+}
+
+/* --- Сама карточка -------------------------------------------------- */
+
+/*
+ * Перебиваем оформление из theme.scss: там у карточки рамка в 10px цветом
+ * подложки, жёсткая высота 210px и цветные градиенты под числом.
+ */
+.fan-fact-section .addon-root-animated-number:has(.fan-fact) {
+	min-height: 0;
+	max-height: none;
+}
+
+.fan-fact-section .addon-root-animated-number:has(.fan-fact) > div {
+	height: auto;
+	min-height: 218px;
+	border: 0;
+	border-radius: 14px;
+	background-color: #fff;
+	padding: 26px 24px 24px;
+	/* Тонкая мягкая тень - лист бумаги, а не UI-карточка. */
+	box-shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 8px 24px rgba(20, 20, 20, 0.07);
+}
+
+.fan-fact-section .sppb-animated-number {
+	max-height: none;
+	margin-bottom: 14px;
+	padding: 0;
+	background: none !important;
+	border-radius: 0;
+	/* «1000» и плюс - одна строка: иначе плюс переносился и карточка росла. */
+	white-space: nowrap;
+}
+
+.fan-fact-section .sppb-addon-content {
+	justify-content: flex-start;
+}
+
+/* --- Планшет и телефон ---------------------------------------------- */
+
+@media (max-width: 1199px) {
+	.fan-fact-section .sppb-row { height: 430px; }
+	.fan-fact-section .sppb-row-column { width: 190px; margin-left: -95px; }
+	.fan-fact-section .sppb-row-column:nth-child(1) { --fan-x: -376px; --fan-y: 118px; }
+	.fan-fact-section .sppb-row-column:nth-child(2) { --fan-x: -198px; --fan-y: 46px; }
+	.fan-fact-section .sppb-row-column:nth-child(4) { --fan-x: 198px; --fan-y: 46px; }
+	.fan-fact-section .sppb-row-column:nth-child(5) { --fan-x: 376px; --fan-y: 118px; }
+	.fan-fact-section .sppb-row-column:nth-child(6) { --fan-y: 212px; }
+}
+
+/*
+ * На узком экране веер не собрать - карточки становятся обычным столбиком.
+ * Лёгкий разнобой в наклоне оставляем, чтобы они всё ещё читались как
+ * разложенные листы, но раскладку возвращаем в поток.
+ */
+@media (max-width: 991px) {
+	.fan-fact-section .sppb-row {
+		position: static;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 16px;
+		height: auto;
+	}
+
+	/*
+	 * :nth-child(n) - не «красивость», а вес селектора: раскладку веера
+	 * задают правила вида ...:nth-child(1), и простой селектор по классу их
+	 * не перебьёт - сдвиги --fan-x остались бы от десктопа, и карточки
+	 * уезжали бы за край экрана.
+	 */
+	.fan-fact-section .sppb-row-column:nth-child(n) {
+		position: static;
+		width: calc(50% - 8px);
+		max-width: 260px;
+		margin-left: 0;
+		--fan-x: 0px;
+		--fan-y: 0px;
+	}
+
+	.fan-fact-section .sppb-row-column:nth-child(1) { --fan-r: -1.5deg; }
+	.fan-fact-section .sppb-row-column:nth-child(2) { --fan-r: 1.5deg; }
+	.fan-fact-section .sppb-row-column:nth-child(3) { --fan-r: -1deg; }
+	.fan-fact-section .sppb-row-column:nth-child(4) { --fan-r: 1deg; }
+	.fan-fact-section .sppb-row-column:nth-child(5) { --fan-r: -1.5deg; }
+
+	/* В столбик карточке не нужна высота «под веер» - лишний воздух внутри. */
+	.fan-fact-section .addon-root-animated-number:has(.fan-fact) > div {
+		min-height: 0;
+		padding: 22px 20px;
+	}
+
+	.fan-fact-section .sppb-row-column:nth-child(6):nth-child(n) {
+		width: 100%;
+		max-width: none;
+		display: flex;
+		justify-content: center;
+		transform: translate3d(0, 10px, 0) scale(0.98);
+		margin-top: 8px;
+	}
+
+	.fan-fact-section.fan-open .sppb-row-column:nth-child(6) {
+		transform: none;
+	}
+}
+
+@media (max-width: 575px) {
+	.fan-fact-section .sppb-row-column:nth-child(n) {
+		width: 100%;
+		max-width: 340px;
+	}
+}
+
+/* Уважаем системную настройку «меньше движения»: показываем сразу собранным. */
+@media (prefers-reduced-motion: reduce) {
+	.fan-fact-section .sppb-row-column {
+		transition: none;
+		opacity: 1;
+		transform: translate3d(var(--fan-x, 0px), var(--fan-y, 0px), 0) rotate(var(--fan-r, 0deg));
+	}
+
+	.fan-fact-section .sppb-row-column:nth-child(6) {
+		transform: translate3d(-50%, var(--fan-y), 0);
+	}
+}
+
+/*
+ * Подпись на кнопке тема печатает с capitalize («О Производстве»), хотя в
+ * тексте она набрана нормально. В этом блоке кнопка - единственный акцент,
+ * и ломаный регистр на ней заметен.
+ */
+.fan-fact-section .sppb-btn {
+	text-transform: none;
+}
+
+/* ======================================================================
+ * Портфолио: бегущие ленты фотографий.
+ *
+ * Было: плитка 80x80 с полем 20px, то есть на фото оставалось 40px - на
+ * снимке интерьера при таком размере не разобрать ничего. Делаем плитку
+ * крупнее, а белое поле вокруг - тоньше.
+ *
+ * Размер задан переменной: заменить одно число - и обе ленты перестроятся.
+ *
+ * !important здесь по делу: тема задаёт высоту ленты, поле и размер картинки
+ * четыре раза - в базовом правиле и ещё в трёх медиазапросах (1199/991/767),
+ * причём селектором длиннее нашего. Повторять всю эту лесенку ради трёх
+ * значений смысла нет.
+ * ====================================================================== */
+.scroller-wrap {
+	/*
+	 * Кадр горизонтальный: в ленту поставлены кадры из hero, они широкие
+	 * (1600x818). В вертикальной рамке от такого снимка осталась бы узкая
+	 * полоса из середины - как правило, мимо двери.
+	 */
+	--kdc-w: 320px;
+	--kdc-h: 220px;
+	--kdc-frame: 0px;
+}
+
+.scroller-wrap [class*="infinity-scroller"] {
+	/* Высота ленты - под плитку целиком, иначе её обрежет по старым 80px. */
+	height: calc(var(--kdc-h) + var(--kdc-frame) * 2) !important;
+}
+
+.scroller-wrap [class*="infinity-scroller"] > div {
+	padding: var(--kdc-frame) !important;
+	/*
+	 * Белой подложки под снимком больше нет - у плитки остаётся только сама
+	 * фотография со своей окантовкой. Фон темы гасим: при нулевом поле он
+	 * всё равно вылезал бы из-под скруглённых углов картинки.
+	 */
+	background-color: transparent !important;
+	border-radius: 12px;
+
+	/*
+	 * Обёртка картинки у аддона - inline-block, и строка добавляла под ней
+	 * 7px на «хвосты» букв. Плитка получалась 227px при высоте кадра 220px,
+	 * а лента обрезает всё, что выше её высоты (overflow: hidden) - у верхних
+	 * снимков срезало полоску сверху. Гасим строку.
+	 */
+	line-height: 0;
+	font-size: 0;
+}
+
+.scroller-wrap [class*="infinity-scroller"] > div .sppb-addon-single-image-container {
+	display: block;
+	line-height: 0;
+}
+
+.scroller-wrap [class*="infinity-scroller"] > div img {
+	width: var(--kdc-w) !important;
+	height: var(--kdc-h) !important;
+	object-fit: cover;
+	display: block;
+
+	/*
+	 * Все кадры одного размера: размер задан рамкой, а не файлом, поэтому
+	 * снимки любых пропорций обрезаются по центру под один формат.
+	 *
+	 * Тонкая тёмная окантовка + скругление. box-sizing: border-box - чтобы
+	 * рамка укладывалась внутрь заданных размеров и плитки не разъехались
+	 * на два пикселя.
+	 */
+	box-sizing: border-box;
+	border: 1px solid #1a1a1a;
+	/* !important: конструктор печатает каждой картинке своё
+	   #sppb-addon-… img { border-radius: 0 } - идентификатор сильнее класса. */
+	border-radius: 12px !important;
+}
+
+/*
+ * Затухание по краям ленты убрано.
+ *
+ * Тема рисует его двумя псевдоэлементами (плашка цвета фона с blur), из-за
+ * них крайние снимки выглядели засвеченными. Ленту растянули на всю ширину
+ * окна, кадры и так уходят за край - подсветка не нужна.
+ */
+.scroller-wrap [class*="infinity-scroller"]::before,
+.scroller-wrap [class*="infinity-scroller"]::after {
+	display: none !important;
+}
+
+/*
+ * Ход лент во всю ширину окна.
+ *
+ * Обе ленты жили внутри центральной колонки (её предел - 1140px), поэтому
+ * снимки разворачивались только по середине экрана, а вторая лента была ещё
+ * и ужата до 80%. Выводим обе за пределы колонки: ширина - весь экран,
+ * отрицательные поля вытаскивают блок из контейнера.
+ *
+ * 100vw не берём: в него входит вертикальная полоса прокрутки, и страница
+ * получала бы горизонтальный скролл. Считаем от фактической ширины
+ * контейнера через margin - результат тот же, но без переполнения.
+ */
+.scroller-wrap {
+	/*
+	 * !important: конструктор печатает этому блоку width: 91% и авто-поля по
+	 * его идентификатору, а тема на телефоне - свои 110% / -5%. Оба правила
+	 * сильнее селектора по классу.
+	 */
+	width: auto !important;
+	margin-left: calc(50% - 50vw + var(--kdc-sbw, 0px) / 2) !important;
+	margin-right: calc(50% - 50vw + var(--kdc-sbw, 0px) / 2) !important;
+}
+
+.sppb-addon-wrapper:has(> .rtl-infinity-scroller-kdc),
+.sppb-addon-wrapper:has(> .ltr-infinity-scroller-kdc) {
+	width: 100%;
+	margin: 0 auto;
+}
+
+
+@media (max-width: 991px) {
+	.scroller-wrap {
+		--kdc-w: 260px;
+		--kdc-h: 180px;
+		--kdc-frame: 0px;
+	}
+}
+
+@media (max-width: 767px) {
+	.scroller-wrap {
+		--kdc-w: 200px;
+		--kdc-h: 140px;
+		--kdc-frame: 0px;
+	}
+}
+
+/*
+ * Пояс ленты портфолио (собирается в custom.js).
+ *
+ * Двигается css-анимацией, а не скриптом: transform выполняется в
+ * композиторе, поэтому прокрутка страницы и любая занятость главного потока
+ * на скорость ленты не влияют.
+ *
+ * Пояс склеен из двух одинаковых половин, сдвиг ровно на -50% - в конце
+ * цикла картинка совпадает сама с собой, шва не видно.
+ */
+.scroller-wrap [class*="infinity-scroller"] .kdc-belt {
+	/*
+	 * !important: пояс - прямой потомок ленты, и на него ложится правило
+	 * темы для плиток (> div { top: 50% }). Без перебивки пояс уезжал вниз
+	 * на половину высоты и нижняя половина обрезалась.
+	 */
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	width: max-content;
+	will-change: transform;
+	animation-timing-function: linear;
+	animation-iteration-count: infinite;
+	animation-name: kdc-marquee-rtl;
+}
+
+.scroller-wrap [class*="infinity-scroller"] .kdc-belt.kdc-belt-ltr {
+	animation-name: kdc-marquee-ltr;
+}
+
+.scroller-wrap [class*="infinity-scroller"] .kdc-belt.kdc-paused {
+	animation-play-state: paused;
+}
+
+/*
+ * Плитки внутри пояса - обычные элементы потока. Тема ставит им absolute и
+ * собственный transform (их двигал старый скрипт) - это надо снять, иначе
+ * они сложатся стопкой в левом углу.
+ *
+ * Зазор задан margin'ом, а не gap: длина половины пояса должна быть ровно
+ * кратна «плитка + зазор», иначе сдвиг на -50% не совпадёт и на стыке
+ * дёрнется.
+ */
+.scroller-wrap [class*="infinity-scroller"] .kdc-belt > div {
+	position: static !important;
+	transform: none !important;
+	flex: 0 0 auto;
+	margin-right: 30px;
+}
+
+@keyframes kdc-marquee-rtl {
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+
+	to {
+		transform: translate3d(-50%, 0, 0);
+	}
+}
+
+@keyframes kdc-marquee-ltr {
+	from {
+		transform: translate3d(-50%, 0, 0);
+	}
+
+	to {
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+/*
+ * Ленту портфолио нельзя прокручивать руками.
+ *
+ * У темы на ленте overflow-x: auto, а пояс теперь в пять раз шире экрана -
+ * то есть её можно было утащить вбок колесом, трекпадом или пальцем, и она
+ * уезжала независимо от анимации. Закрываем прокрутку совсем; touch-action
+ * pan-y оставляет вертикальный свайп странице, а горизонтальный жест по
+ * ленте больше ничего не двигает.
+ */
+.scroller-wrap [class*="infinity-scroller"] {
+	overflow: hidden !important;
+	touch-action: pan-y;
+	overscroll-behavior-x: none;
+}
+
+/* ======================================================================
+ * Команда: редакционный разворот, а не каталог карточек.
+ *
+ * Разметка остаётся конструкторской: строка из трёх колонок, в каждой -
+ * фотография, текстовый блок с именем и должностью и текстовый блок с
+ * цитатой. Плашек, рамок и теней у карточек нет: снимок сам по себе, текст
+ * прямо под ним.
+ * ====================================================================== */
+
+/* --- Композиция из трёх сотрудников ---------------------------------- */
+
+/*
+ * Ряд шире основной колонки страницы (её предел 1140px): при трёх снимках
+ * по 400-450px в неё не уложиться. Расширяем до 1440px, но не больше окна.
+ * --kdc-sbw - ширина полосы прокрутки, её отдаёт custom.js; без поправки
+ * появлялся бы горизонтальный скролл.
+ */
+.kdc-team {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: min(1440px, calc(100vw - var(--kdc-sbw, 0px) - 80px)) !important;
+	max-width: none !important;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+.kdc-team .sppb-row {
+	align-items: flex-start !important;
+}
+
+.kdc-team .sppb-row-column {
+	padding: 0 24px;
+	display: flex;
+}
+
+.kdc-team .sppb-row-column > .sppb-column {
+	width: 100%;
+	/* Ни фона, ни рамки, ни тени - снимок и текст живут прямо на фоне страницы. */
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	overflow: visible;
+}
+
+/* --- Фотография ------------------------------------------------------ */
+
+.kdc-team .addon-root-image:has(.kdc-team-photo) {
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	border-radius: 18px;
+	line-height: 0;
+}
+
+.kdc-team .addon-root-image:has(.kdc-team-photo) > .clearfix,
+.kdc-team .kdc-team-photo,
+.kdc-team .kdc-team-photo .sppb-addon-content,
+.kdc-team .kdc-team-photo .sppb-addon-single-image-container {
+	height: 100% !important;
+	width: 100%;
+	display: block;
+	line-height: 0;
+}
+
+.kdc-team .kdc-team-photo img {
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	object-fit: cover;
+	object-position: 50% 30%;
+	display: block;
+	border-radius: 0 !important;
+}
+
+/*
+ * Лёгкий разнобой, чтобы ряд не читался сеткой: крайние снимки опущены и
+ * чуть повёрнуты, средний стоит ровно и выше остальных.
+ */
+.kdc-team .sppb-row-column:nth-child(1) .addon-root-image:has(.kdc-team-photo) {
+	transform: rotate(-0.7deg);
+}
+
+.kdc-team .sppb-row-column:nth-child(3) .addon-root-image:has(.kdc-team-photo) {
+	transform: rotate(0.7deg);
+}
+
+.kdc-team .sppb-row-column:nth-child(1) > .sppb-column,
+.kdc-team .sppb-row-column:nth-child(3) > .sppb-column {
+	margin-top: 44px;
+}
+
+/*
+ * Средний снимок чуть выше остальных, но не настолько, чтобы его подпись
+ * ушла ниже соседних: высота подобрана так, чтобы низ ссылки «Обсудить
+ * проект» встал примерно на одну линию с концом текста у Анны и Надежды.
+ */
+.kdc-team .sppb-row-column:nth-child(2) .addon-root-image:has(.kdc-team-photo) {
+	aspect-ratio: 41 / 50;
+}
+
+/* Скругление снимка при видимом overflow даём самой картинке. */
+.kdc-team .sppb-row-column .addon-root-image:has(.kdc-team-photo) {
+	position: relative;
+	overflow: visible;
+}
+
+.kdc-team .kdc-team-photo img {
+	border-radius: 18px !important;
+}
+
+/* --- Подписи --------------------------------------------------------- */
+
+.kdc-team .addon-root-text-block:has(.kdc-team-head) {
+	padding: 22px 2px 0;
+}
+
+.kdc-team .addon-root-text-block:has(.kdc-team-quote) {
+	padding: 0 2px;
+}
+
+.kdc-team .kdc-team-head .sppb-addon-title {
+	margin: 0 0 6px;
+	font-family: "Source Serif Pro", serif;
+	font-weight: 400;
+	font-size: 28px;
+	line-height: 1.15;
+	color: #141414;
+	text-align: left;
+}
+
+.kdc-team .kdc-team-head .sppb-addon-text,
+.kdc-team .kdc-team-head .sppb-addon-text p {
+	margin: 0;
+	font-family: Inter, sans-serif;
+	font-size: 13px;
+	line-height: 1.5;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(20, 20, 20, 0.5);
+	text-align: left;
+}
+
+.kdc-team .kdc-team-quote .sppb-addon-text,
+.kdc-team .kdc-team-quote .sppb-addon-text p {
+	margin: 16px 0 0;
+	font-family: "Source Serif Pro", serif;
+	font-style: italic;
+	font-size: 18px;
+	line-height: 1.5;
+	/* Приглушённой остаётся только должность - цитата идёт чёрным. */
+	color: #141414;
+	text-align: left;
+}
+
+/* --- Появление при прокрутке ---------------------------------------- */
+
+.kdc-team .sppb-row-column {
+	opacity: 0;
+	transform: translateY(18px);
+	transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kdc-team.kdc-team-in .sppb-row-column {
+	opacity: 1;
+	transform: none;
+}
+
+.kdc-team .sppb-row-column:nth-child(2) {
+	transition-delay: 0.09s;
+}
+
+.kdc-team .sppb-row-column:nth-child(3) {
+	transition-delay: 0.18s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kdc-team .sppb-row-column {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
+/* --- Узкие экраны ---------------------------------------------------- */
+
+@media (max-width: 991px) {
+	.kdc-team .sppb-row-column {
+		padding: 0 14px;
+	}
+
+	.kdc-team .kdc-team-head .sppb-addon-title {
+		font-size: 24px;
+	}
+
+	.kdc-team .kdc-team-quote .sppb-addon-text p {
+		font-size: 16px;
+	}
+}
+
+@media (max-width: 767px) {
+	/* На телефоне поля от краёв экрана меньше - 16px вместо 40px. */
+	.kdc-team {
+		width: calc(100vw - var(--kdc-sbw, 0px) - 32px) !important;
+	}
+
+	/*
+	 * В столбик разнобой не нужен: наклон и разная высота на узком экране
+	 * читаются как сбой вёрстки, а не как приём.
+	 */
+	.kdc-team .sppb-row-column {
+		padding: 0 16px;
+		margin-bottom: 44px;
+	}
+
+	.kdc-team .sppb-row-column:last-child {
+		margin-bottom: 0;
+	}
+
+	.kdc-team .sppb-row-column:nth-child(1) > .sppb-column,
+	.kdc-team .sppb-row-column:nth-child(3) > .sppb-column {
+		margin-top: 0;
+	}
+
+	.kdc-team .sppb-row-column .addon-root-image:has(.kdc-team-photo) {
+		aspect-ratio: 4 / 5;
+		transform: none;
+	}
+}
+
+/*
+ * Кнопка «Обсудить проект» под карточкой Павла - вместо отдельного нижнего
+ * CTA-блока. Та же чёрная пилюля, что и основные кнопки сайта, только
+ * компактнее: высота 46px и ширина строго по содержимому.
+ *
+ * !important: конструктор печатает кнопке свои цвета, отступы и скругление
+ * правилом по идентификатору аддона - оно сильнее селектора по классу.
+ */
+.kdc-team .addon-root-button:has(.kdc-team-cta) {
+	margin-top: 18px;
+	padding: 0 2px;
+}
+
+.kdc-team .kdc-team-cta .sppb-btn,
+.kdc-team .kdc-team-cta.sppb-btn {
+	display: inline-flex;
+	align-items: center;
+	width: auto;
+	min-height: 46px;
+	padding: 0 24px !important;
+	border: 0 !important;
+	border-radius: 999px !important;
+	background: #141414 !important;
+	font-family: Inter, sans-serif;
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 1.2;
+	color: #fff !important;
+	text-transform: none;
+	transition: background-color 0.3s ease;
+}
+
+.kdc-team .kdc-team-cta .sppb-btn:hover,
+.kdc-team .kdc-team-cta.sppb-btn:hover {
+	background: #000 !important;
+}
+
+.kdc-team .kdc-team-cta .sppb-btn [class*="icon-arrow-right"],
+.kdc-team .kdc-team-cta.sppb-btn [class*="icon-arrow-right"] {
+	margin-left: 10px;
+	font-size: 13px;
+	color: #fff;
+}
+
+/*
+ * Блог «Из жизни КЛЕВЕРДОРС»: пустая рамка под картинку.
+ *
+ * Карточка статьи всегда рисует блок под изображение, даже когда у статьи
+ * изображения нет - получается пустой прямоугольник (у главной карточки это
+ * больше 400px белого пространства между заголовком блока и текстом).
+ * Схлопываем такие блоки: рамка исчезает, карточка начинается с текста.
+ */
+.sppb-dynamic-content-image-wrapper:empty {
+	display: none;
+}
+
+/* ======================================================================
+ * Страница блога: редакционный разворот вместо сетки одинаковых карточек.
+ *
+ * Разметку даёт аддон articles (картинка, заголовок, мета, «Подробнее»).
+ * Колонок у него теперь одна - всю композицию собираем сеткой здесь:
+ * первая статья крупная, вторая рядом уже, ниже пара другого соотношения.
+ * Класс kdc-journal проставлен у всех списков статей на странице.
+ * ====================================================================== */
+.kdc-journal .sppb-row {
+	display: grid;
+	grid-template-columns: repeat(12, 1fr);
+	gap: 104px 48px;
+	margin: 0;
+}
+
+/* Колонки конструктора больше не задают ширину - её задаёт сетка. */
+.kdc-journal .sppb-row > div {
+	width: auto !important;
+	max-width: none !important;
+	padding: 0 !important;
+	flex: none !important;
+}
+
+/*
+ * Ширина чередуется: широкая - уже, затем наоборот. Кадры везде
+ * горизонтальные, поэтому узкая статья получается ещё и ниже - разный
+ * масштаб держится на пропорциях, а не на отдельных стилях карточек.
+ */
+.kdc-journal .sppb-row > div:nth-child(1) { grid-column: span 7; }
+.kdc-journal .sppb-row > div:nth-child(2) { grid-column: span 5; }
+.kdc-journal .sppb-row > div:nth-child(3) { grid-column: span 5; }
+.kdc-journal .sppb-row > div:nth-child(4) { grid-column: span 7; }
+.kdc-journal .sppb-row > div:nth-child(5) { grid-column: span 7; }
+.kdc-journal .sppb-row > div:nth-child(6) { grid-column: span 5; }
+
+/*
+ * Узкая статья в паре опущена - строка перестаёт читаться как ряд сетки.
+ * Сдвиг считаем от ширины экрана, чтобы на средних ширинах он таял сам.
+ */
+.kdc-journal .sppb-row > div:nth-child(2),
+.kdc-journal .sppb-row > div:nth-child(4),
+.kdc-journal .sppb-row > div:nth-child(6) {
+	margin-top: clamp(0px, 5vw, 76px);
+}
+
+/* --- Карточка -------------------------------------------------------- */
+
+.kdc-journal .sppb-addon-article {
+	background: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	height: auto !important;
+}
+
+.kdc-journal .sppb-article-img-wrap {
+	display: block;
+	overflow: hidden;
+	border-radius: 18px;
+	margin-bottom: 22px;
+	aspect-ratio: 3 / 2;
+	line-height: 0;
+}
+
+.kdc-journal .sppb-article-img-wrap img {
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	object-fit: cover;
+	display: block;
+	border-radius: 0 !important;
+	/* Лёгкий наезд при наведении вместо теней и рамок. */
+	transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kdc-journal .sppb-addon-article:hover .sppb-article-img-wrap img {
+	transform: scale(1.02);
+}
+
+/*
+ * Широкие статьи идут в 16/9, узкие - в 3/2: кадр остаётся горизонтальным,
+ * а высоту ему задаёт собственная пропорция, а не выравнивание по соседу.
+ */
+.kdc-journal .sppb-row > div:nth-child(1) .sppb-article-img-wrap,
+.kdc-journal .sppb-row > div:nth-child(4) .sppb-article-img-wrap,
+.kdc-journal .sppb-row > div:nth-child(5) .sppb-article-img-wrap {
+	aspect-ratio: 16 / 9;
+}
+
+.kdc-journal .sppb-row > div:nth-child(2) .sppb-article-img-wrap,
+.kdc-journal .sppb-row > div:nth-child(3) .sppb-article-img-wrap,
+.kdc-journal .sppb-row > div:nth-child(6) .sppb-article-img-wrap {
+	aspect-ratio: 3 / 2;
+}
+
+.kdc-journal .sppb-article-info-wrap {
+	padding: 0 !important;
+}
+
+/* --- Мета: категория · дата ------------------------------------------ */
+
+.kdc-journal .sppb-article-meta {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0 0 10px !important;
+	order: -1;
+}
+
+/* Категория печатается после даты - меняем порядок, не трогая шаблон. */
+.kdc-journal .sppb-meta-category {
+	order: 1;
+}
+
+.kdc-journal .sppb-meta-date {
+	order: 2;
+}
+
+.kdc-journal .sppb-meta-category::after {
+	content: "·";
+	margin-left: 8px;
+	color: rgba(20, 20, 20, 0.35);
+}
+
+.kdc-journal .sppb-article-meta,
+.kdc-journal .sppb-article-meta a,
+.kdc-journal .sppb-meta-date {
+	font-family: Inter, sans-serif;
+	font-size: 13px !important;
+	line-height: 1.4;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(20, 20, 20, 0.5) !important;
+}
+
+/* --- Заголовок и «Подробнее» ----------------------------------------- */
+
+.kdc-journal .sppb-article-info-wrap {
+	display: flex;
+	flex-direction: column;
+}
+
+.kdc-journal .sppb-addon-article h5 {
+	margin: 0 0 14px !important;
+	order: 0;
+}
+
+.kdc-journal .sppb-addon-article h5 a {
+	font-family: "Source Serif Pro", serif;
+	font-weight: 400;
+	font-size: 26px;
+	line-height: 1.2;
+	color: #141414 !important;
+}
+
+.kdc-journal .sppb-row > div:nth-child(1) h5 a {
+	font-size: 40px;
+}
+
+.kdc-journal .sppb-readmore {
+	order: 1;
+	align-self: flex-start;
+	font-family: Inter, sans-serif;
+	font-size: 15px !important;
+	color: #141414 !important;
+	border-bottom: 1px solid rgba(20, 20, 20, 0.3);
+	padding-bottom: 2px;
+	transition: border-color 0.3s ease;
+}
+
+.kdc-journal .sppb-readmore::after {
+	content: " →";
+}
+
+.kdc-journal .sppb-addon-article:hover .sppb-readmore {
+	border-bottom-color: #141414;
+}
+
+/* --- Появление при прокрутке ---------------------------------------- */
+
+.kdc-journal .sppb-addon-article {
+	opacity: 0;
+	transform: translateY(20px);
+	transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kdc-journal .sppb-addon-article.kdc-in {
+	opacity: 1;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kdc-journal .sppb-addon-article {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
+/* --- Узкие экраны ---------------------------------------------------- */
+
+@media (max-width: 991px) {
+	.kdc-journal .sppb-row {
+		gap: 64px 28px;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(n) {
+		grid-column: span 6;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(1) {
+		grid-column: span 12;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(1) h5 a {
+		font-size: 32px;
+	}
+
+	/* Пары стали равными - сдвиг вниз здесь только у правой статьи. */
+	.kdc-journal .sppb-row > div:nth-child(n) {
+		margin-top: 0;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(3),
+	.kdc-journal .sppb-row > div:nth-child(5) {
+		margin-top: 32px;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(n) .sppb-article-img-wrap {
+		aspect-ratio: 3 / 2;
+	}
+}
+
+@media (max-width: 767px) {
+	.kdc-journal .sppb-row {
+		gap: 52px 0;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(n) {
+		grid-column: span 12;
+		margin-top: 0;
+	}
+
+	.kdc-journal .sppb-row > div:nth-child(n) .sppb-article-img-wrap {
+		aspect-ratio: 3 / 2;
+	}
+
+	.kdc-journal .sppb-addon-article h5 a,
+	.kdc-journal .sppb-row > div:nth-child(1) h5 a {
+		font-size: 24px;
+	}
+}
+
+/* ======================================================================
+ * «Из жизни Клевердорс» на главной - журнальная полоса.
+ *
+ * Слева текстовая колонка (подпись, заголовок, лид, ссылка), справа три
+ * публикации в один ряд. Высота снимков общая, ширина убывает: свежая ~51%,
+ * вторая ~29%, третья ~20% от полосы публикаций. Выразительность держится
+ * на масштабе и разнице ширин, без рамок, теней и отдельных карточек.
+ *
+ * Разметку даёт аддон articles: ссылка-картинка, затем блок с заголовком,
+ * мета и «Подробнее». Мету и «Подробнее» переносим на снимок абсолютным
+ * позиционированием - высота кадра известна (--kdc-jh-h), поэтому отсчёт
+ * от верха карточки точный.
+ * ====================================================================== */
+
+.kdc-jh {
+	--kdc-jh-h: min(380px, calc(29vw - 20px));
+	--kdc-jh-gap: 24px;
+
+	/*
+	 * Полоса живёт в колонке 730px, а композиции нужен размах - выводим её
+	 * за пределы колонки. Ширину считаем от vw с поправкой на полосу
+	 * прокрутки (--kdc-sbw приходит из custom.js), иначе появился бы
+	 * горизонтальный скролл.
+	 */
+	width: min(1280px, calc(100vw - var(--kdc-sbw, 0px) - 80px)) !important;
+	max-width: none !important;
+	margin-left: 50% !important;
+	transform: translateX(-50%);
+}
+
+/*
+ * Пять аддонов колонки раскладываем сеткой: первые четыре - левый столбец,
+ * пятый (лента) занимает правый на всю высоту.
+ */
+.kdc-jh > .sppb-container-inner > .sppb-row > .sppb-row-column > .sppb-column > .sppb-column-addons {
+	display: grid;
+	grid-template-columns: 22% 1fr;
+	/*
+	 * Первые две строки - по содержимому, третья забирает остаток высоты
+	 * (её задаёт лента справа). Без этого строки растягивались поровну и
+	 * между заголовком и лидом зиял случайный промежуток.
+	 */
+	grid-template-rows: auto auto 1fr;
+	column-gap: 56px;
+	align-items: start;
+}
+
+.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(1) { grid-column: 1; grid-row: 1; }
+.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(2) { grid-column: 1; grid-row: 2; }
+.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(3) { grid-column: 1; grid-row: 3; }
+.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(4) {
+	grid-column: 2;
+	grid-row: 1 / span 3;
+}
+
+/* --- Левая колонка ---------------------------------------------------- */
+
+/* Конструктор печатает свои размеры по #sppb-addon-..., отсюда !important. */
+.kdc-jh .kdc-jh-title .sppb-addon-title {
+	margin: 0 !important;
+	font-family: "Source Serif Pro", serif !important;
+	font-weight: 400 !important;
+	font-size: 50px !important;
+	line-height: 1.04 !important;
+	text-align: left !important;
+	color: #141414 !important;
+}
+
+.kdc-jh .kdc-jh-lead p {
+	margin: 20px 0 0 !important;
+	font-family: Inter, sans-serif !important;
+	font-size: 15px !important;
+	line-height: 1.6 !important;
+	color: #6a6a68 !important;
+}
+
+/*
+ * «Все записи» - та же кнопка, что стояла под блоком, приведённая к виду
+ * текстовой ссылки. Класс конструктор вешает на саму кнопку, а не на
+ * обёртку, поэтому отступ задаём по позиции аддона в колонке.
+ * text-transform: none - в теме у кнопок стоит capitalize, из-за него
+ * выходило «Все Записи».
+ */
+.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(3) {
+	margin-top: 28px;
+}
+
+/* У аддона выравнивание по центру - в текстовой колонке ссылка идёт слева. */
+.kdc-jh .sppb-button-wrapper {
+	text-align: left !important;
+}
+
+.kdc-jh .sppb-btn.kdc-jh-link {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 8px;
+	width: auto !important;
+	min-height: 0 !important;
+	padding: 0 0 3px !important;
+	border: 0 !important;
+	border-bottom: 1px solid rgba(20, 20, 20, 0.3) !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	font-family: Inter, sans-serif !important;
+	font-size: 15px !important;
+	text-transform: none !important;
+	color: #141414 !important;
+	transition: border-color 0.3s ease;
+}
+
+.kdc-jh .sppb-btn.kdc-jh-link:hover,
+.kdc-jh .sppb-btn.kdc-jh-link:focus {
+	border-bottom-color: #141414 !important;
+	background: none !important;
+	color: #141414 !important;
+}
+
+.kdc-jh .sppb-btn.kdc-jh-link .icon {
+	font-size: 13px;
+}
+
+/* --- Полоса публикаций ------------------------------------------------ */
+
+.kdc-jh-feed .sppb-row {
+	display: grid;
+	grid-template-columns: 51fr 29fr 20fr;
+	gap: var(--kdc-jh-gap);
+	margin: 0;
+}
+
+/* Ширину задаёт сетка, колонки конструктора в этом не участвуют. */
+.kdc-jh-feed .sppb-row > div {
+	width: auto !important;
+	max-width: none !important;
+	padding: 0 !important;
+	flex: none !important;
+}
+
+.kdc-jh-feed .sppb-addon-article {
+	position: relative;
+	background: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	height: auto !important;
+}
+
+/* --- Снимок ----------------------------------------------------------- */
+
+.kdc-jh-feed .sppb-article-img-wrap {
+	position: relative;
+	display: block;
+	height: var(--kdc-jh-h);
+	overflow: hidden;
+	border-radius: 14px;
+	line-height: 0;
+}
+
+.kdc-jh-feed .sppb-article-img-wrap img {
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	object-fit: cover;
+	display: block;
+	border-radius: 0 !important;
+	transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Затемнение при наведении - ровное, без цвета и без градиента. */
+.kdc-jh-feed .sppb-article-img-wrap::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: #000;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.45s ease;
+}
+
+.kdc-jh-feed .sppb-addon-article:hover .sppb-article-img-wrap img {
+	transform: scale(1.025);
+}
+
+.kdc-jh-feed .sppb-addon-article:hover .sppb-article-img-wrap::after {
+	opacity: 0.12;
+}
+
+/* --- Дата под снимком -------------------------------------------------- */
+
+.kdc-jh-feed .sppb-article-info-wrap {
+	display: flex;
+	flex-direction: column;
+	padding: 0 !important;
+}
+
+/* Дата идёт первой строкой под кадром, заголовок - следом. */
+.kdc-jh-feed .sppb-article-meta {
+	order: 0;
+	margin: 18px 0 0;
+	font-family: Inter, sans-serif !important;
+	font-size: 11px !important;
+	line-height: 1 !important;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #8c8c8a !important;
+}
+
+/*
+ * Рубрику не показываем - остаётся только дата. !important обязателен:
+ * у аддона есть своё правило на .sppb-article-meta > span (display,
+ * margin 5px, свой цвет и кегль), и по специфичности оно сильнее.
+ */
+.kdc-jh-feed .sppb-meta-category {
+	display: none !important;
+}
+
+.kdc-jh-feed .sppb-meta-date {
+	margin: 0 !important;
+	font: inherit !important;
+	letter-spacing: inherit;
+	color: inherit !important;
+	white-space: nowrap;
+}
+
+/* --- Заголовок под снимком -------------------------------------------- */
+
+.kdc-jh-feed .sppb-addon-article h5 {
+	order: 1;
+	margin: 10px 0 0 !important;
+}
+
+.kdc-jh-feed .sppb-addon-article h5 a {
+	font-family: "Source Serif Pro", serif !important;
+	font-weight: 400 !important;
+	line-height: 1.16 !important;
+	color: #141414 !important;
+}
+
+.kdc-jh-feed .sppb-row > div:nth-child(1) h5 a { font-size: 30px !important; }
+.kdc-jh-feed .sppb-row > div:nth-child(2) h5 a { font-size: 22px !important; }
+.kdc-jh-feed .sppb-row > div:nth-child(3) h5 a { font-size: 19px !important; }
+
+/*
+ * Вся публикация кликабельна: растягиваем ссылку заголовка на карточку.
+ * Так остаётся один настоящий <a> - работает и клавиатура, и правый клик.
+ */
+.kdc-jh-feed .sppb-addon-article h5 a::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+}
+
+/* --- Круг со стрелкой -------------------------------------------------- */
+
+.kdc-jh-feed .sppb-readmore {
+	position: absolute;
+	right: 16px;
+	top: calc(var(--kdc-jh-h) - 56px);
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border: 0;
+	border-radius: 50%;
+	/*
+	 * Плотная белая заливка, а не прозрачная с рамкой: подложки под метой
+	 * больше нет, и полупрозрачный круг терялся на светлом кадре
+	 * (вторая публикация - почти белая дверь).
+	 */
+	background: rgba(255, 255, 255, 0.92);
+	font-size: 0 !important;
+	color: transparent !important;
+	transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease;
+}
+
+.kdc-jh-feed .sppb-readmore::after {
+	content: "→";
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+	line-height: 1;
+	color: #141414;
+}
+
+.kdc-jh-feed .sppb-addon-article:hover .sppb-readmore {
+	transform: translateX(5px);
+	background: #fff;
+}
+
+/* --- Появление при прокрутке ------------------------------------------ */
+
+.kdc-jh-feed .sppb-addon-article {
+	opacity: 0;
+	transform: translateY(18px);
+	transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kdc-jh-feed .sppb-addon-article.kdc-in {
+	opacity: 1;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kdc-jh-feed .sppb-addon-article,
+	.kdc-jh-feed .sppb-article-img-wrap img,
+	.kdc-jh-feed .sppb-readmore {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
+/* --- Планшет ----------------------------------------------------------- */
+
+@media (max-width: 1199px) {
+	.kdc-jh > .sppb-container-inner > .sppb-row > .sppb-row-column > .sppb-column > .sppb-column-addons {
+		grid-template-columns: 1fr;
+		column-gap: 0;
+	}
+
+	/* Текст встаёт над полосой; лид и ссылка - в один ряд под заголовком. */
+	.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(n) {
+		grid-column: 1;
+		grid-row: auto;
+	}
+
+	.kdc-jh .sppb-column-addons > .sppb-addon-wrapper:nth-child(4) {
+		margin-top: 40px;
+	}
+
+	.kdc-jh .kdc-jh-title .sppb-addon-title {
+		font-size: 42px !important;
+	}
+
+	.kdc-jh .kdc-jh-lead p {
+		max-width: 520px;
+	}
+}
+
+/* --- Телефон ----------------------------------------------------------- */
+
+@media (max-width: 767px) {
+	.kdc-jh {
+		width: calc(100vw - var(--kdc-sbw, 0px) - 32px) !important;
+	}
+
+	.kdc-jh-feed .sppb-row {
+		grid-template-columns: 1fr;
+		gap: 40px;
+	}
+
+	/*
+	 * Иерархия сохраняется высотой кадра, а не шириной: сверху крупная
+	 * публикация, ниже две поменьше. Снимки не сплющиваются - у каждого
+	 * своя высота при одной ширине.
+	 */
+	.kdc-jh-feed .sppb-row > div:nth-child(1) { --kdc-jh-h: 300px; }
+	.kdc-jh-feed .sppb-row > div:nth-child(2) { --kdc-jh-h: 235px; }
+	.kdc-jh-feed .sppb-row > div:nth-child(3) { --kdc-jh-h: 200px; }
+
+	.kdc-jh .kdc-jh-title .sppb-addon-title {
+		font-size: 34px !important;
+	}
+
+	.kdc-jh-feed .sppb-row > div:nth-child(1) h5 a { font-size: 25px !important; }
+	.kdc-jh-feed .sppb-row > div:nth-child(2) h5 a { font-size: 21px !important; }
+	.kdc-jh-feed .sppb-row > div:nth-child(3) h5 a { font-size: 19px !important; }
+}
+
+/* ======================================================================
+ * Нижняя строка футера - часть серой плашки.
+ *
+ * Копирайт и ссылка на политику живут в #sp-footer, отдельном от модуля
+ * футера, и лежали на белом под плашкой. Контейнер #sp-footer совпадает
+ * с плашкой по левому и правому краю (одна и та же сетка), поэтому
+ * достаточно покрасить его тем же цветом: снизу у плашки убираем
+ * скругление, снизу у строки - добавляем. Плашка при этом доходит
+ * до самого низа страницы.
+ * ====================================================================== */
+
+#sp-footer > .container {
+	background-color: #f2f2f0;
+	border-bottom-left-radius: 20px;
+	border-bottom-right-radius: 20px;
+}
+
+#sp-footer .container-inner {
+	padding-top: 20px;
+	padding-bottom: 28px;
+}
+
+/* Копирайт больше не приглушённый - тот же чёрный, что и ссылка рядом. */
+#sp-footer .sp-copyright {
+	color: #141414 !important;
+}
+
+/*
+ * «БУДЕМ НА СВЯЗИ» стояла в разрядку: 32px сверху от своего аддона и 32px
+ * снизу от нижнего поля секции, поверх которых шли ещё 22px контейнера
+ * копирайта. Поджимаем с обеих сторон.
+ */
+#sppb-addon-wrapper-351b9b90-f3b2-4e79-b480-bcda1db9b348 {
+	margin-top: 12px !important;
+}
+
+.sppb-section#section-id-76942a41-38be-4f95-979f-c7f1ce4f4ffe {
+	padding-bottom: 0 !important;
+}
+
+/* Низ плашки теперь продолжается строкой копирайта - скругление там лишнее. */
+#sp-footer-module-section,
+.sppb-section#section-id-76942a41-38be-4f95-979f-c7f1ce4f4ffe {
+	border-bottom-left-radius: 0 !important;
+	border-bottom-right-radius: 0 !important;
+}
+
+/*
+ * На телефоне контейнер футера идёт во всю ширину, а плашка - с полями
+ * по 15px. Без выравнивания серая полоса внизу оказалась бы шире плашки
+ * и стык читался бы ступенькой.
+ */
+@media (max-width: 767px) {
+	#sp-footer > .container {
+		width: auto !important;
+		max-width: none !important;
+		margin-left: 15px !important;
+		margin-right: 15px !important;
+		padding-left: 20px !important;
+		padding-right: 20px !important;
+	}
+}
+
+/* ======================================================================
+ * Каталог: композиция 13 коллекций 2 / 2 / 3 / 3 / 3.
+ *
+ * Аддон - dynamic_content_collection, все 13 карточек рендерятся как
+ * повторяющиеся копии одного шаблона с СОБСТВЕННЫМ инлайновым <style>
+ * на каждую копию (width:310px;height:223px; по уникальному addon-id).
+ * Вместо 13 точечных переопределений держим один общий грид на контейнере
+ * и раскладываем карточки через nth-child - селектор с контейнерным id
+ * специфичнее, чем правило на id конкретного аддона, поэтому побеждает
+ * без attribute-хаков.
+ *
+ * Сетка из 6 равных колонок - общий знаменатель для 2-в-ряд (span 3)
+ * и 3-в-ряд (span 2): 2×3 = 3×2 = 6, поэтому одна и та же сетка сама
+ * укладывает 4 первые карточки в 2 ряда, а следующие 9 - в 3 ряда по 3,
+ * без ручного деления на подсекции.
+ * ====================================================================== */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 {
+	display: grid !important;
+	grid-template-columns: repeat(6, 1fr) !important;
+	gap: 28px !important;
+}
+
+/* Первые 4 - главные коллекции, по 2 в ряд. */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 > .sppb-dynamic-content-collection__item:nth-child(-n+4) {
+	grid-column: span 3;
+}
+
+/* Остальные 9 - компактнее, по 3 в ряд. */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 > .sppb-dynamic-content-collection__item:nth-child(n+5) {
+	grid-column: span 2;
+}
+
+/*
+ * Картинка: снимаем фиксированную высоту 223px из инлайн-стиля аддона -
+ * дальше высотой управляет aspect-ratio, единое соотношение сторон внутри
+ * каждой из двух групп (крупные / компактные), ширина у аддона и так
+ * уже 100% (!important в его собственном правиле).
+ */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(-n+4) .sppb-dynamic-content-image-wrapper {
+	height: auto !important;
+	aspect-ratio: 4 / 3 !important;
+}
+
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(n+5) .sppb-dynamic-content-image-wrapper {
+	height: auto !important;
+	aspect-ratio: 3 / 2 !important;
+}
+
+/* Главные коллекции чуть заметнее - крупнее заголовок, текст тот же. */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(-n+4) .services-title {
+	font-size: 24px;
+}
+
+@media (max-width: 991px) {
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 {
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 22px !important;
+	}
+
+	/* На планшете строгую 2/2/3/3/3 не удержать без искусственной узости
+	   компактных карточек - переходим на ровные 2 в ряд для всех 13. */
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 > .sppb-dynamic-content-collection__item:nth-child(-n+4),
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 > .sppb-dynamic-content-collection__item:nth-child(n+5) {
+		grid-column: span 1;
+	}
+
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(n+5) .sppb-dynamic-content-image-wrapper {
+		aspect-ratio: 4 / 3 !important;
+	}
+}
+
+@media (max-width: 767px) {
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 {
+		grid-template-columns: 1fr !important;
+		gap: 20px !important;
+	}
+
+	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(-n+4) .services-title {
+		font-size: 21px;
+	}
+}
+
+/*
+ * Каталог: заголовок «Каталог продукции» выключен (helixultimate_enable_page_title
+ * у пункта меню = 0), секция #sp-page-title схлопнулась до 0px. Она же держала
+ * отступ под фиксированную шапку: без него «Наша коллекция» уезжала под шапку.
+ * Отступ добавлен явно, только на этой странице (itemid-114).
+ *
+ * Заданы два зазора: 50px «шапка → заголовок» и 55px «подзаголовок →
+ * карточки». Высота шапки разная по брейкпоинтам (60px на десктопе и
+ * планшете, 50px на телефоне), поэтому padding-top пересчитан под неё:
+ * 110 = 60 + 50, 100 = 50 + 50.
+ */
+.itemid-114 #sp-main {
+	padding-top: 110px;
+}
+
+@media (max-width: 991px) {
+	.itemid-114 #sp-main {
+		padding-top: 110px;
+	}
+}
+
+@media (max-width: 767px) {
+	.itemid-114 #sp-main {
+		padding-top: 100px;
+	}
+}
+
+/*
+ * Второй зазор - у секции с сеткой коллекций свой встроенный padding-top
+ * (100/80/70/60px по брейкпоинтам), а сверху него ещё ~16px даёт
+ * собственный отступ подзаголовка. Этот «плюс 16» одинаков на всех трёх
+ * проверенных ширинах, поэтому 39px (55 - 16) перекрывает встроенный
+ * padding везде разом, без разбивки по брейкпоинтам.
+ */
+.itemid-114 #section-id-943c8d41-d07e-4430-a32a-5560444bf136 {
+	padding-top: 39px !important;
+}
+
+/*
+ * Каталог: блок «Ваша задача уникальна? Наше производство — тоже.» -
+ * заголовок компактнее (на ~10px кегля на каждом брейкпоинте), отступ
+ * после него уменьшен на 10px, а вкладки-«карточки» под фото подняты
+ * ближе к нему тоже на 10px (двигаем весь .sppb-nav-modern разом -
+ * все три вкладки в нём делят один margin-top).
+ */
+.itemid-114 #sppb-addon-86abe5d9-62d2-4ec7-8251-fb000e3cfc4e .sppb-addon-title {
+	font-size: 60px !important;
+}
+
+@media (max-width: 991px) {
+	.itemid-114 #sppb-addon-86abe5d9-62d2-4ec7-8251-fb000e3cfc4e .sppb-addon-title {
+		font-size: 48px !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.itemid-114 #sppb-addon-86abe5d9-62d2-4ec7-8251-fb000e3cfc4e .sppb-addon-title {
+		font-size: 44px !important;
+	}
+}
+
+.itemid-114 #sppb-addon-wrapper-86abe5d9-62d2-4ec7-8251-fb000e3cfc4e {
+	margin-bottom: 40px !important;
+}
+
+.itemid-114 .services-tab-content .sppb-modern-tab .sppb-nav-modern {
+	margin-top: 20px !important;
+}
+
+@media (max-width: 767px) {
+	.itemid-114 .services-tab-content .sppb-modern-tab .sppb-nav-modern {
+		margin-top: 5px !important;
+	}
+}
+
+/*
+ * Каталог: у активной вкладки-«карточки» контур был того же цвета,
+ * что и её собственная заливка (border: var(--sppb-bg-card-primary),
+ * а background-color активного состояния - та же переменная) - контур
+ * буквально сливался с фоном и не читался вовсе, в отличие от неактивных
+ * карточек, где та же граница видна на белом. Красим контур активной
+ * явным тёмным цветом.
+ */
+.itemid-114 .services-tab-content .sppb-modern-tab .sppb-nav-modern > li.active > a {
+	border-color: #141414 !important;
+}
+
+/*
+ * Страницы отдельных коллекций (.view-dynamic.services-page, например
+ * /katalogproduktsii/baget-e) наследуют от темы правило для «тёмного»
+ * геройного макета:
+ *   .view-dynamic.services-page #sp-header #sp-menu ... > a
+ *     { color: var(--sppb-color-variation-1) }  // белый
+ * По специфичности (2 id + 5 классов) оно перебивает даже правило для
+ * .fixed-menu (2 id + 4 класса), которое красит пункты меню в тёмный на
+ * остальных внутренних страницах. У наших карточек коллекций нет тёмного
+ * hero - шапка обычная светлая, поэтому пункты меню («Главная», «О
+ * компании» и т.д., кроме активного пункта в своей заливке) оказывались
+ * белым по белому и пропадали. Явно красим их в тот же тёмный, что и
+ * везде на сайте.
+ */
+.view-dynamic.services-page #sp-header #sp-menu .sp-megamenu-wrapper .sp-megamenu-parent .sp-menu-item > a {
+	color: #141414 !important;
+}
+
+/*
+ * Тот же сбой у телефонной кнопки шапки на страницах коллекций: тема
+ * красит её в var(--sppb-color-variation-1) (белый) через правило
+ * с .view-dynamic.services-page в селекторе - тот же расчёт на тёмный
+ * hero, которого у карточки коллекции нет. Кнопка (обводка + текст,
+ * без заливки) становится белой на белом и пропадает целиком.
+ */
+.view-dynamic.services-page #sp-header .sppb-button-wrapper .sppb-btn {
+	color: #141414 !important;
+	border-color: #141414 !important;
+}
+
+/* И бургер-иконка там же страдает тем же образом - три белые полоски на белом. */
+.view-dynamic.services-page #sp-header #sp-menu #offcanvas-toggler .burger-icon > span {
+	background-color: #141414 !important;
+}
+
+/* ======================================================================
+ * Страница коллекции (dynamic_content:detail, шаблон page id 14) -
+ * редакционная композиция вместо карточек с фото сверху и текстом снизу.
+ *
+ * Правки применяются через #section-id-1b74a99d-... - этот id стабилен
+ * на ВСЕХ 13 страницах коллекций (общий шаблон), поэтому один набор
+ * правил работает одинаково для «Классика Е», «Прованс» и т.д.
+ *
+ * Слева фото не трогаем содержательно: у аддона своя ширина 100%/aspect-
+ * ratio 16:9, мы меняем только РАЗМЕР области, а не то, что попадает
+ * в кадр - кадрирование остаётся прежним.
+ * ====================================================================== */
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba {
+	padding: 25px 0 96px !important;
+}
+
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row {
+	row-gap: 88px;
+	align-items: stretch !important;
+}
+
+/* --- Первый экран: текст слева, фото справа -------------------------- */
+
+.kdc-cd-hero {
+	display: flex !important;
+	flex-direction: row-reverse !important;
+	align-items: center !important;
+	gap: 64px;
+	width: 100%;
+}
+
+/*
+ * Флекс-детьми .kdc-cd-hero (display:flex) оказываются не сами
+ * .kdc-cd-hero-photo/.kdc-cd-hero-text - те классы конструктор поставил
+ * на 2-3 уровня глубже - а их родительские .sppb-addon-wrapper. Размер
+ * поэтому задаём на этом уровне, по структурному признаку (у фото есть
+ * свой addon-root-..., у текстовой обёртки различия нет - берём вторую).
+ */
+.kdc-cd-hero > .addon-root-dynamic-content-image {
+	flex: 0 0 58%;
+	max-width: 58%;
+}
+
+.kdc-cd-hero > .sppb-addon-wrapper:not(.addon-root-dynamic-content-image) {
+	flex: 1 1 42%;
+	max-width: 42%;
+}
+
+/*
+ * Радиус тут не работал: .kdc-cd-hero-photo стоит на самой обёртке
+ * .sppb-dynamic-content-image-wrapper, а не на её родителе - вложенный
+ * селектор ничего не находил. Кроме того у самой картинки аддон задаёт
+ * СВОЙ border-radius: 0 0 20px 20px (скруглены только нижние углы) -
+ * перебиваем и то, и другое.
+ */
+.kdc-cd-hero-photo {
+	border-radius: 18px !important;
+}
+
+.kdc-cd-hero-photo img {
+	border-radius: 18px !important;
+}
+
+/*
+ * Исходник (E-3.jpeg) квадратный (1:1). Заданное аддоном 16:9 обрезает
+ * его почти вдвое по высоте и в первую очередь срезает верх - на фото
+ * пропадает потолочный светильник. Снимаем ограничение до более
+ * бережного портретного кадра и слегка смещаем точку отсчёта вверх,
+ * чтобы верх кадра гарантированно остался в кадре.
+ */
+.kdc-cd-hero-photo {
+	aspect-ratio: 4 / 5 !important;
+}
+
+.kdc-cd-hero-photo img {
+	object-position: 50% 35% !important;
+}
+
+/*
+ * Текстовая часть раньше была абсолютно позиционированной карточкой,
+ * наплывающей на низ фото (global_custom_css аддона), - в JSON эту
+ * привязку уже сняли, здесь только гасим то, что могло остаться в кэше,
+ * и задаём собственную раскладку.
+ */
+.kdc-cd-hero-text {
+	position: static !important;
+	transform: none !important;
+	width: 100% !important;
+	max-width: none !important;
+	align-items: flex-start !important;
+	justify-content: center !important;
+	background: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
+	gap: 0 !important;
+}
+
+.kdc-cd-eyebrow {
+	margin: 0 0 18px !important;
+}
+
+.kdc-cd-eyebrow .sppb-addon-title {
+	font-family: Inter, sans-serif !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #8c8c8a !important;
+}
+
+.kdc-cd-hero-title {
+	margin: 0 !important;
+}
+
+.kdc-cd-hero-title p {
+	margin: 0;
+	font-family: "Source Serif Pro", serif;
+	font-weight: 400;
+	font-size: 56px;
+	line-height: 1.08;
+	letter-spacing: -0.5px;
+	color: #141414;
+}
+
+.kdc-cd-hero-sub {
+	margin: 24px 0 0 !important;
+}
+
+.kdc-cd-hero-sub p {
+	margin: 0;
+	max-width: 34ch;
+	font-family: Inter, sans-serif;
+	font-size: 17px;
+	line-height: 1.6;
+	color: #6a6a68;
+}
+
+/*
+ * Три коротких пункта под описанием - усиливают левую часть hero, не
+ * превращаясь в отдельный блок: тот же тихий регистр, что у лейбла
+ * «Коллекция» сверху, разделены тонкой вертикальной чертой, а не точкой
+ * или запятой, чтобы держать редакционный, а не «тег-листовый» вид.
+ */
+.kdc-cd-hero-tags {
+	margin: 40px 0 0 !important;
+}
+
+.kdc-cd-hero-tags .sppb-addon-content p {
+	display: flex;
+	flex-wrap: wrap;
+	row-gap: 10px;
+	margin: 0;
+}
+
+.kdc-cd-hero-tags .sppb-addon-content p span {
+	font-family: Inter, sans-serif;
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #8c8c8a;
+	padding: 0 10px;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.kdc-cd-hero-tags .sppb-addon-content p span:first-child {
+	padding-left: 0;
+}
+
+.kdc-cd-hero-tags .sppb-addon-content p span:not(:first-child) {
+	border-left: 1px solid rgba(20, 20, 20, 0.16);
+}
+
+/* --- Нижний блок: «О коллекции» и «Палитра» в одной полосе ----------- */
+
+/*
+ * «О коллекции» и «Палитра» - один общий серый блок на двух колонках,
+ * а не две отдельные карточки. Фон/скругление/поля переехали на сами
+ * колонки (у каждой свой край общей полосы), гасим бутстраповский
+ * гаттер по 15px, чтобы половины сходились встык без зазора - виден
+ * только тонкий разделитель между ними.
+ */
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(2) {
+	width: 55% !important;
+	max-width: 55% !important;
+	flex: 0 0 55% !important;
+	padding: 0 !important;
+}
+
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(3) {
+	width: 45% !important;
+	max-width: 45% !important;
+	flex: 0 0 45% !important;
+	padding: 0 !important;
+	/*
+	 * У колонки был свой margin-top:50px (собственная настройка колонки
+	 * в конструкторе) - из-за него низ «Палитры» совпадал с низом
+	 * «О коллекции» случайно, а верх с верхом - нет, и общий фон читался
+	 * ступенькой. Общая рамка теперь держится на align-items:stretch.
+	 */
+	margin-top: 0 !important;
+}
+
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(2) > .sppb-column {
+	background: #f2f2f0;
+	border-radius: 20px 0 0 20px;
+	padding: 56px 40px 56px 56px;
+	height: 100%;
+}
+
+#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(3) > .sppb-column {
+	background: #f2f2f0;
+	border-radius: 0 20px 20px 0;
+	/*
+	 * У «Палитры» контент вплотную заполняет свою заливку (никакого
+	 * лишнего запаса от stretch нет) - видимый отступ после последнего
+	 * ряда образцов равен ровно нижнему полю. Уменьшаем его на 30px;
+	 * колонки по-прежнему растягиваются вровень через align-items:stretch.
+	 */
+	padding: 56px 56px 26px 40px;
+	height: 100%;
+	/* Тонкий вертикальный разделитель между «О коллекции» и «Палитрой». */
+	border-left: 1px solid rgba(20, 20, 20, 0.12);
+}
+
+.kdc-cd-about {
+	max-width: 46ch;
+	background: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+}
+
+.kdc-cd-palette {
+	background: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+}
+
+.kdc-cd-about-title .sppb-addon-title {
+	font-family: "Source Serif Pro", serif !important;
+	font-weight: 400 !important;
+	font-size: 34px !important;
+	line-height: 1.15 !important;
+	color: #141414 !important;
+	margin-bottom: 20px !important;
+}
+
+.kdc-cd-about-body p {
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+	line-height: 1.7;
+	color: #3a3a38;
+}
+
+.kdc-cd-about-body p:not(:last-child) {
+	margin-bottom: 18px;
+}
+
+.kdc-cd-palette-title .sppb-addon-title {
+	font-family: "Source Serif Pro", serif !important;
+	font-weight: 400 !important;
+	font-size: 26px !important;
+	line-height: 1.2 !important;
+	color: #141414 !important;
+	margin-bottom: 14px !important;
+}
+
+.kdc-cd-palette-quote .sppb-addon-title {
+	font-family: "Source Serif Pro", serif !important;
+	font-weight: 400 !important;
+	font-style: italic;
+	font-size: 17px !important;
+	line-height: 1.55 !important;
+	color: #6a6a68 !important;
+	margin-bottom: 28px !important;
+}
+
+/*
+ * Картинка увеличена на 15% относительно ширины колонки и центрирована
+ * встречным отступом (-7.5% с каждой стороны). Сверху добавлен запас,
+ * чтобы возросшая высота не наезжала на цитату над ней.
+ */
+.kdc-cd-palette-img {
+	margin: 16px -7.5% 0;
+}
+
+.kdc-cd-palette-img img {
+	border-radius: 12px;
+	display: block;
+	width: 115%;
+	height: auto;
+}
+
+.kdc-cd-palette-link.sppb-btn {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 8px;
+	width: auto !important;
+	min-height: 0 !important;
+	padding: 0 0 3px !important;
+	border: 0 !important;
+	border-bottom: 1px solid rgba(20, 20, 20, 0.3) !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	font-family: Inter, sans-serif !important;
+	font-size: 14px !important;
+	text-transform: none !important;
+	color: #141414 !important;
+	transition: border-color 0.3s ease;
+}
+
+.kdc-cd-palette-link.sppb-btn:hover,
+.kdc-cd-palette-link.sppb-btn:focus {
+	border-bottom-color: #141414 !important;
+	background: none !important;
+	color: #141414 !important;
+}
+
+/* --- Планшет и телефон: hero и нижняя полоса складываются в колонку -- */
+
+@media (max-width: 991px) {
+	.kdc-cd-hero {
+		flex-direction: column-reverse !important;
+		align-items: flex-start !important;
+		gap: 32px;
+	}
+
+	.kdc-cd-hero > .addon-root-dynamic-content-image,
+	.kdc-cd-hero > .sppb-addon-wrapper:not(.addon-root-dynamic-content-image) {
+		max-width: 100%;
+		flex: 1 1 100% !important;
+	}
+
+	.kdc-cd-hero-title p {
+		font-size: 42px;
+	}
+
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(2),
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(3) {
+		width: 100% !important;
+		max-width: 100% !important;
+		flex: 1 1 100% !important;
+	}
+
+	/* Единая карточка складывается в колонку - разделитель тоже горизонтальный. */
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(2) > .sppb-column {
+		border-radius: 20px 20px 0 0;
+		padding: 48px 32px 40px;
+	}
+
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > .sppb-row-column:nth-child(3) > .sppb-column {
+		border-radius: 0 0 20px 20px;
+		border-left: 0;
+		border-top: 1px solid rgba(20, 20, 20, 0.12);
+		padding: 40px 32px 48px;
+	}
+
+	.kdc-cd-about {
+		max-width: none;
+	}
+}
+
+@media (max-width: 767px) {
+	.kdc-cd-hero-title p {
+		font-size: 32px;
+	}
+
+	.kdc-cd-about-title .sppb-addon-title {
+		font-size: 26px !important;
+	}
+
+	/* На телефоне те же 3 пункта уже не умещаются в строку без переноса -
+	   переходим на список в столбик, разделитель становится верхней чертой. */
+	.kdc-cd-hero-tags .sppb-addon-content p {
+		flex-direction: column;
+		align-items: flex-start;
+		row-gap: 10px;
+	}
+
+	.kdc-cd-hero-tags .sppb-addon-content p span {
+		padding: 0;
+	}
+
+	.kdc-cd-hero-tags .sppb-addon-content p span:not(:first-child) {
+		border-left: 0;
+		padding-top: 10px;
+		border-top: 1px solid rgba(20, 20, 20, 0.16);
+	}
+}
+
+/*
+ * Плашка заголовка страницы (О компании / Блог / Контакты и т.п.) -
+ * у темы верхний отступ 175/150/100px по брейкпоинтам, единообразно
+ * снижаем до 70px на всех трёх.
+ */
+.sp-page-title {
+	padding: 70px 0 0 !important;
+}

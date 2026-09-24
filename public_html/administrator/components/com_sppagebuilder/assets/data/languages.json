@@ -1,0 +1,145 @@
+{
+    "bulgarian": {
+        "id": "01",
+        "title": "Bulgarian (bg-BG)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "bg-BG",
+        "lang_key": "bulgarian",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/bg-BG.com_sppagebuilder.zip"
+        }
+    },
+    "czech": {
+        "id": "02",
+        "title": "Czech (cs-CZ)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "cs-CZ",
+        "lang_key": "czech",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/cs-CZ.com_sppagebuilder.zip"
+        }
+    },
+    "spanish": {
+        "id": "03",
+        "title": "Spanish (es-ES)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "es-ES",
+        "lang_key": "spanish",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/es-ES.com_sppagebuilder.zip"
+        }
+    },
+    "finnish": {
+        "id": "04",
+        "title": "Finnish (fi-FI)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "fi-FI",
+        "lang_key": "finnish",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/fi-FI.com_sppagebuilder.zip"
+        }
+    },
+    "french": {
+        "id": "05",
+        "title": "French (fr-FR)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "fr-FR",
+        "lang_key": "french",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/fr-FR.com_sppagebuilder.zip"
+        }
+    },
+    "italian": {
+        "id": "06",
+        "title": "Italian (it-IT)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "it-IT",
+        "lang_key": "italian",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/it-IT.com_sppagebuilder.zip"
+        }
+    },
+    "dutch": {
+        "id": "07",
+        "title": "Dutch (nl-NL)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "nl-NL",
+        "lang_key": "dutch",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/nl-NL.com_sppagebuilder.zip"
+        }
+    },
+    "portuguese_brazil": {
+        "id": "08",
+        "title": "Portuguese Brazil (pt-BR)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "pt-BR",
+        "lang_key": "portuguese_brazil",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/pt-BR.com_sppagebuilder.zip"
+        }
+    },
+    "portuguese": {
+        "id": "09",
+        "title": "Portuguese (pt-PT)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "pt-PT",
+        "lang_key": "portuguese",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/pt-PT.com_sppagebuilder.zip"
+        }
+    },
+    "russian": {
+        "id": "10",
+        "title": "Russian (ru-RU)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "ru-RU",
+        "lang_key": "russian",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/ru-RU.com_sppagebuilder.zip"
+        }
+    },
+    "thai": {
+        "id": "11",
+        "title": "Thai (th-TH)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "th-TH",
+        "lang_key": "thai",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/th-TH.com_sppagebuilder.zip"
+        }
+    },
+    "ukrainian": {
+        "id": "12",
+        "title": "Ukrainian (uk-UA)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "uk-UA",
+        "lang_key": "ukrainian",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/uk-UA.com_sppagebuilder.zip"
+        }
+    },
+    "german": {
+        "id": "13",
+        "title": "German (de-DE)",
+        "version": "2.0.1",
+        "description": "Language pack for SP Pagebuilder.",
+        "lang_tag": "de-DE",
+        "lang_key": "german",
+        "downloads": {
+            "source": "https://www.joomshaper.com/resources/sppagebuilder/languages/de-DE.com_sppagebuilder.zip"
+        }
+    }
+}

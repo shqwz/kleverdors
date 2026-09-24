@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "plg_system_cookienotice",
+  "version": "1.0.18",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "plg_system_cookienotice.banner.styles",
+      "type": "style",
+      "uri": "plg_system_cookienotice/cookienotice.css",
+      "version": "1.0.18"
+    },
+    {
+      "name": "plg_system_cookienotice.banner.script",
+      "type": "script",
+      "uri": "plg_system_cookienotice/cookienotice.js",
+      "attributes": {
+        "defer": true
+      },
+      "dependencies": [
+        "core"
+      ],
+      "version": "1.0.18"
+    }
+  ]
+}
