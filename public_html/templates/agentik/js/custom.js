@@ -37,7 +37,328 @@
 		initMarquee();
 		initTeamReveal();
 		initJournalReveal();
+		initArticlesLoadMore();
+		initCarouselAutoplayOnView();
+		initCarouselClickSelect();
+		initDoorConfigurator();
 	});
+
+	/**
+	 * Конфигуратор двери на странице коллекции (первый экран). Скрипт
+	 * отдельный и тяжёлый - подгружаем только там, где он нужен.
+	 */
+	function initDoorConfigurator() {
+		if (!document.querySelector(".kdc-cd-hero")) {
+			return;
+		}
+
+		var s = document.createElement("script");
+		s.src = "/templates/agentik/js/kdc-configurator.js?v=79";
+		s.defer = true;
+		document.body.appendChild(s);
+	}
+
+	/**
+	 * Карусели SPPB (image_carousel, например «Хронология коллекций» на
+	 * странице «О компании»): автопрокрутка стартует сразу при загрузке,
+	 * и пока посетитель долистает до блока, лента уже уехала к 2017 году.
+	 *
+	 * Держим автопрокрутку выключенной, пока карусель не на экране, и
+	 * запускаем, когда она показалась; ушла с экрана - снова стоп.
+	 * options.autoplay тоже переключаем: плагин сам перезапускает таймер
+	 * после каждого слайда, по фокусу окна и после ресайза, если этот флаг
+	 * включён.
+	 */
+	function initCarouselAutoplayOnView() {
+		if (!("IntersectionObserver" in window)) {
+			return;
+		}
+
+		var observer = new IntersectionObserver(
+			function (entries) {
+				entries.forEach(function (entry) {
+					var inst = entry.target.kdcCarousel;
+
+					if (!inst) {
+						return;
+					}
+
+					if (entry.isIntersecting) {
+						inst.options.autoplay = true;
+
+						if (inst.timer === 0) {
+							inst.startLoop();
+						}
+					} else {
+						inst.options.autoplay = false;
+						inst.stopLoop();
+					}
+				});
+			},
+			{ threshold: 0.35 }
+		);
+
+		whenCarouselsReady('.sppb-carousel-extended[data-autoplay="1"]', function (el, inst) {
+			inst.options.autoplay = false;
+			inst.stopLoop();
+			observer.observe(el);
+		});
+	}
+
+	/**
+	 * Карусель с центральным элементом («Хронология коллекций»).
+	 *
+	 * 1. Клик по любому кружку ставит его в центр (штатно плагин сдвигает
+	 *    ленту только на шаг и только для крайних элементов).
+	 * 2. Центр считаем по геометрии: штатный расчёт ошибается на один
+	 *    элемент, когда боковой отступ шире элемента (узкие десктопы).
+	 * 3. Лента бесконечная - по краям стоят копии. Штатно плагин
+	 *    перескакивает с копии на оригинал посреди движения, и увеличенный
+	 *    кружок сбрасывается и начинает расти заново. Здесь перескок делается
+	 *    ДО анимации и незаметно (без переходов, размеры сохраняются), а
+	 *    потом лента плавно едет к цели. Через это же идёт автопрокрутка:
+	 *    Next/Prev плагина подменены.
+	 */
+	function initCarouselClickSelect() {
+		var CLICK_SPEED = 900;
+		var CENTER = "sppb-carousel-extended-item-center";
+
+		// Какой элемент реально стоит по центру окна при текущем сдвиге ленты.
+		// Элемент i занимает [i*w, i*w + w - margin), окно - [pos, pos + ширина).
+		function visualCenter(inst) {
+			var w = inst.itemWidth;
+			var m = inst.viewPort && inst.viewPort.margin ? inst.viewPort.margin : 0;
+			var half = inst.$sliderList.outerWidth() / 2;
+
+			return Math.round((inst._currentPosition + half - (w - m) / 2) / w);
+		}
+
+		// Центр и два соседа получают свои классы - по ним и идёт вся
+		// анимация размера (custom.css). Штатные правила темы завязаны на
+		// nth-child(3n), из-за чего соседи на каждом шаге меняли направление
+		// сдвига и дёргались.
+		function setCenter(inst, index) {
+			var $items = inst.$outerStage.children();
+
+			$items.removeClass(CENTER + " kdc-prev kdc-next");
+			$items.eq(index).addClass(CENTER + " active");
+			$items.eq(index - 1).addClass("kdc-prev active");
+			$items.eq(index + 1).addClass("kdc-next active");
+
+			// Точки под лентой: по одной на каждые options.items элементов.
+			// Штатный расчёт падает на части позиций (:nth-child(1.5)).
+			if (inst.$dotContainer) {
+				var n = inst._numberOfItems;
+				var real = (((index - inst._clones) % n) + n) % n;
+				var $dots = inst.$dotContainer.children("li");
+
+				$dots.removeClass("active");
+				$dots.eq(Math.min(Math.floor(real / inst.options.items), $dots.length - 1)).addClass("active");
+			}
+		}
+
+		function place(inst, pos, speed) {
+			var transition = speed ? "all " + speed + "ms ease 0s" : "0s";
+
+			inst.$outerStage.css({
+				"-webkit-transition": transition,
+				transition: transition,
+				"-webkit-transform": "translate3D(-" + pos + "px,0px,0px)",
+				transform: "translate3D(-" + pos + "px,0px,0px)"
+			});
+			inst._currentPosition = pos;
+
+			// Плагин падает на расчёте точки-индикатора для некоторых позиций
+			// (:nth-child(5.5)); центр к этому моменту уже выставлен.
+			try {
+				inst.processActivationWorker();
+			} catch (e) {}
+
+			// Точки плагин отмечает уже после центра - повторяем за ним.
+			setCenter(inst, visualCenter(inst));
+		}
+
+		// Если по центру копия - мгновенно встаём на такой же оригинал.
+		// Копия и оригинал выглядят одинаково, а переходы на это время
+		// выключены, так что глазу ничего не видно.
+		function settle(el, inst) {
+			var n = inst._numberOfItems;
+			var c = visualCenter(inst);
+			var shift = 0;
+
+			if (c >= inst._clones + n) {
+				shift = -n;
+			} else if (c < inst._clones) {
+				shift = n;
+			}
+
+			if (!shift) {
+				return;
+			}
+
+			el.classList.add("kdc-carousel-jump");
+			place(inst, inst._currentPosition + shift * inst.itemWidth, 0);
+			void el.offsetWidth;
+			el.classList.remove("kdc-carousel-jump");
+		}
+
+		function go(el, inst, steps, speed) {
+			if (!steps) {
+				return;
+			}
+
+			// settle() уже зафиксировал позицию принудительным пересчётом
+			// (offsetWidth), так что анимация стартует от неё, а не склеивается.
+			settle(el, inst);
+			place(inst, inst._currentPosition + steps * inst.itemWidth, speed);
+		}
+
+		whenCarouselsReady(".sppb-carousel-extended-center", function (el, inst) {
+			el.classList.add("kdc-carousel-pick");
+
+			// Вызов из init (t === 0) не трогаем: там лента ещё не выставлена.
+			var ownCenter = inst.applyCenterMode;
+
+			inst.applyCenterMode = function (t, i) {
+				if (t === 0 || !this.$sliderList) {
+					return ownCenter.call(this, t, i);
+				}
+
+				setCenter(this, visualCenter(this));
+			};
+
+			// Штатно по центру встаёт второй элемент ленты; хронология должна
+			// начинаться с первого (2005). Сдвигаем без анимации.
+			function centerOn(real) {
+				el.classList.add("kdc-carousel-jump");
+				place(inst, inst._currentPosition + (inst._clones + real - visualCenter(inst)) * inst.itemWidth, 0);
+				void el.offsetWidth;
+				el.classList.remove("kdc-carousel-jump");
+			}
+
+			centerOn(0);
+
+			// При ресайзе плагин делает destroy() + init() и снова ставит в
+			// центр второй элемент. Возвращаем ту коллекцию, что была в центре.
+			// Перехватываем именно destroy/init: плагин зовёт их через this,
+			// а свой onResize мог запомнить ещё до нас (ресайз при загрузке).
+			var ownDestroy = inst.destroy;
+			var ownInit = inst.init;
+
+			inst.destroy = function () {
+				var n = this._numberOfItems;
+
+				this.kdcReal = (((visualCenter(this) - this._clones) % n) + n) % n;
+				return ownDestroy.apply(this, arguments);
+			};
+
+			inst.init = function () {
+				ownInit.apply(this, arguments);
+				centerOn(this.kdcReal || 0);
+			};
+
+			// Автопрокрутка и свайп зовут Next/Prev.
+			inst.Next = function () {
+				go(el, inst, 1, inst.options.speed);
+			};
+
+			inst.Prev = function () {
+				go(el, inst, -1, inst.options.speed);
+			};
+
+			el.addEventListener(
+				"click",
+				function (e) {
+					var dot = e.target.closest(".sppb-carousel-extended-dots li");
+
+					// Точка - переход к первому элементу своей группы.
+					if (dot) {
+						e.stopPropagation();
+						e.preventDefault();
+
+						var group = $(dot).index();
+						var n = inst._numberOfItems;
+						var real = (((visualCenter(inst) - inst._clones) % n) + n) % n;
+						var jump = group * inst.options.items - real;
+
+						go(el, inst, jump, CLICK_SPEED);
+
+						if (inst.options.autoplay) {
+							inst.stopLoop();
+							inst.startLoop();
+						}
+
+						return;
+					}
+
+					var item = e.target.closest(".sppb-carousel-extended-item");
+
+					if (!item || e.target.closest("a")) {
+						return;
+					}
+
+					e.stopPropagation();
+					e.preventDefault();
+
+					if (inst.isDragging || inst.hasMoved) {
+						return;
+					}
+
+					var steps = inst.$outerStage.children().index(item) - visualCenter(inst);
+
+					if (!steps) {
+						return;
+					}
+
+					// Шаг считаем до settle: после перескока на том же месте
+					// окна стоит двойник, и шаг до цели не меняется.
+					go(el, inst, steps, CLICK_SPEED);
+
+					// Посетитель выбрал сам - даём посмотреть, прежде чем лента
+					// поедет дальше.
+					if (inst.options.autoplay) {
+						inst.stopLoop();
+						inst.startLoop();
+					}
+				},
+				true
+			);
+		});
+	}
+
+	/**
+	 * Экземпляры spCarousel создаются в document.ready самого плагина.
+	 * Ждём их и запоминаем на элементе: при ресайзе плагин делает
+	 * destroy() + init() и стирает свои $.data, а объект остаётся тем же.
+	 */
+	function whenCarouselsReady(selector, callback) {
+		var carousels = document.querySelectorAll(selector);
+		var tries = 0;
+
+		if (!carousels.length) {
+			return;
+		}
+
+		(function attach() {
+			var pending = Array.prototype.filter.call(carousels, function (el) {
+				return !el.kdcCarousel && !$.data(el, "spCarousel");
+			});
+
+			if (pending.length && tries++ < 50) {
+				setTimeout(attach, 100);
+				return;
+			}
+
+			Array.prototype.forEach.call(carousels, function (el) {
+				var inst = el.kdcCarousel || $.data(el, "spCarousel");
+
+				if (inst) {
+					el.kdcCarousel = inst;
+					callback(el, inst);
+				}
+			});
+		})();
+	}
 
 	/**
 	 * Блог: статьи проявляются по мере прокрутки.
@@ -51,6 +372,16 @@
 		var articles = document.querySelectorAll(
 			".kdc-journal .sppb-addon-article, .kdc-jh-feed .sppb-addon-article"
 		);
+
+		// Заголовки в ленте блога обрезаны до трёх строк - полный текст
+		// показываем подсказкой при наведении.
+		var titleHints = function (root) {
+			root.querySelectorAll(".kdc-journal .sppb-addon-article h5 a:not([title])").forEach(function (a) {
+				a.title = a.textContent.trim();
+			});
+		};
+
+		titleHints(document);
 
 		if (!articles.length) {
 			return;
@@ -84,8 +415,102 @@
 		Array.prototype.forEach.call(articles, function (article, i) {
 			// Задержка считается внутри ряда, иначе у нижних статей она
 			// накопилась бы до неприличной паузы.
-			article.dataset.kdcIndex = i % 2;
+			// В блоге ряд из трёх карточек, на главной - тоже три.
+			article.dataset.kdcIndex = i % 3;
 			observer.observe(article);
+		});
+
+		// Кнопка «Показать ещё» дописывает статьи в ленту запросом - без
+		// этого они так и остались бы прозрачными.
+		if (!("MutationObserver" in window)) {
+			return;
+		}
+
+		document.querySelectorAll(".kdc-journal .sppb-addon-content > .sppb-row").forEach(function (row) {
+			new MutationObserver(function () {
+				titleHints(document);
+				row.querySelectorAll(".sppb-addon-article:not([data-kdc-index])").forEach(function (article) {
+					var all = row.querySelectorAll(".sppb-addon-article");
+
+					article.dataset.kdcIndex = Array.prototype.indexOf.call(all, article) % 3;
+					observer.observe(article);
+				});
+			}).observe(row, { childList: true });
+		});
+	}
+
+	/**
+	 * Блог: кнопка «Показать ещё» (articles-pagination.js из SPPB).
+	 *
+	 * У плагина один счётчик страниц на всю страницу, а лент у нас шесть
+	 * (по вкладке на категорию): нажали «ещё» во «Всех» - и вкладка
+	 * «Проекты» потом начнёт не со второй страницы. Держим свой счётчик на
+	 * каждой кнопке и перед штатным обработчиком подставляем его в общий.
+	 */
+	function initArticlesLoadMore() {
+		document.querySelectorAll(".kdc-journal .sppb-addon-articles__pagination").forEach(function (box) {
+			var button = box.querySelector("[data-sppb-articles-load-more-button]");
+			var row = box.closest(".sppb-addon-articles").querySelector(".sppb-addon-content > .sppb-row");
+			var limitInput = box.querySelector('[name="sppb-articles-limit"]');
+			var limit = limitInput ? Number(limitInput.value) : 0;
+			var count = function () {
+				return row ? row.querySelectorAll(".sppb-addon-article").length : 0;
+			};
+
+			if (!button || !row || !limit) {
+				return;
+			}
+
+			// Число страниц плагин считает по всем статьям сайта, а не по
+			// категории вкладки - кнопка висела и там, где статей 3-5.
+			// Не хватает на вторую страницу - кнопка не нужна.
+			if (count() < limit) {
+				box.remove();
+				return;
+			}
+
+			// Плагин блокирует кнопку на время запроса и снимает блок после.
+			// Пришло меньше полной страницы - дальше грузить нечего.
+			var before = 0;
+
+			new MutationObserver(function () {
+				if (!button.disabled && count() - before < limit) {
+					box.remove();
+				}
+			}).observe(button, { attributes: true, attributeFilter: ["disabled"] });
+
+			// Перехват на родителе срабатывает раньше обработчика на кнопке.
+			box.addEventListener(
+				"click",
+				function (e) {
+					if (!e.target.closest("[data-sppb-articles-load-more-button]")) {
+						return;
+					}
+
+					var shown = Number(button.dataset.kdcPage || 1);
+
+					before = count();
+
+					try {
+						// eslint-disable-next-line no-undef
+						sppbArtcileAddonCurrentPage = shown;
+					} catch (err) {
+						return;
+					}
+
+					button.dataset.kdcPage = shown + 1;
+
+					// Плагин на время запроса пишет на кнопке «Loading...»
+					// (строка зашита в articles-pagination.js). Его обработчик
+					// срабатывает после нашего - подменяем текст следом.
+					setTimeout(function () {
+						if (button.disabled) {
+							button.textContent = "Загружаем…";
+						}
+					}, 0);
+				},
+				true
+			);
 		});
 	}
 
@@ -962,5 +1387,27 @@
 			});
 		}
 	}
+
+	/* Страница коллекции: кнопка «Назад» в каталог справа от названия. */
+	$(function () {
+		var title = document.querySelector(".kdc-cd-hero-title");
+
+		if (!title || title.parentNode.querySelector(".kdc-back")) {
+			return;
+		}
+
+		var back = document.createElement("a");
+		back.className = "kdc-back";
+		back.href = "/katalogproduktsii";
+		back.innerHTML = '<span aria-hidden="true">←</span><span class="kdc-back-t">Назад</span>';
+		back.setAttribute("aria-label", "Назад в каталог");
+		back.title = "Назад в каталог";
+
+		var row = document.createElement("div");
+		row.className = "kdc-cd-title-row";
+		title.parentNode.insertBefore(row, title);
+		row.appendChild(title);
+		row.appendChild(back);
+	});
 
 })(jQuery);

@@ -383,12 +383,21 @@
  * По центру (50%) дверь уходила за правый край, и на первом экране оставались
  * стена с растением - для сайта про двери неудачный кадр.
  *
- * Сдвигаем точку к правой трети, чтобы дверь оставалась в кадре. На десктопе
- * ширины хватает, там сохраняется штатное 50% 50%.
+ * Центр кадра - на дверь: она занимает ~62-87% ширины фото, её середина
+ * на 74%. При cover на 375x812 это background-position 82% (дверь ровно
+ * посередине и почти во всю ширину), на вертикальном планшете ~85%.
+ * Масштаб - минимально возможный (cover): меньше - появятся поля сверху
+ * и снизу. На десктопе ширины хватает, там штатное 50% 50%.
  */
+@media (max-width: 991px) and (orientation: portrait) {
+	.hero-wrap .sp-item .sp-background {
+		background-position: 85% 50% !important;
+	}
+}
+
 @media (max-width: 767px) {
 	.hero-wrap .sp-item .sp-background {
-		background-position: 55% 50% !important;
+		background-position: 82% 50% !important;
 	}
 }
 
@@ -1216,8 +1225,8 @@
 
 .kdc-team .sppb-row-column {
 	opacity: 0;
-	transform: translateY(18px);
-	transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+	transform: translateY(20px);
+	transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kdc-team.kdc-team-in .sppb-row-column {
@@ -1344,17 +1353,20 @@
 }
 
 /* ======================================================================
- * Страница блога: редакционный разворот вместо сетки одинаковых карточек.
+ * Страница блога: ровная сетка одинаковых карточек.
  *
- * Разметку даёт аддон articles (картинка, заголовок, мета, «Подробнее»).
- * Колонок у него теперь одна - всю композицию собираем сеткой здесь:
- * первая статья крупная, вторая рядом уже, ниже пара другого соотношения.
+ * Разметку даёт аддон articles (картинка, заголовок, мета, «Подробнее»),
+ * колонка у него одна - сетку собираем здесь. Раньше был «разворот» с
+ * карточками разной ширины и сдвигом по высоте, но он держался на
+ * nth-child(1..6): с кнопкой «Показать ещё» статей стало больше, и с
+ * седьмой сетка разваливалась. Теперь все карточки равные: 3 колонки,
+ * обложки одной пропорции.
  * Класс kdc-journal проставлен у всех списков статей на странице.
  * ====================================================================== */
 .kdc-journal .sppb-row {
 	display: grid;
-	grid-template-columns: repeat(12, 1fr);
-	gap: 104px 48px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 44px 32px;
 	margin: 0;
 }
 
@@ -1364,28 +1376,7 @@
 	max-width: none !important;
 	padding: 0 !important;
 	flex: none !important;
-}
-
-/*
- * Ширина чередуется: широкая - уже, затем наоборот. Кадры везде
- * горизонтальные, поэтому узкая статья получается ещё и ниже - разный
- * масштаб держится на пропорциях, а не на отдельных стилях карточек.
- */
-.kdc-journal .sppb-row > div:nth-child(1) { grid-column: span 7; }
-.kdc-journal .sppb-row > div:nth-child(2) { grid-column: span 5; }
-.kdc-journal .sppb-row > div:nth-child(3) { grid-column: span 5; }
-.kdc-journal .sppb-row > div:nth-child(4) { grid-column: span 7; }
-.kdc-journal .sppb-row > div:nth-child(5) { grid-column: span 7; }
-.kdc-journal .sppb-row > div:nth-child(6) { grid-column: span 5; }
-
-/*
- * Узкая статья в паре опущена - строка перестаёт читаться как ряд сетки.
- * Сдвиг считаем от ширины экрана, чтобы на средних ширинах он таял сам.
- */
-.kdc-journal .sppb-row > div:nth-child(2),
-.kdc-journal .sppb-row > div:nth-child(4),
-.kdc-journal .sppb-row > div:nth-child(6) {
-	margin-top: clamp(0px, 5vw, 76px);
+	margin: 0 !important;
 }
 
 /* --- Карточка -------------------------------------------------------- */
@@ -1396,16 +1387,19 @@
 	border-radius: 0 !important;
 	box-shadow: none !important;
 	padding: 0 !important;
-	height: auto !important;
+	height: 100% !important;
+	display: flex;
+	flex-direction: column;
 }
 
 .kdc-journal .sppb-article-img-wrap {
 	display: block;
 	overflow: hidden;
 	border-radius: 18px;
-	margin-bottom: 22px;
-	aspect-ratio: 3 / 2;
+	margin-bottom: 20px;
+	aspect-ratio: 4 / 3;
 	line-height: 0;
+	background: rgba(20, 20, 20, 0.05);
 }
 
 .kdc-journal .sppb-article-img-wrap img {
@@ -1423,24 +1417,11 @@
 	transform: scale(1.02);
 }
 
-/*
- * Широкие статьи идут в 16/9, узкие - в 3/2: кадр остаётся горизонтальным,
- * а высоту ему задаёт собственная пропорция, а не выравнивание по соседу.
- */
-.kdc-journal .sppb-row > div:nth-child(1) .sppb-article-img-wrap,
-.kdc-journal .sppb-row > div:nth-child(4) .sppb-article-img-wrap,
-.kdc-journal .sppb-row > div:nth-child(5) .sppb-article-img-wrap {
-	aspect-ratio: 16 / 9;
-}
-
-.kdc-journal .sppb-row > div:nth-child(2) .sppb-article-img-wrap,
-.kdc-journal .sppb-row > div:nth-child(3) .sppb-article-img-wrap,
-.kdc-journal .sppb-row > div:nth-child(6) .sppb-article-img-wrap {
-	aspect-ratio: 3 / 2;
-}
-
 .kdc-journal .sppb-article-info-wrap {
 	padding: 0 !important;
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
 }
 
 /* --- Мета: категория · дата ------------------------------------------ */
@@ -1472,7 +1453,7 @@
 .kdc-journal .sppb-article-meta a,
 .kdc-journal .sppb-meta-date {
 	font-family: Inter, sans-serif;
-	font-size: 13px !important;
+	font-size: 12px !important;
 	line-height: 1.4;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -1481,45 +1462,42 @@
 
 /* --- Заголовок и «Подробнее» ----------------------------------------- */
 
-.kdc-journal .sppb-article-info-wrap {
-	display: flex;
-	flex-direction: column;
-}
-
 .kdc-journal .sppb-addon-article h5 {
-	margin: 0 0 14px !important;
+	margin: 0 0 16px !important;
 	order: 0;
 }
 
+/* Не больше трёх строк: длинные заголовки из ВК («Багетная рамка
+   П‑серии: когда «минимализм»…») раздували свой ряд. Полный заголовок -
+   в статье и во всплывающей подсказке (title, custom.js). */
 .kdc-journal .sppb-addon-article h5 a {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	overflow: hidden;
 	font-family: "Source Serif Pro", serif;
 	font-weight: 400;
-	font-size: 26px;
-	line-height: 1.2;
+	font-size: 20px;
+	line-height: 1.25;
 	color: #141414 !important;
 }
 
-.kdc-journal .sppb-row > div:nth-child(1) h5 a {
-	font-size: 40px;
-}
-
+/* «Подробнее» - сразу под заголовком. */
 .kdc-journal .sppb-readmore {
 	order: 1;
+	margin: 0 !important;
 	align-self: flex-start;
 	font-family: Inter, sans-serif;
 	font-size: 15px !important;
 	color: #141414 !important;
-	border-bottom: 1px solid rgba(20, 20, 20, 0.3);
-	padding-bottom: 2px;
-	transition: border-color 0.3s ease;
+	border-bottom: 0 !important;
+	padding-bottom: 0;
+	text-decoration: none !important;
 }
 
 .kdc-journal .sppb-readmore::after {
 	content: " →";
-}
-
-.kdc-journal .sppb-addon-article:hover .sppb-readmore {
-	border-bottom-color: #141414;
 }
 
 /* --- Появление при прокрутке ---------------------------------------- */
@@ -1527,7 +1505,7 @@
 .kdc-journal .sppb-addon-article {
 	opacity: 0;
 	transform: translateY(20px);
-	transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+	transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kdc-journal .sppb-addon-article.kdc-in {
@@ -1547,53 +1525,23 @@
 
 @media (max-width: 991px) {
 	.kdc-journal .sppb-row {
-		gap: 64px 28px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 32px 24px;
 	}
 
-	.kdc-journal .sppb-row > div:nth-child(n) {
-		grid-column: span 6;
-	}
-
-	.kdc-journal .sppb-row > div:nth-child(1) {
-		grid-column: span 12;
-	}
-
-	.kdc-journal .sppb-row > div:nth-child(1) h5 a {
-		font-size: 32px;
-	}
-
-	/* Пары стали равными - сдвиг вниз здесь только у правой статьи. */
-	.kdc-journal .sppb-row > div:nth-child(n) {
-		margin-top: 0;
-	}
-
-	.kdc-journal .sppb-row > div:nth-child(3),
-	.kdc-journal .sppb-row > div:nth-child(5) {
-		margin-top: 32px;
-	}
-
-	.kdc-journal .sppb-row > div:nth-child(n) .sppb-article-img-wrap {
-		aspect-ratio: 3 / 2;
+	.kdc-journal .sppb-addon-article h5 a {
+		font-size: 19px;
 	}
 }
 
-@media (max-width: 767px) {
+@media (max-width: 575px) {
 	.kdc-journal .sppb-row {
-		gap: 52px 0;
+		grid-template-columns: 1fr;
+		gap: 24px;
 	}
 
-	.kdc-journal .sppb-row > div:nth-child(n) {
-		grid-column: span 12;
-		margin-top: 0;
-	}
-
-	.kdc-journal .sppb-row > div:nth-child(n) .sppb-article-img-wrap {
-		aspect-ratio: 3 / 2;
-	}
-
-	.kdc-journal .sppb-addon-article h5 a,
-	.kdc-journal .sppb-row > div:nth-child(1) h5 a {
-		font-size: 24px;
+	.kdc-journal .sppb-addon-article h5 a {
+		font-size: 20px;
 	}
 }
 
@@ -1897,8 +1845,8 @@
 
 .kdc-jh-feed .sppb-addon-article {
 	opacity: 0;
-	transform: translateY(18px);
-	transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+	transform: translateY(20px);
+	transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kdc-jh-feed .sppb-addon-article.kdc-in {
@@ -2360,7 +2308,10 @@
 	margin: 0;
 	font-family: "Source Serif Pro", serif;
 	font-weight: 400;
-	font-size: 56px;
+	/* Длинные названия («Шпонированные») не заезжают на превью справа. */
+	font-size: min(56px, 3.5vw);
+	overflow-wrap: break-word;
+	hyphens: auto;
 	line-height: 1.08;
 	letter-spacing: -0.5px;
 	color: #141414;
@@ -2368,6 +2319,11 @@
 
 .kdc-cd-hero-sub {
 	margin: 24px 0 0 !important;
+}
+
+.kdc-cd-hero-sub,
+.kdc-cd-hero-sub p {
+	text-align: left !important;
 }
 
 .kdc-cd-hero-sub p {
@@ -2641,4 +2597,2182 @@
  */
 .sp-page-title {
 	padding: 70px 0 0 !important;
+}
+
+/*
+ * «О компании» (Itemid 107): Helix-заголовок страницы был «.» и висел
+ * точкой над контентом - он выключен в пункте меню, а место под
+ * фиксированной шапкой компенсируем отступом, как в каталоге.
+ */
+.itemid-107 #sp-main {
+	padding-top: 110px;
+}
+
+@media (max-width: 767px) {
+	.itemid-107 #sp-main {
+		padding-top: 100px;
+	}
+}
+
+/* Счётчики: подпись («года», «м²», «дней») добавляется через ::after
+   у flex-элемента, и ведущий пробел в ней схлопывается - «2года». */
+.itemid-107 .sppb-animated-number::after {
+	margin-left: 0.22em;
+}
+
+/* CTA «Будем рады обсудить ваш проект»: тема делает у кнопок
+   text-transform: capitalize - «Про Сотрудничество». По-русски
+   с заглавной только первое слово. */
+#sppb-addon-e05f1c4e-327c-412a-8ff1-5742b3034b50 .sppb-btn {
+	text-transform: none !important;
+}
+
+/* =====================================================================
+ * «О компании»: блок совладельца, принципы, цитата (пп. 7-10 разбора)
+ * ===================================================================== */
+
+/* --- Совладелец: текст слева, крупное фото справа, цитата-идея --- */
+/* Серая карточка - на внешней колонке, внутренний ряд без своего фона. */
+.kdc-owner #column-id-fa07c287-3107-47fa-96cd-58c3b059c5cd {
+	padding: 64px !important;
+	border-radius: 24px;
+	background-color: var(--sppb-bg-card-primary);
+}
+
+.kdc-owner #section-id-1768388360257 {
+	padding: 0 !important;
+	background: none !important;
+}
+
+.kdc-owner #section-id-1768388360257 > .sppb-container-inner > .sppb-nested-row {
+	flex-wrap: nowrap;
+	align-items: stretch !important;
+	gap: 64px;
+	margin: 0;
+}
+
+.kdc-owner .sppb-nested-row > .sppb-row-column,
+.kdc-owner .sppb-nested-row > .sppb-row-column > .sppb-column {
+	padding: 0 !important;
+}
+
+.kdc-owner .sppb-nested-row > .sppb-row-column:first-child {
+	flex: 1 1 0 !important;
+	max-width: none !important;
+	min-width: 0;
+}
+
+.kdc-owner .sppb-nested-row > .sppb-row-column:last-child {
+	flex: 0 0 42% !important;
+	max-width: 42% !important;
+}
+
+.kdc-owner-photo .sppb-addon-single-image-container,
+.kdc-owner-photo img {
+	display: block;
+	width: 100% !important;
+	border-radius: 18px;
+}
+
+/* Фото тянется на высоту текста рядом - без пустоты под ним. */
+.kdc-owner .sppb-nested-row > .sppb-row-column:last-child > .sppb-column,
+.kdc-owner .sppb-nested-row > .sppb-row-column:last-child .sppb-column-addons,
+.kdc-owner .sppb-nested-row > .sppb-row-column:last-child .sppb-addon-wrapper,
+.kdc-owner .sppb-nested-row > .sppb-row-column:last-child #sppb-addon-1768389889702,
+.kdc-owner-photo,
+.kdc-owner-photo .sppb-addon-content,
+.kdc-owner-photo .sppb-addon-single-image-container {
+	height: 100%;
+}
+
+.kdc-owner-photo img {
+	height: 100% !important;
+	min-height: 460px;
+	object-fit: cover;
+	object-position: 50% 35%;
+}
+
+.kdc-owner-text .sppb-addon-title {
+	margin: 0 0 36px !important;
+}
+
+.kdc-owner-text .sppb-addon-content p {
+	font-size: 17px;
+	line-height: 1.65;
+	color: rgba(20, 20, 20, 0.78);
+	margin: 0 0 18px;
+}
+
+.kdc-owner-quote {
+	margin: 26px 0;
+	padding: 20px 0;
+	border: 0;
+	border-top: 1px solid rgba(20, 20, 20, 0.14);
+	border-bottom: 1px solid rgba(20, 20, 20, 0.14);
+	font-family: "Source Serif Pro", Georgia, serif;
+	font-size: 42px;
+	line-height: 1.1;
+	letter-spacing: -1px;
+	color: #141414;
+	background: none;
+}
+
+.kdc-owner-quote span {
+	display: block;
+	margin-bottom: 14px;
+	font-family: Inter, system-ui, sans-serif;
+	font-size: 12px;
+	line-height: 1.4;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: rgba(20, 20, 20, 0.55);
+}
+
+.kdc-owner-list {
+	list-style: none;
+	margin: 8px 0 0 !important;
+	padding: 0 !important;
+}
+
+.kdc-owner-list li {
+	margin: 0 !important;
+	padding: 8px 0 !important;
+	font-size: 16px;
+	line-height: 1.6;
+	color: rgba(20, 20, 20, 0.72);
+}
+
+.kdc-owner-text .sppb-addon-content p:last-of-type {
+	margin-bottom: 0;
+}
+
+.kdc-owner-list li::before,
+.kdc-owner-list li::marker {
+	content: none;
+}
+
+.kdc-owner-list strong {
+	font-weight: 500 !important;
+	color: #141414;
+}
+
+/* --- Принципы: заголовок шире, все три пункта раскрыты --- */
+#sppb-addon-wrapper-1768544835439 {
+	max-width: 880px !important;
+	width: 100% !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+.kdc-principles-title .sppb-addon-title {
+	font-size: 56px !important;
+	line-height: 1.08 !important;
+	letter-spacing: -1.8px !important;
+}
+
+.kdc-principles .create-tabs .sppb-nav > li a {
+	padding: 26px 28px !important;
+	color: #141414 !important;
+	font-weight: 500 !important;
+}
+
+.kdc-principles .create-tabs .sppb-nav > li a::before {
+	display: none;
+}
+
+.kdc-principles .create-tabs .sppb-nav > li a .sppb-tab-subtitle {
+	height: auto;
+	opacity: 1;
+	visibility: visible;
+	margin-top: 12px;
+}
+
+.kdc-principles .create-tabs .sppb-nav > li:not(.active) a {
+	border-color: rgba(20, 20, 20, 0.12) !important;
+}
+
+.kdc-principles .create-tabs .sppb-nav > li.active a {
+	border-color: #141414 !important;
+}
+
+/* Пустая секция «Our Core Values» из шаблона: содержимое скрыто,
+   а 120px отступов оставались дырой перед цитатой. */
+#section-id-2L0Ot31wycoQDi8L1c4d_ {
+	display: none !important;
+}
+
+.kdc-voice#section-id-ZFxEmBD0TJFz7YXWbKjMJ {
+	padding-top: 20px !important;
+}
+
+/* --- Цитата (Алиса, шаблон - фото будет заменено): без маски --- */
+.kdc-voice .tes-about-widget {
+	grid-template-columns: 240px 1fr;
+	align-items: center;
+	gap: 56px;
+	padding: 48px 0;
+	border-top: 1px solid rgba(20, 20, 20, 0.12);
+	border-bottom: 1px solid rgba(20, 20, 20, 0.12);
+}
+
+.kdc-voice-photo .sppb-addon-single-image-container,
+.kdc-voice-photo img {
+	display: block;
+	width: 100% !important;
+	border-radius: 18px;
+}
+
+.kdc-voice-photo img {
+	height: auto !important;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+}
+
+.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content,
+.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content p {
+	font-family: "Source Serif Pro", Georgia, serif !important;
+	font-size: 30px !important;
+	line-height: 1.25 !important;
+	letter-spacing: -0.6px !important;
+	color: #141414 !important;
+}
+
+.kdc-voice .tes-about-widget .addon-root-raw-html:has(.blockcode-comma) {
+	display: none;
+}
+
+@media (max-width: 991px) {
+	.kdc-owner #column-id-fa07c287-3107-47fa-96cd-58c3b059c5cd {
+		padding: 32px 24px !important;
+	}
+
+
+	.kdc-owner #section-id-1768388360257 > .sppb-container-inner > .sppb-nested-row {
+		flex-direction: column;
+		gap: 32px;
+	}
+
+	.kdc-owner .sppb-nested-row > .sppb-row-column:first-child,
+	.kdc-owner .sppb-nested-row > .sppb-row-column:last-child {
+		flex: 1 1 auto !important;
+		width: 100%;
+		max-width: 100% !important;
+		position: static;
+	}
+
+	.kdc-owner .sppb-nested-row > .sppb-row-column:last-child {
+		order: -1;
+	}
+
+	.kdc-owner-photo img {
+		height: auto !important;
+		min-height: 0;
+		aspect-ratio: 4 / 5;
+	}
+
+	.kdc-owner-text .sppb-addon-title {
+		margin-bottom: 24px !important;
+	}
+
+	.kdc-owner-quote {
+		font-size: 32px;
+		margin: 28px 0;
+		padding: 22px 0;
+	}
+
+	.kdc-principles-title .sppb-addon-title {
+		font-size: 40px !important;
+		letter-spacing: -1px !important;
+	}
+
+	.kdc-voice .tes-about-widget {
+		grid-template-columns: 160px 1fr;
+		gap: 32px;
+	}
+
+	.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content,
+	.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content p {
+		font-size: 24px !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.kdc-principles .create-tabs .sppb-nav {
+		flex-direction: column;
+		flex-wrap: nowrap;
+		overflow: visible !important;
+	}
+
+	.kdc-principles .create-tabs .sppb-nav > li {
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: 100% !important;
+		margin: 0 0 12px !important;
+	}
+
+	.kdc-principles .create-tabs .sppb-nav > li a {
+		padding: 20px !important;
+		font-size: 20px !important;
+	}
+
+	.kdc-owner-quote {
+		font-size: 28px;
+	}
+
+	.kdc-principles-title .sppb-addon-title {
+		font-size: 34px !important;
+	}
+
+	/* Фото слева, текст справа - как на компьютере, только компактнее.
+	   Тема на телефоне ставит column-reverse, поэтому задаём сетку явно. */
+	.kdc-voice .tes-about-widget {
+		display: grid !important;
+		grid-template-columns: 96px minmax(0, 1fr);
+		align-items: start;
+		gap: 18px;
+		padding: 32px 0;
+	}
+
+	.kdc-voice .tes-about-widget > .addon-root-image {
+		width: 96px;
+		margin: 4px 0 0 !important;
+	}
+
+	.kdc-voice-photo .sppb-addon-single-image-container,
+	.kdc-voice-photo img {
+		border-radius: 14px;
+	}
+
+	.kdc-voice .tes-about-widget > .sppb-addon-wrapper:not(.addon-root-image) {
+		margin: 0 !important;
+	}
+
+	.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content,
+	.kdc-voice #sppb-addon-1768564011275 .sppb-addon-content p {
+		font-size: 19px !important;
+		letter-spacing: -0.3px !important;
+		line-height: 1.3 !important;
+	}
+}
+
+/* «О компании»: все заголовки разделов одного размера - по заголовку
+   «Как мы воплощаем философию в производстве» (56 / 40 / 34px). */
+.itemid-107 #sppb-addon-01582de2-c92c-4c48-b534-1ddb9c209347 .sppb-addon-title,
+.itemid-107 #sppb-addon-1768389883209 .sppb-addon-title,
+.itemid-107 #sppb-addon-QsQdnXWCYWMLegZyJ0euW .sppb-addon-title,
+.itemid-107 #sppb-addon-d6149061-0d9c-47fd-a7b1-b2b992adbde5 .sppb-addon-title {
+	font-size: 56px !important;
+	line-height: 1.08 !important;
+	letter-spacing: -1.8px !important;
+}
+
+@media (max-width: 991px) {
+	.itemid-107 #sppb-addon-01582de2-c92c-4c48-b534-1ddb9c209347 .sppb-addon-title,
+	.itemid-107 #sppb-addon-1768389883209 .sppb-addon-title,
+	.itemid-107 #sppb-addon-QsQdnXWCYWMLegZyJ0euW .sppb-addon-title,
+	.itemid-107 #sppb-addon-d6149061-0d9c-47fd-a7b1-b2b992adbde5 .sppb-addon-title {
+		font-size: 40px !important;
+		letter-spacing: -1px !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.itemid-107 #sppb-addon-01582de2-c92c-4c48-b534-1ddb9c209347 .sppb-addon-title,
+	.itemid-107 #sppb-addon-1768389883209 .sppb-addon-title,
+	.itemid-107 #sppb-addon-QsQdnXWCYWMLegZyJ0euW .sppb-addon-title,
+	.itemid-107 #sppb-addon-d6149061-0d9c-47fd-a7b1-b2b992adbde5 .sppb-addon-title {
+		font-size: 34px !important;
+	}
+}
+
+/* «Хронология коллекций»: вертикальные отступы серой карточки на 50px меньше
+   (было 105/100, на планшете 80/80). */
+#section-id-1768551587615 {
+	padding-top: 55px !important;
+	padding-bottom: 50px !important;
+}
+
+@media (max-width: 991px) {
+	#section-id-1768551587615 {
+		padding-top: 30px !important;
+		padding-bottom: 30px !important;
+	}
+}
+
+@media (max-width: 767px) {
+	#section-id-1768551587615 {
+		padding-top: 25px !important;
+		padding-bottom: 25px !important;
+	}
+}
+
+/* «Хронология коллекций»: кружки кликабельны (выбор - в custom.js). */
+.kdc-carousel-pick .sppb-carousel-extended-item {
+	cursor: pointer;
+}
+
+
+
+/* Размер кружков - по своим классам (custom.js): центр крупный, соседи
+   подтянуты к нему, остальные мелкие. Правила темы на nth-child(3n)
+   перебиваем. */
+.kdc-carousel-pick .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item {
+	opacity: 0.5 !important;
+	transform: scale(0.6) !important;
+	transition: transform 0.8s ease, opacity 0.8s ease !important;
+}
+
+.kdc-carousel-pick .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item.kdc-prev {
+	transform: scale(0.6) translateX(40px) !important;
+}
+
+.kdc-carousel-pick .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item.kdc-next {
+	transform: scale(0.6) translateX(-40px) !important;
+}
+
+.kdc-carousel-pick .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item.sppb-carousel-extended-item-center {
+	opacity: 1 !important;
+	transform: scale(1) !important;
+}
+
+/* Незаметный перескок ленты с копии на оригинал: без переходов. */
+.kdc-carousel-pick.kdc-carousel-jump .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item,
+.kdc-carousel-pick.kdc-carousel-jump .sppb-carousel-extended-outer-stage .sppb-carousel-extended-item * {
+	transition: none !important;
+}
+
+/* =====================================================================
+ * Единая анимация появления по всему сайту.
+ *
+ * Эталон - наши собственные проявления (блог, команда): подъём на 20px
+ * и проявление за 0.7с с мягким торможением, без задержек. Блоки SPPB
+ * с включённой анимацией (fadeInUp / fadeInLeft / fadeInRight / fadeIn /
+ * fadeInUpBig, 300-600мс, разные задержки) приводим к тому же виду -
+ * какой бы эффект ни стоял в настройках конкретного блока.
+ * ===================================================================== */
+@keyframes kdc-reveal {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 20px, 0);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.sppb-wow.sppb-animated {
+	animation-name: kdc-reveal !important;
+	animation-duration: 0.7s !important;
+	animation-delay: 0s !important;
+	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+	animation-fill-mode: both !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sppb-wow.sppb-animated {
+		animation: none !important;
+	}
+}
+
+/* Блог: кнопка «Показать ещё» - контурная «пилюля», как «Получить расчёт». */
+.kdc-journal .sppb-addon-articles__pagination {
+	display: flex;
+	justify-content: center;
+	margin-top: 48px;
+}
+
+.kdc-journal .sppb-addon-articles__pagination .sppb-btn {
+	padding: 12px 28px;
+	border: 1px solid #141414;
+	border-radius: 999px;
+	background: transparent;
+	color: #141414;
+	font-family: Inter, system-ui, sans-serif;
+	font-size: 15px;
+	line-height: 1.2;
+	text-transform: none;
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.kdc-journal .sppb-addon-articles__pagination .sppb-btn:hover {
+	background: #141414;
+	color: #fff;
+}
+
+/* Статьи блога (перенесены из ВК): остальные фото поста - сеткой под
+   текстом, одинаковыми превью. Обложка - первое фото, стоит над текстом. */
+.kdc-article-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 16px;
+	margin: 36px 0 8px;
+}
+
+.kdc-article-gallery img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 3 / 4;
+	object-fit: cover;
+	border-radius: 16px;
+}
+
+@media (max-width: 575px) {
+	.kdc-article-gallery {
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+
+	.kdc-article-gallery img {
+		border-radius: 12px;
+	}
+}
+
+/* Статья блога с клипом ВК: вертикальное видео 9:16, не во всю ширину. */
+.kdc-article-video {
+	width: 100%;
+	max-width: 380px;
+	margin: 32px 0 8px;
+	aspect-ratio: 9 / 16;
+	border-radius: 16px;
+	overflow: hidden;
+	background: #000;
+}
+
+.kdc-article-video iframe {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+/* В статье с видео обложка не нужна: её заменяет плеер, а кадр из клипа
+   маленький (280px) и во всю ширину статьи расплывается. В ленте блога
+   обложка остаётся. */
+.article-details:has(.kdc-article-video) .article-full-image {
+	display: none;
+}
+
+/* =====================================================================
+ * Статья блога (пункт меню 414 «Статьи блога», /blog/stati/...).
+ * Шапка (категория, заголовок, дата) отцентрована в колонке 700px -
+ * текст, навигация и «Читайте также» выравниваем по ней же.
+ * ===================================================================== */
+
+/* Назад к ленте */
+.kdc-article-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 28px;
+	font-family: Inter, system-ui, sans-serif;
+	font-size: 15px;
+	line-height: 1.3;
+	color: rgba(20, 20, 20, 0.65) !important;
+	text-decoration: none !important;
+	transition: color 0.3s ease;
+}
+
+.kdc-article-back:hover {
+	color: #141414 !important;
+}
+
+.kdc-article-back span {
+	transition: transform 0.3s ease;
+}
+
+.kdc-article-back:hover span {
+	transform: translateX(-4px);
+}
+
+/* Слева была колонка под блок автора (шаблонный «хранитель проектов») -
+   у новых статей пустая, и текст уезжал вправо. Текст - одной колонкой. */
+.itemid-414.view-article .article-details-wrap {
+	display: block !important;
+}
+
+.itemid-414.view-article .field-author-info {
+	display: none !important;
+}
+
+.itemid-414.view-article .article-content-wrap,
+.itemid-414.view-article .article-details .pagenavigation {
+	max-width: 760px;
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+.itemid-414.view-article [itemprop="articleBody"] {
+	font-size: 18px;
+	line-height: 1.65;
+}
+
+/* Предыдущая / Следующая - по краям колонки текста */
+.itemid-414.view-article .article-details .pagenavigation {
+	margin-top: 48px;
+	padding-top: 28px;
+	border-top: 1px solid rgba(20, 20, 20, 0.12);
+}
+
+.itemid-414.view-article .pagenavigation .pagination {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	margin: 0;
+}
+
+.itemid-414.view-article .pagenavigation .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0 !important;
+	border: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	font-family: Inter, system-ui, sans-serif;
+	font-size: 16px;
+	color: #141414 !important;
+	text-transform: none !important;
+}
+
+/* Одна «Следующая» без «Предыдущей» - всё равно справа */
+.itemid-414.view-article .pagenavigation .btn.next {
+	margin-left: auto;
+}
+
+/* «Читайте также» - те же карточки, что в ленте блога */
+.itemid-414.view-article .related-article-list-container {
+	max-width: 1110px;
+	margin: 96px auto 0 !important;
+	padding: 0 !important;
+}
+
+.itemid-414.view-article .related-article-title {
+	margin: 0 0 32px !important;
+	font-size: 40px !important;
+	line-height: 1.1 !important;
+	letter-spacing: -1px !important;
+}
+
+.itemid-414.view-article .related-article-list .row {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 32px;
+	margin: 0;
+}
+
+.itemid-414.view-article .related-article-list .row > div {
+	width: auto;
+	max-width: none;
+	padding: 0;
+	flex: none;
+}
+
+.itemid-414.view-article .related-article-list .article {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+}
+
+.itemid-414.view-article .related-article-list .article-full-image {
+	float: none !important;
+	display: block;
+	overflow: hidden;
+	margin: 0 0 18px !important;
+	border-radius: 18px;
+	aspect-ratio: 4 / 3;
+}
+
+.itemid-414.view-article .related-article-list .article-full-image img {
+	width: 100% !important;
+	height: 100% !important;
+	object-fit: cover;
+	border-radius: 0 !important;
+	transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.itemid-414.view-article .related-article-list .article:hover .article-full-image img {
+	transform: scale(1.02);
+}
+
+.itemid-414.view-article .related-article-list .article-information-wrapper,
+.itemid-414.view-article .related-article-list .article-information {
+	padding: 0 !important;
+	background: none !important;
+}
+
+.itemid-414.view-article .related-article-list .category {
+	font-family: Inter, sans-serif;
+	font-size: 12px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(20, 20, 20, 0.5);
+}
+
+.itemid-414.view-article .related-article-list .article-meta {
+	margin: 0 0 8px !important;
+}
+
+.itemid-414.view-article .related-article-list .article-header h2 {
+	margin: 0 !important;
+	font-family: "Source Serif Pro", serif;
+	font-size: 20px !important;
+	line-height: 1.25 !important;
+	letter-spacing: 0 !important;
+}
+
+.itemid-414.view-article .related-article-list .article-header h2 a {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+	color: #141414 !important;
+}
+
+/* Под карточкой был весь текст статьи вместе с галереей - убираем. */
+.itemid-414.view-article .related-article-list .intro-text,
+.itemid-414.view-article .related-article-list .readmore {
+	display: none !important;
+}
+
+@media (max-width: 991px) {
+	.itemid-414.view-article .related-article-list .row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 24px;
+	}
+
+	.itemid-414.view-article .related-article-title {
+		font-size: 32px !important;
+	}
+}
+
+@media (max-width: 575px) {
+	.itemid-414.view-article .related-article-list .row {
+		grid-template-columns: 1fr;
+	}
+
+	.itemid-414.view-article [itemprop="articleBody"] {
+		font-size: 17px;
+	}
+}
+
+/* Одно дополнительное фото - не мелкой третью колонки, а крупнее. */
+.kdc-article-gallery:has(> img:only-child) {
+	grid-template-columns: minmax(0, 420px);
+}
+
+/* Статья блога: от шапки до «← Все записи блога» было ~120px
+   (100px у #sp-main-body + 80px у .article-details). Оставляем ~40px. */
+.itemid-414.view-article .article-details {
+	padding-top: 0 !important;
+}
+
+.itemid-414.view-article .article-details {
+	margin-top: -16px;
+}
+
+/* «← Назад» - слева, на одной линии с плашкой категории над заголовком. */
+.itemid-414.view-article .article-details {
+	position: relative;
+}
+
+.itemid-414.view-article .kdc-article-back {
+	position: absolute;
+	left: 0;
+	top: 3px;
+	margin: 0;
+	z-index: 1;
+}
+
+/* Обложка статьи: тема задаёт только пропорцию 18.9/9, без ширины - фото
+   уже 1110px (из ВК приходят 591-1024px) вставали в свой размер у левого
+   края и были ниже остальных. Всегда во всю ширину статьи. */
+.article-details > .article-full-image img,
+.article-details > figure.article-full-image img {
+	display: block;
+	width: 100% !important;
+	max-width: none;
+	height: auto;
+}
+
+/* =====================================================================
+ * Статья блога: шапка «как в каталоге» (.kdc-article-hero, шаблон
+ * article/default.php). Слева «← Назад» + категория, заголовок, дата,
+ * вводный абзац; справа обложка 4:5.
+ * ===================================================================== */
+.kdc-article-hero {
+	display: flex;
+	align-items: center;
+	gap: 64px;
+	margin: 0 0 64px;
+}
+
+.kdc-article-hero-text {
+	flex: 1 1 0;
+	min-width: 0;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	column-gap: 20px;
+}
+
+.kdc-article-hero-media {
+	flex: 0 0 50%;
+	max-width: 50%;
+}
+
+/* Шапку темы раскладываем по сетке левой колонки. */
+.kdc-article-hero .article-head,
+.kdc-article-hero .article-info {
+	display: contents;
+}
+
+.itemid-414.view-article .kdc-article-hero .kdc-article-back {
+	position: static;
+	grid-column: 1;
+	grid-row: 1;
+	margin: 0;
+}
+
+.kdc-article-hero .article-info .category-name {
+	position: static !important;
+	transform: none !important;
+	grid-column: 2;
+	grid-row: 1;
+	justify-self: start;
+}
+
+.kdc-article-hero .article-header {
+	grid-column: 1 / -1;
+	grid-row: 2;
+	margin: 28px 0 0 !important;
+	text-align: left;
+}
+
+.kdc-article-hero .article-header h1,
+.kdc-article-hero .article-header h2 {
+	margin: 0 !important;
+	font-size: 56px !important;
+	line-height: 1.08 !important;
+	letter-spacing: -1.8px !important;
+	text-align: left;
+}
+
+.kdc-article-hero .article-info .published {
+	grid-column: 1 / -1;
+	grid-row: 3;
+	justify-self: start;
+	margin-top: 18px;
+	color: rgba(20, 20, 20, 0.55) !important;
+}
+
+.kdc-article-lead {
+	grid-column: 1 / -1;
+	grid-row: 4;
+	margin-top: 28px;
+}
+
+.kdc-article-lead p {
+	margin: 0;
+	font-size: 19px;
+	line-height: 1.6;
+	color: rgba(20, 20, 20, 0.78);
+}
+
+.kdc-article-hero-media .article-full-image {
+	margin: 0 !important;
+	float: none !important;
+}
+
+.kdc-article-hero-media .article-full-image img {
+	display: block;
+	width: 100% !important;
+	height: auto;
+	aspect-ratio: 4 / 5 !important;
+	object-fit: cover;
+	border-radius: 18px !important;
+}
+
+@media (max-width: 991px) {
+	.kdc-article-hero {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 32px;
+		margin-bottom: 40px;
+	}
+
+	.kdc-article-hero-media {
+		flex: none;
+		max-width: 100%;
+	}
+
+	.kdc-article-hero-media .article-full-image img {
+		aspect-ratio: 4 / 3 !important;
+	}
+
+	.kdc-article-hero .article-header h1,
+	.kdc-article-hero .article-header h2 {
+		font-size: 40px !important;
+		letter-spacing: -1px !important;
+	}
+}
+
+@media (max-width: 575px) {
+	.kdc-article-hero .article-header h1,
+	.kdc-article-hero .article-header h2 {
+		font-size: 34px !important;
+	}
+
+	.kdc-article-lead p {
+		font-size: 17px;
+	}
+}
+
+/* С шапкой «как в каталоге» текст и навигация - по левому краю шапки,
+   а не по центру: иначе колонка висит сдвинутой относительно заголовка. */
+.itemid-414.view-article .article-details:has(.kdc-article-hero) .article-content-wrap,
+.itemid-414.view-article .article-details:has(.kdc-article-hero) .pagenavigation {
+	margin-left: 0 !important;
+}
+
+/* Тело статьи под шапкой «как в каталоге»: две колонки с теми же
+   пропорциями - текст слева (под заголовком), доп. фото справа
+   (под обложкой). */
+.itemid-414.view-article .article-details:has(.kdc-article-hero) .article-content-wrap,
+.itemid-414.view-article .article-details:has(.kdc-article-hero) .pagenavigation {
+	max-width: none !important;
+}
+
+.kdc-article-cols {
+	display: flex;
+	align-items: flex-start;
+	gap: 64px;
+}
+
+.kdc-article-cols-text {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.kdc-article-cols-text > :first-child {
+	margin-top: 0;
+}
+
+.kdc-article-cols-media {
+	flex: 0 0 50%;
+	max-width: 50%;
+}
+
+.kdc-article-cols-media .kdc-article-gallery {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin: 0;
+}
+
+/* Одно фото - во всю правую колонку, как обложка сверху. */
+.kdc-article-cols-media .kdc-article-gallery:has(> img:only-child) {
+	grid-template-columns: 1fr;
+}
+
+.kdc-article-cols-media .kdc-article-gallery:has(> img:only-child) img {
+	aspect-ratio: 4 / 5;
+	border-radius: 18px;
+}
+
+/* Три фото: первое крупно на всю ширину, два ниже парой. */
+.kdc-article-cols-media .kdc-article-gallery:has(> img:nth-child(3):last-child) img:first-child {
+	grid-column: 1 / -1;
+	aspect-ratio: 4 / 3;
+}
+
+@media (max-width: 991px) {
+	.kdc-article-cols {
+		flex-direction: column;
+		gap: 32px;
+	}
+
+	.kdc-article-cols-media {
+		flex: none;
+		max-width: 100%;
+		width: 100%;
+	}
+
+	.kdc-article-cols-media .kdc-article-gallery:has(> img:only-child) img {
+		aspect-ratio: 4 / 3;
+	}
+}
+
+/* Соседние записи блога (свой расчёт по ленте, article/default.php):
+   только «← Предыдущая / Следующая →», без названия записи. */
+.itemid-414.view-article .kdc-article-nav .pagination {
+	gap: 32px;
+	align-items: flex-start;
+}
+
+.itemid-414.view-article .kdc-article-nav .btn {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	max-width: 46%;
+	white-space: normal;
+	text-align: left;
+}
+
+.itemid-414.view-article .kdc-article-nav .btn.next {
+	align-items: flex-end;
+	text-align: right;
+}
+
+.itemid-414.view-article .kdc-article-nav .kdc-nav-label {
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+	color: #141414;
+	transition: opacity 0.3s ease;
+}
+
+.itemid-414.view-article .kdc-article-nav .btn:hover .kdc-nav-label {
+	opacity: 0.7;
+}
+
+.itemid-414.view-article .kdc-article-nav .kdc-nav-title {
+	font-family: "Source Serif Pro", serif;
+	font-size: 20px;
+	line-height: 1.25;
+	color: #141414;
+	transition: opacity 0.3s ease;
+}
+
+.itemid-414.view-article .kdc-article-nav .btn:hover .kdc-nav-title {
+	opacity: 0.7;
+}
+
+/* Контакты: тема пишет кнопки с заглавной в каждом слове (capitalize) -
+   «Написать Info@Kleverdors.Ru», «Посмотреть В МАХ». Текст - как в базе. */
+#sppb-addon-1776092269089 .sppb-btn,
+#sppb-addon-zOim72ZdEpBENeE2jnGPG .sppb-btn {
+	text-transform: none !important;
+}
+
+/* Телефоны стали ссылками (tel:) - цвет как у остального текста. */
+.itemid-413 a[href^="tel:"],
+#sp-bottom a[href^="tel:"] {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* Блог и Контакты: над заголовком страницы висела мелкая надпись с
+   названием пункта меню («Блог», «Контакты») - дублирует меню. Прячем
+   только текст: отступ блока .sp-page-title держит заголовок ниже шапки. */
+.itemid-115 .sp-page-title-heading,
+.itemid-413 .sp-page-title-heading {
+	display: none !important;
+}
+
+.itemid-115 .sp-page-title,
+.itemid-413 .sp-page-title {
+	padding-top: 110px !important;
+}
+
+@media (max-width: 767px) {
+	.itemid-115 .sp-page-title,
+	.itemid-413 .sp-page-title {
+		padding-top: 90px !important;
+	}
+}
+
+/* Контакты: три карточки (Сотрудничество / Производство / Онлайн) были
+   разной высоты - каждая по своему тексту. Растягиваем серую карточку
+   на всю высоту колонки, кнопка «Посмотреть в МАХ» - у низа карточки. */
+#column-id-1767935316309 > .sppb-column-addons,
+#column-id-1767935316310 > .sppb-column-addons,
+#column-id-1767935316311 > .sppb-column-addons {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+/* Отступ до следующего ряда (фото + почта) - 50px, как был у самой
+   высокой карточки. */
+#sppb-addon-wrapper-1767940945838,
+#sppb-addon-wrapper-d9oZcIiF810IOCzumODI-,
+#sppb-addon-wrapper-Ye9U7NeS-R5Eero9gnMFf {
+	flex: 1 1 auto;
+	display: flex !important;
+	flex-direction: column;
+	margin-bottom: 50px !important;
+}
+
+#sppb-addon-1767940945838,
+#sppb-addon-d9oZcIiF810IOCzumODI-,
+#sppb-addon-Ye9U7NeS-R5Eero9gnMFf {
+	flex: 1 1 auto;
+	display: flex !important;
+	flex-direction: column;
+	margin-bottom: 0 !important;
+}
+
+#sppb-addon-wrapper-zOim72ZdEpBENeE2jnGPG {
+	margin-top: auto !important;
+}
+
+/* =====================================================================
+ * Мобильная адаптация - исправления по проверке на 360/375px.
+ * ===================================================================== */
+
+/* Кнопки: тема пишет каждое слово с заглавной (text-transform:
+   capitalize) - «Посмотреть Все Коллекции И Наши Возможности». Тексты
+   в базе уже набраны правильно - показываем как есть. */
+.sppb-btn {
+	text-transform: none !important;
+}
+
+@media (max-width: 767px) {
+	/* Длинные кнопки не влезали в экран (white-space: nowrap) - переносим
+	   текст и держим кнопку в ширину колонки. */
+	.sppb-btn {
+		max-width: 100%;
+		white-space: normal !important;
+		text-align: center;
+		line-height: 1.3;
+	}
+
+	/* Главная: «Индивидуальные решения» - 50px, слово не помещалось. */
+	#sppb-addon-cb0a6d93-9ba9-4115-9e3f-901b5c6a3b43 .sppb-addon-title {
+		font-size: min(50px, 10.5vw) !important;
+	}
+
+	/* Футер: «БУДЕМ НА СВЯЗИ» - три слова по краям (space-between) шрифтом
+	   50px не помещались в 290px и склеивались. */
+	#sppb-addon-351b9b90-f3b2-4e79-b480-bcda1db9b348 .sppb-addon-title {
+		font-size: min(50px, 9vw) !important;
+	}
+
+	/* Блог: категории - в несколько строк, а не лентой за край экрана. */
+	.blog-tabs .sppb-nav.sppb-nav-tabs {
+		flex-wrap: wrap !important;
+		overflow: visible !important;
+		gap: 8px;
+	}
+
+	.blog-tabs .sppb-nav.sppb-nav-tabs > li {
+		margin: 0 !important;
+	}
+
+	/* clearfix-псевдоэлементы становятся flex-элементами и с gap
+	   сдвигают первую кнопку. */
+	.blog-tabs .sppb-nav.sppb-nav-tabs::before,
+	.blog-tabs .sppb-nav.sppb-nav-tabs::after {
+		display: none !important;
+	}
+
+	/* Коллекция: описание под заголовком - по левому краю, как заголовок
+	   (SPPB центрирует текст на телефоне). */
+	.kdc-cd-hero-sub,
+	.kdc-cd-hero-sub p {
+		text-align: left !important;
+	}
+
+	/* Коллекция: «Про коллекцию» и «Палитра» - одна серая карточка
+	   (верхние и нижние скругления), на телефоне их разрывал общий
+	   отступ между рядами 88px. */
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba .sppb-row > #column-wrap-id-a2d1d2ad-c098-41d8-bf7f-85e6a2c84e88 {
+		margin-top: -88px !important;
+	}
+
+	/* Коллекция: портфолио - сетка 3 колонки вместо столбика квадратов
+	   по 200px (было ~9600px прокрутки). */
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery {
+		display: grid !important;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery > * {
+		width: auto !important;
+		max-width: none !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		float: none !important;
+	}
+
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery img {
+		display: block;
+		width: 100% !important;
+		height: auto !important;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+		border-radius: 8px;
+	}
+
+	/* Модельный ряд: цена и название нарисованы на самих картинках -
+	   2 колонки, чтобы подписи читались. */
+	#section-id-edb79f02-d4c8-4d8a-ab69-f4c8e73b8b1f .sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery {
+		display: grid !important;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+	}
+
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery > * {
+		width: auto !important;
+		max-width: none !important;
+		margin: 0 !important;
+		float: none !important;
+	}
+
+	.sppb-dynamic-content-gallery .sppb-dc-bxslider.sppb-gallery img {
+		width: 100% !important;
+		height: auto !important;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+	}
+}
+
+/* =====================================================================
+ * Конфигуратор двери - первый экран страницы коллекции
+ * (templates/agentik/js/kdc-configurator.js). Справа вместо фото -
+ * дверь, слева под описанием - выбор модели и отделки.
+ * ===================================================================== */
+.kdc-cfg-on .kdc-cd-hero-photo {
+	position: relative;
+	overflow: hidden;
+	background: #f2f1ee;
+}
+
+.kdc-cfg-stage {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	border-radius: inherit;
+	background: var(--kdc-wall, #f4f3f0);
+	transition: background-color 0.3s;
+}
+
+/* Пол - нижние 17% сцены (рисуется скриптом в перспективе: доски идут
+   на зрителя); дверь стоит на его линии. */
+.kdc-cfg-floor {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 17%;
+	background: #d9c9ae;
+}
+
+.kdc-cfg-floor canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Плинтус вдоль стены: белый, с бликом сверху и тенью на пол. */
+.kdc-cfg-skirt {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 17%;
+	height: 1.6%;
+	min-height: 7px;
+	background: linear-gradient(180deg, #fbfaf8 0, #f1efea 30%, #e6e3dc 100%);
+	box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.08), 0 2px 3px rgba(0, 0, 0, 0.14);
+}
+
+/* Мягкая тень двери на полу. */
+.kdc-cfg-shadow {
+	position: absolute;
+	height: 14px;
+	border-radius: 50%;
+	background: radial-gradient(closest-side, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0));
+	pointer-events: none;
+}
+
+.kdc-cfg-stage.is-dark-wall .kdc-cfg-door-img {
+	filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
+}
+
+/* Стена и пол - колонка у правого края сцены. */
+.kdc-cfg-env {
+	position: absolute;
+	right: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 8px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.82);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.kdc-cfg-env-title {
+	font: 500 9px/1 Inter, sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: #8c8c8a;
+}
+
+.kdc-cfg-env-title + .kdc-cfg-env-sw {
+	margin-top: -2px;
+}
+
+.kdc-cfg-env-sw + .kdc-cfg-env-title {
+	margin-top: 6px;
+}
+
+.kdc-cfg-env-sw {
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	box-shadow: 0 0 0 1.5px transparent;
+	cursor: pointer;
+	transition: box-shadow 0.2s;
+}
+
+.kdc-cfg-env-sw span {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.kdc-cfg-env-sw.is-on {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #141414;
+}
+
+.kdc-cfg-scene {
+	position: absolute;
+}
+
+.kdc-cfg-door {
+	position: absolute;
+}
+
+.kdc-cfg-door-img {
+	position: absolute;
+	inset: 0;
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+	display: block;
+	border-radius: 0 !important;
+}
+
+.kdc-cfg-door-img:not([src]) {
+	visibility: hidden;
+}
+
+.kdc-cfg-glass-layer {
+	position: absolute;
+	inset: 0;
+}
+
+.kdc-cfg-pane {
+	position: absolute;
+	overflow: hidden;
+	box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.kdc-cfg-pane img {
+	max-width: none !important;
+	border-radius: 0 !important;
+}
+
+.kdc-cfg-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	background: rgba(244, 243, 240, 0.6);
+	display: none;
+	align-items: center;
+	justify-content: center;
+	font: 14px Inter, sans-serif;
+	color: #8c8c8a;
+}
+
+.kdc-cfg-stage.is-loading .kdc-cfg-loading {
+	display: flex;
+}
+
+/* --- Панель выбора ---------------------------------------------------- */
+
+.kdc-cfg-panel {
+	width: 100%;
+	margin-top: 36px;
+	font-family: Inter, sans-serif;
+	color: #141414;
+}
+
+.kdc-cfg-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 24px;
+	border-bottom: 1px solid rgba(20, 20, 20, 0.12);
+}
+
+.kdc-cfg-tab {
+	margin: 0 0 -1px;
+	padding: 0 0 12px;
+	border: 0;
+	border-bottom: 1.5px solid transparent;
+	background: none;
+	font: 500 15px/1.2 Inter, sans-serif;
+	color: #8c8c8a;
+	cursor: pointer;
+	transition: color 0.2s, border-color 0.2s;
+}
+
+.kdc-cfg-tab:hover {
+	color: #141414;
+}
+
+.kdc-cfg-tab.is-on {
+	color: #141414;
+	border-bottom-color: #141414;
+}
+
+.kdc-cfg-body {
+	padding-top: 20px;
+	min-height: 150px;
+}
+
+.kdc-cfg-models {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.kdc-cfg-model,
+.kdc-cfg-portal {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 6px 7px;
+	border: 0;
+	border-radius: 10px;
+	background: #f2f1ee;
+	box-shadow: inset 0 0 0 1px transparent;
+	cursor: pointer;
+	transition: box-shadow 0.2s, background-color 0.2s;
+}
+
+.kdc-cfg-model:hover,
+.kdc-cfg-portal:hover {
+	background: #ebe9e4;
+}
+
+.kdc-cfg-model.is-on,
+.kdc-cfg-portal.is-on {
+	box-shadow: inset 0 0 0 1.5px #141414;
+}
+
+.kdc-cfg-model-img {
+	display: block;
+	height: 84px;
+	min-width: 30px;
+}
+
+.kdc-cfg-model-img canvas {
+	display: block;
+	height: 84px;
+	width: auto;
+}
+
+.kdc-cfg-model-name {
+	font-size: 11px;
+	line-height: 1.2;
+	color: #6a6a68;
+	max-width: 110px;
+	text-align: center;
+}
+
+.kdc-cfg-group + .kdc-cfg-group {
+	margin-top: 18px;
+}
+
+.kdc-cfg-group-title {
+	margin: 0 0 10px;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #8c8c8a;
+}
+
+.kdc-cfg-swatches,
+.kdc-cfg-glasses {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.kdc-cfg-swatch {
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	background: none;
+	box-shadow: 0 0 0 1.5px transparent;
+	cursor: pointer;
+	transition: box-shadow 0.2s;
+}
+
+.kdc-cfg-swatch span {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 10px;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.kdc-cfg-swatch.is-on {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #141414;
+}
+
+.kdc-cfg-glass {
+	position: relative;
+	width: 52px;
+	height: 52px;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	overflow: hidden;
+	background: linear-gradient(180deg, #f5f4f2, #e1dfdb);
+	box-shadow: 0 0 0 1.5px transparent;
+	cursor: pointer;
+}
+
+.kdc-cfg-glass.is-on {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #141414;
+}
+
+.kdc-cfg-glass-ball {
+	position: absolute;
+	left: 12%;
+	top: 16%;
+	width: 54%;
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: radial-gradient(circle at 35% 30%, #e9c9a0, #b98457 55%, #7d5433);
+}
+
+.kdc-cfg-glass-pane {
+	position: absolute;
+	left: 38%;
+	top: 38%;
+	width: 62%;
+	height: 62%;
+	box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.6), -1px 0 2px rgba(0, 0, 0, 0.12);
+}
+
+.kdc-cfg-portals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.kdc-cfg-portal-img {
+	display: block;
+	width: 96px;
+	height: 96px;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.kdc-cfg-portal-img canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.kdc-cfg-summary {
+	margin-top: 24px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(20, 20, 20, 0.12);
+}
+
+.kdc-cfg-caption {
+	font-size: 14px;
+	line-height: 1.5;
+	color: #141414;
+}
+
+.kdc-cfg-price {
+	margin-top: 10px;
+	font-family: "Source Serif Pro", Georgia, serif;
+	font-size: 30px;
+	line-height: 1.1;
+	letter-spacing: -0.3px;
+	color: #141414;
+}
+
+.kdc-cfg-price span {
+	display: block;
+	margin-top: 4px;
+	font-family: Inter, sans-serif;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #8c8c8a;
+}
+
+.kdc-cfg-note {
+	margin-top: 12px;
+	font-size: 12px;
+	line-height: 1.55;
+	color: #8c8c8a;
+}
+
+/* Телефон и планшет: превью под текстом, выбор - под превью. */
+@media (max-width: 991px) {
+	.kdc-cfg-on .kdc-cd-hero-photo {
+		aspect-ratio: 4 / 5 !important;
+	}
+
+	.kdc-cfg-panel.is-below {
+		margin-top: 24px;
+	}
+}
+
+@media (max-width: 575px) {
+	.kdc-cfg-tabs {
+		gap: 4px 18px;
+	}
+
+	.kdc-cfg-tab {
+		font-size: 14px;
+	}
+
+	.kdc-cfg-model-img,
+	.kdc-cfg-model-img canvas {
+		height: 76px;
+	}
+}
+
+/* --- Конфигуратор: первый экран без сдвигов -------------------------- */
+
+/* Надпись «Коллекция» над названием не нужна. */
+#sppb-addon-wrapper-kdcCdEyebrow01 {
+	display: none !important;
+}
+
+@media (min-width: 992px) {
+	/* Дверь и текст - от верха, а не по центру высокой левой колонки:
+	   при открытии страницы дверь видна целиком. */
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba {
+		padding-top: 0 !important;
+	}
+
+	.kdc-cfg-on.kdc-cd-hero {
+		align-items: flex-start !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-text {
+		justify-content: flex-start !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-photo {
+		aspect-ratio: auto !important;
+		height: clamp(480px, calc(100vh - 150px), 820px) !important;
+		max-height: none !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-title p {
+		line-height: 1.05;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-sub {
+		margin-top: 16px !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags {
+		margin-top: 24px !important;
+	}
+
+	.kdc-cfg-panel {
+		margin-top: 28px;
+	}
+}
+
+/* Панель выбора постоянной высоты: смена вкладки, модели или цвета
+   ничего не сдвигает. Много моделей - прокрутка внутри панели. */
+.kdc-cfg-body {
+	height: 300px;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 16px 6px 4px 2px;
+	margin: 0 -6px 0 -2px;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(20, 20, 20, 0.25) transparent;
+}
+
+.kdc-cfg-body::-webkit-scrollbar {
+	width: 6px;
+}
+
+.kdc-cfg-body::-webkit-scrollbar-thumb {
+	border-radius: 3px;
+	background: rgba(20, 20, 20, 0.25);
+}
+
+.kdc-cfg-model-img,
+.kdc-cfg-model-img canvas {
+	height: 76px;
+}
+
+/* Подпись - всегда две строки. */
+.kdc-cfg-summary {
+	margin-top: 16px;
+}
+
+.kdc-cfg-caption {
+	height: 3em;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+/* Телефон и планшет: дверь целиком в первом экране - метки в одну
+   строку, отступы меньше. */
+@media (max-width: 991px) {
+	#section-id-1b74a99d-bf21-40df-8c57-d6c6bad98aba {
+		padding-top: 0 !important;
+	}
+
+	.kdc-cfg-on.kdc-cd-hero {
+		gap: 20px !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-sub {
+		margin-top: 12px !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags {
+		margin-top: 14px !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags .sppb-addon-content p {
+		flex-direction: row !important;
+		align-items: center !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags .sppb-addon-content p span {
+		padding: 0 8px !important;
+		border-top: 0 !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags .sppb-addon-content p span:first-child {
+		padding-left: 0 !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-tags .sppb-addon-content p span:not(:first-child) {
+		border-left: 1px solid rgba(20, 20, 20, 0.16) !important;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-photo {
+		aspect-ratio: auto !important;
+		height: min(calc(100vh - 330px), 125vw) !important;
+		min-height: 380px;
+	}
+}
+
+/* --- Модельный ряд: дверь отдельно, справа модель и цена ------------- */
+.kdc-range-on .sppb-addon-content {
+	display: none !important;
+}
+
+.kdc-range {
+	margin-top: 16px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 48px 24px;
+}
+
+.kdc-range-item {
+	display: flex;
+	align-items: flex-end;
+	gap: 18px;
+	padding: 0;
+	border: 0;
+	background: none;
+	text-align: left;
+	cursor: pointer;
+	color: #141414;
+}
+
+.kdc-range-img {
+	position: relative;
+	flex: none;
+	--ar: 0.43;
+	/* Высота 280px; широкая (двустворчатая) дверь - не шире 58% карточки,
+	   уменьшается пропорционально. */
+	width: min(calc(var(--ar) * 280px), 58%);
+	height: auto;
+	aspect-ratio: 43 / 100;
+	overflow: hidden;
+	transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kdc-range-img img {
+	position: absolute;
+	max-width: none !important;
+	height: auto;
+	border-radius: 0 !important;
+}
+
+.kdc-range-item:hover .kdc-range-img {
+	transform: translateY(-4px);
+}
+
+.kdc-range-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding-bottom: 4px;
+	min-width: 0;
+}
+
+.kdc-range-label {
+	font: 500 11px/1 Inter, sans-serif;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #8c8c8a;
+}
+
+.kdc-range-name {
+	margin-bottom: 10px;
+	font-family: "Source Serif Pro", Georgia, serif;
+	font-size: 28px;
+	line-height: 1.1;
+	color: #141414;
+	word-break: break-word;
+}
+
+.kdc-range-price {
+	font: 500 17px/1.2 Inter, sans-serif;
+	color: #141414;
+	white-space: nowrap;
+}
+
+.kdc-range-note {
+	font: 12px/1.3 Inter, sans-serif;
+	color: #8c8c8a;
+}
+
+.kdc-range-item:hover .kdc-range-name {
+	text-decoration: underline;
+	text-underline-offset: 4px;
+	text-decoration-thickness: 1px;
+}
+
+@media (max-width: 767px) {
+	.kdc-range {
+		margin-top: 28px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 32px 12px;
+	}
+
+	.kdc-range-item {
+		gap: 10px;
+	}
+
+	.kdc-range-img {
+		width: min(calc(var(--ar) * 190px), 55%);
+	}
+
+	.kdc-range-name {
+		font-size: 20px;
+		margin-bottom: 6px;
+	}
+
+	.kdc-range-price {
+		font-size: 14px;
+	}
+
+	.kdc-range-label,
+	.kdc-range-note {
+		font-size: 10px;
+	}
+}
+
+/* --- Конфигуратор на телефоне: всё под палец -------------------------- */
+@media (max-width: 575px) {
+	/* Вкладки - на всю ширину, поровну, высокие. */
+	.kdc-cfg-tabs {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0;
+	}
+
+	.kdc-cfg-tab {
+		min-height: 48px;
+		padding: 0 2px;
+		font-size: 15px;
+		text-align: center;
+		border-bottom-width: 2px;
+	}
+
+	/* Без прокрутки внутри страницы: список целиком. */
+	.kdc-cfg-body {
+		height: auto;
+		overflow: visible;
+		padding: 16px 0 4px;
+		margin: 0;
+	}
+
+	/* Модели - сетка на всю ширину, превью крупнее. */
+	.kdc-cfg-models {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 8px;
+	}
+
+	.kdc-cfg-model {
+		padding: 10px 4px 8px;
+		gap: 6px;
+		border-radius: 12px;
+	}
+
+	.kdc-cfg-model-img,
+	.kdc-cfg-model-img canvas {
+		height: 104px;
+	}
+
+	.kdc-cfg-model-name {
+		font-size: 13px;
+		color: #3a3a38;
+	}
+
+	/* Цвета - крупные квадраты, ровными рядами. */
+	.kdc-cfg-group + .kdc-cfg-group {
+		margin-top: 22px;
+	}
+
+	.kdc-cfg-group-title {
+		font-size: 12px;
+	}
+
+	.kdc-cfg-swatches {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 10px;
+	}
+
+	.kdc-cfg-swatch {
+		width: auto;
+		height: auto;
+		aspect-ratio: 1;
+		border-radius: 12px;
+	}
+
+	.kdc-cfg-swatch span {
+		border-radius: 12px;
+	}
+
+	/* Стёкла. */
+	.kdc-cfg-glasses {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 10px;
+	}
+
+	.kdc-cfg-glass {
+		width: auto;
+		height: auto;
+		aspect-ratio: 1;
+		border-radius: 12px;
+	}
+
+	/* Наличники - по три в ряд на всю ширину. */
+	.kdc-cfg-portals {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+
+	.kdc-cfg-portal {
+		padding: 8px 6px;
+		border-radius: 12px;
+	}
+
+	.kdc-cfg-portal-img {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+	}
+
+	.kdc-cfg-portal .kdc-cfg-model-name {
+		max-width: none;
+	}
+
+	/* Стена и пол - строкой внизу сцены, дверь не закрывают. */
+	.kdc-cfg-env {
+		top: auto;
+		right: auto;
+		left: 50%;
+		bottom: 12px;
+		transform: translateX(-50%);
+		flex-direction: row;
+		gap: 10px;
+		padding: 8px 14px;
+	}
+
+	/* Подписи не влезают - группы разделяет черта. */
+	.kdc-cfg-env-title {
+		display: none;
+	}
+
+	.kdc-cfg-env-sw + .kdc-cfg-env-title + .kdc-cfg-env-sw {
+		margin-left: 11px;
+		position: relative;
+	}
+
+	.kdc-cfg-env-sw + .kdc-cfg-env-title + .kdc-cfg-env-sw::before {
+		content: "";
+		position: absolute;
+		left: -12px;
+		top: 4px;
+		bottom: 4px;
+		width: 1px;
+		background: rgba(20, 20, 20, 0.15);
+	}
+
+	.kdc-cfg-env-sw {
+		width: 30px;
+		height: 30px;
+		flex: none;
+	}
+
+	/* Итог. */
+	.kdc-cfg-caption {
+		font-size: 15px;
+	}
+
+	.kdc-cfg-price {
+		font-size: 34px;
+	}
+
+	.kdc-cfg-note {
+		font-size: 13px;
+	}
+}
+
+/* Телефон: дверь закреплена под шапкой, выбор прокручивается под ней -
+   цвет, стекло, модель видно сразу, без прокрутки вверх. */
+@media (max-width: 575px) {
+	/* overflow-x: hidden у обёрток темы ломает sticky; clip - нет. */
+	body:has(.kdc-cfg-on),
+	body:has(.kdc-cfg-on) .body-innerwrapper {
+		overflow-x: clip !important;
+		overflow-y: visible !important;
+	}
+
+	.kdc-cfg-on .addon-root-dynamic-content-image > .clearfix {
+		position: -webkit-sticky;
+		position: sticky;
+		top: var(--kdc-header-h, 50px);
+		z-index: 5;
+		padding-bottom: 10px;
+		background: #fff;
+	}
+
+	.kdc-cfg-on .kdc-cd-hero-photo {
+		height: min(52vh, 125vw) !important;
+		min-height: 300px;
+	}
+
+	.kdc-cfg-panel.is-below {
+		margin-top: 6px;
+	}
+
+	/* Вкладки - сразу под дверью, тоже на месте. */
+	.kdc-cfg-panel.is-below .kdc-cfg-tabs {
+		position: -webkit-sticky;
+		position: sticky;
+		top: calc(var(--kdc-header-h, 50px) + 10px + max(300px, min(52vh, 125vw)));
+		z-index: 4;
+		background: #fff;
+	}
+}
+
+/* --- Коллекция: «Назад» в каталог справа от названия ------------------ */
+.kdc-cd-title-row {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.kdc-cd-title-row .kdc-cd-hero-title {
+	flex: 0 1 auto;
+	min-width: 0;
+	margin: 0 !important;
+	text-align: left !important;
+}
+
+/* Компьютер: колонка узкая - круглая кнопка со стрелкой. */
+@media (min-width: 992px) {
+	.kdc-back {
+		width: 44px;
+		height: 44px;
+		padding: 0 !important;
+		justify-content: center;
+		font-size: 18px !important;
+	}
+
+	.kdc-back-t {
+		display: none;
+	}
+}
+
+.kdc-back {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 16px;
+	border: 1px solid rgba(20, 20, 20, 0.2);
+	border-radius: 999px;
+	font: 500 14px/1 Inter, sans-serif;
+	color: #141414;
+	text-decoration: none;
+	transition: background-color 0.2s, border-color 0.2s;
+}
+
+.kdc-back:hover,
+.kdc-back:focus-visible {
+	background: #f2f1ee;
+	border-color: rgba(20, 20, 20, 0.35);
+	color: #141414;
+	text-decoration: none;
+}
+
+@media (max-width: 575px) {
+	.kdc-back {
+		padding: 10px 14px;
+		font-size: 14px;
+	}
 }

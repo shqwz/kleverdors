@@ -1,0 +1,2022 @@
+{
+    "_readme": "Модели конфигуратора по коллекциям (ключ - адрес страницы /katalogproduktsii/<ключ>). Для каждой модели: name - название, src - картинка двери (дверь по центру на светлом фоне; подписи по углам не мешают), price - цена комплекта в рублях или null. Геометрию (коробка, стекло, ручка) конфигуратор находит на картинке сам. materials: ral - цвета RAL, veneer - шпон. glass - стекло вручную, если конфигуратор не нашёл его сам: список прямоугольников [x, y, ширина, высота] в долях кадра двери (0..1); края подгоняются к рамке. Можно {\"r\": [...], \"bars\": [колонки, ряды]} - раскладка, \"snap\": false - без подгонки. Пустой список - стекла нет. casing: false - дверь без наличников. На уровне коллекции: glass - \"keep\" (стекло/витраж всегда как на фото) или \"none\" (стекла нет); detectMetal: false - не искать ручку/петли (для шпона). \"lines\": [колонки, ряды] - тонкая латунная решётка поверх стекла; \"keep\": true - этот проём как на фото (витраж). facet: true - у стекла скошенная кромка (фацет), она тоже стекло. seed: [x, y, ширина, высота] - откуда начинать заливку стекла (для стекла с вырезом); flood: false - стекло с отражением, без заливки. cross: true - косой крест из планок цвета полотна.",
+    "collections": {
+        "baget-e": {
+            "models": [
+                {
+                    "name": "Е1",
+                    "src": "images/modeli/e/price/e1ppp.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "Е2",
+                    "src": "images/modeli/e/price/e2ppp.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.281,
+                                0.127,
+                                0.437,
+                                0.779
+                            ],
+                            "lines": [
+                                2,
+                                5
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Е3",
+                    "src": "images/modeli/e/price/e3ppp.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "Е4",
+                    "src": "images/modeli/e/price/e4ppp.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.283,
+                                0.125,
+                                0.214,
+                                0.167
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.283,
+                                0.295,
+                                0.214,
+                                0.165
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.283,
+                                0.463,
+                                0.214,
+                                0.167
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.505,
+                                0.125,
+                                0.211,
+                                0.167
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.503,
+                                0.295,
+                                0.213,
+                                0.167
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.463,
+                                0.212,
+                                0.166
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е5",
+                    "src": "images/modeli/e/price/e5ppp.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "Е6",
+                    "src": "images/modeli/e/price/e6ppp.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.284,
+                                0.126,
+                                0.212,
+                                0.141
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.27,
+                                0.212,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.413,
+                                0.212,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.555,
+                                0.212,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.555,
+                                0.214,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.413,
+                                0.214,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.27,
+                                0.214,
+                                0.14
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.127,
+                                0.214,
+                                0.14
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е7",
+                    "src": "images/modeli/e/price/e7ppp.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "Е8",
+                    "src": "images/modeli/e/price/e8ppp.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.282,
+                                0.126,
+                                0.212,
+                                0.12
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.282,
+                                0.249,
+                                0.212,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.282,
+                                0.372,
+                                0.212,
+                                0.12
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.126,
+                                0.212,
+                                0.12
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.25,
+                                0.215,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.502,
+                                0.25,
+                                0.215,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.503,
+                                0.372,
+                                0.214,
+                                0.119
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е9",
+                    "src": "images/modeli/e/price/e9ppp.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "Е10",
+                    "src": "images/modeli/e/price/e10ppp.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.284,
+                                0.126,
+                                0.212,
+                                0.098
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.227,
+                                0.212,
+                                0.098
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.126,
+                                0.213,
+                                0.098
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.227,
+                                0.213,
+                                0.098
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.282,
+                                0.414,
+                                0.215,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.282,
+                                0.514,
+                                0.215,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.414,
+                                0.215,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.514,
+                                0.215,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.7,
+                                0.213,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.284,
+                                0.8,
+                                0.213,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.505,
+                                0.8,
+                                0.213,
+                                0.097
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.7,
+                                0.214,
+                                0.097
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е11",
+                    "src": "images/modeli/e/price/e11ppp.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "Е12",
+                    "src": "images/modeli/e/price/e12ppp.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.283,
+                                0.33,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.283,
+                                0.453,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.283,
+                                0.575,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.33,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.453,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.504,
+                                0.575,
+                                0.213,
+                                0.119
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е13",
+                    "src": "images/modeli/e/price/e13ppp.jpg",
+                    "price": 42795
+                },
+                {
+                    "name": "Е14",
+                    "src": "images/modeli/e/price/e14ppp.jpg",
+                    "price": 42795,
+                    "glass": [
+                        {
+                            "r": [
+                                0.282,
+                                0.126,
+                                0.142,
+                                0.496
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.575,
+                                0.126,
+                                0.144,
+                                0.496
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Е15",
+                    "src": "images/modeli/e/price/e15ppp.jpg",
+                    "price": 45720
+                },
+                {
+                    "name": "Е16",
+                    "src": "images/modeli/e/price/e16ppp.jpg",
+                    "price": 45720,
+                    "glass": [
+                        {
+                            "r": [
+                                0.282,
+                                0.126,
+                                0.162,
+                                0.157
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.556,
+                                0.126,
+                                0.164,
+                                0.157
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.281,
+                                0.331,
+                                0.165,
+                                0.159
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.556,
+                                0.331,
+                                0.165,
+                                0.158
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.282,
+                                0.537,
+                                0.166,
+                                0.158
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.558,
+                                0.537,
+                                0.163,
+                                0.158
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.281,
+                                0.742,
+                                0.164,
+                                0.157
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.555,
+                                0.742,
+                                0.166,
+                                0.158
+                            ],
+                            "snap": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "seriya-p": {
+            "models": [
+                {
+                    "name": "П1",
+                    "src": "images/modeli/p/price/priceP1.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "П2",
+                    "src": "images/modeli/p/price/priceP2.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.257,
+                                0.107,
+                                0.23,
+                                0.154
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.511,
+                                0.108,
+                                0.24,
+                                0.153
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.256,
+                                0.27,
+                                0.231,
+                                0.156
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.257,
+                                0.435,
+                                0.232,
+                                0.155
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.51,
+                                0.27,
+                                0.241,
+                                0.156
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.51,
+                                0.435,
+                                0.241,
+                                0.153
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.255,
+                                0.598,
+                                0.232,
+                                0.154
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.51,
+                                0.599,
+                                0.239,
+                                0.153
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.254,
+                                0.761,
+                                0.231,
+                                0.155
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.512,
+                                0.761,
+                                0.237,
+                                0.153
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П3",
+                    "src": "images/modeli/p/price/priceP3.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "П4",
+                    "src": "images/modeli/p/price/priceP4.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.257,
+                                0.106,
+                                0.233,
+                                0.171
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.511,
+                                0.107,
+                                0.236,
+                                0.171
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.258,
+                                0.288,
+                                0.23,
+                                0.168
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.511,
+                                0.287,
+                                0.237,
+                                0.168
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.258,
+                                0.466,
+                                0.229,
+                                0.171
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.511,
+                                0.465,
+                                0.24,
+                                0.172
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П5",
+                    "src": "images/modeli/p/price/priceP5.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "П6",
+                    "src": "images/modeli/p/price/priceP6.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.255,
+                                0.108,
+                                0.231,
+                                0.143
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.513,
+                                0.106,
+                                0.234,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.255,
+                                0.261,
+                                0.229,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.513,
+                                0.261,
+                                0.234,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.255,
+                                0.415,
+                                0.229,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.513,
+                                0.413,
+                                0.234,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.255,
+                                0.568,
+                                0.229,
+                                0.145
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.513,
+                                0.569,
+                                0.234,
+                                0.145
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П7",
+                    "src": "images/modeli/p/price/priceP7.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "П8",
+                    "src": "images/modeli/p/price/priceP8.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.253,
+                                0.106,
+                                0.167,
+                                0.81
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.584,
+                                0.106,
+                                0.167,
+                                0.81
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П9",
+                    "src": "images/modeli/p/price/priceP9.jpg",
+                    "price": 38010,
+                    "facet": true,
+                    "glass": [
+                        {
+                            "r": [
+                                0.266,
+                                0.112,
+                                0.464,
+                                0.072
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П10",
+                    "src": "images/modeli/p/price/priceP10.jpg",
+                    "price": 40220,
+                    "glass": []
+                },
+                {
+                    "name": "П11",
+                    "src": "images/modeli/p/price/priceP11.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "П12",
+                    "src": "images/modeli/p/price/priceP12.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.251,
+                                0.106,
+                                0.172,
+                                0.609
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.583,
+                                0.106,
+                                0.167,
+                                0.609
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П13",
+                    "src": "images/modeli/p/price/priceP13.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.253,
+                                0.106,
+                                0.5,
+                                0.087
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П14",
+                    "src": "images/modeli/p/price/priceP14.jpg",
+                    "price": 40220,
+                    "facet": true,
+                    "glass": [
+                        {
+                            "r": [
+                                0.251,
+                                0.106,
+                                0.17,
+                                0.087
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.582,
+                                0.106,
+                                0.168,
+                                0.087
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П15",
+                    "src": "images/modeli/p/price/priceP15.jpg",
+                    "price": 42795,
+                    "glass": []
+                },
+                {
+                    "name": "П16",
+                    "src": "images/modeli/p/price/priceP16.jpg",
+                    "price": 42795,
+                    "glass": [
+                        {
+                            "r": [
+                                0.251,
+                                0.106,
+                                0.5,
+                                0.086
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П17",
+                    "src": "images/modeli/p/price/priceP17.jpg",
+                    "price": 42795,
+                    "glass": [
+                        {
+                            "r": [
+                                0.251,
+                                0.106,
+                                0.498,
+                                0.086
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.249,
+                                0.261,
+                                0.17,
+                                0.502
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.582,
+                                0.261,
+                                0.168,
+                                0.502
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П18",
+                    "src": "images/modeli/p/price/priceP18.jpg",
+                    "price": 42795,
+                    "glass": []
+                },
+                {
+                    "name": "П19",
+                    "src": "images/modeli/p/price/priceP19.jpg",
+                    "price": 45720,
+                    "glass": []
+                },
+                {
+                    "name": "П20",
+                    "src": "images/modeli/p/price/priceP20.jpg",
+                    "price": 45720,
+                    "glass": []
+                },
+                {
+                    "name": "П21",
+                    "src": "images/modeli/p/price/priceP21.jpg",
+                    "price": 45720,
+                    "glass": [
+                        {
+                            "r": [
+                                0.253,
+                                0.105,
+                                0.169,
+                                0.088
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.581,
+                                0.106,
+                                0.17,
+                                0.087
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "П22",
+                    "src": "images/modeli/p/price/priceP22.jpg",
+                    "price": 45720,
+                    "glass": [
+                        {
+                            "r": [
+                                0.253,
+                                0.106,
+                                0.169,
+                                0.087
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.585,
+                                0.106,
+                                0.164,
+                                0.087
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.249,
+                                0.26,
+                                0.172,
+                                0.503
+                            ],
+                            "snap": false
+                        },
+                        {
+                            "r": [
+                                0.583,
+                                0.261,
+                                0.168,
+                                0.502
+                            ],
+                            "snap": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "realta-2": {
+            "models": [
+                {
+                    "name": "Реалта 1",
+                    "src": "images/modeli/realta/price/realta1.jpg",
+                    "price": 33630
+                },
+                {
+                    "name": "Реалта 3",
+                    "src": "images/modeli/realta/price/realta3.jpg",
+                    "price": 33630
+                },
+                {
+                    "name": "Реалта 4",
+                    "src": "images/modeli/realta/price/realta4.jpg",
+                    "price": 33630,
+                    "glass": [
+                        [
+                            0.3,
+                            0.1,
+                            0.47,
+                            0.55
+                        ]
+                    ]
+                },
+                {
+                    "name": "Реалта 9",
+                    "src": "images/modeli/realta/price/realta9.jpg",
+                    "price": 33630
+                },
+                {
+                    "name": "Реалта 11",
+                    "src": "images/modeli/realta/price/realta11.jpg",
+                    "price": 33630
+                },
+                {
+                    "name": "Реалта 12",
+                    "src": "images/modeli/realta/price/realta12.jpg",
+                    "price": 33630,
+                    "glass": [
+                        [
+                            0.24,
+                            0.34,
+                            0.54,
+                            0.43
+                        ]
+                    ]
+                },
+                {
+                    "name": "Реалта 13",
+                    "src": "images/modeli/realta/price/realta13.jpg",
+                    "price": 33630
+                }
+            ]
+        },
+        "provans": {
+            "models": [
+                {
+                    "name": "В1",
+                    "src": "images/modeli/b/price/priceV1.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "В2",
+                    "src": "images/modeli/b/price/priceV2.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.255,
+                                0.113,
+                                0.16,
+                                0.07
+                            ],
+                            "cross": true
+                        },
+                        {
+                            "r": [
+                                0.585,
+                                0.113,
+                                0.16,
+                                0.07
+                            ],
+                            "cross": true
+                        }
+                    ]
+                },
+                {
+                    "name": "В2 800",
+                    "src": "images/modeli/b/price/priceV2_800.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.23,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        },
+                        {
+                            "r": [
+                                0.43,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        },
+                        {
+                            "r": [
+                                0.63,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        }
+                    ]
+                },
+                {
+                    "name": "В3",
+                    "src": "images/modeli/b/price/priceV3.jpg",
+                    "price": 40220,
+                    "glass": [
+                        {
+                            "r": [
+                                0.23,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        },
+                        {
+                            "r": [
+                                0.43,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        },
+                        {
+                            "r": [
+                                0.63,
+                                0.113,
+                                0.15,
+                                0.07
+                            ],
+                            "cross": true
+                        }
+                    ]
+                },
+                {
+                    "name": "В4",
+                    "src": "images/modeli/b/price/priceV4.jpg",
+                    "price": 40220,
+                    "glass": [
+                        [
+                            0.25,
+                            0.12,
+                            0.49,
+                            0.79
+                        ]
+                    ]
+                },
+                {
+                    "name": "В5",
+                    "src": "images/modeli/b/price/priceV5.jpg",
+                    "price": 42795
+                }
+            ]
+        },
+        "lajt": {
+            "models": [
+                {
+                    "name": "Лайт 01",
+                    "src": "images/modeli/lite/price/pricelajt01.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 02",
+                    "src": "images/modeli/lite/price/pricelajt02.jpg",
+                    "price": 31670,
+                    "glass": [
+                        [
+                            0.24,
+                            0.11,
+                            0.52,
+                            0.8
+                        ]
+                    ]
+                },
+                {
+                    "name": "Лайт 04",
+                    "src": "images/modeli/lite/price/pricelajt04.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 05",
+                    "src": "images/modeli/lite/price/pricelajt05.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 06",
+                    "src": "images/modeli/lite/price/pricelajt06.jpg",
+                    "price": 31670,
+                    "glass": [
+                        [
+                            0.24,
+                            0.11,
+                            0.52,
+                            0.61
+                        ]
+                    ]
+                },
+                {
+                    "name": "Лайт 07",
+                    "src": "images/modeli/lite/price/pricelajt07.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 09",
+                    "src": "images/modeli/lite/price/pricelajt09.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 11",
+                    "src": "images/modeli/lite/price/pricelajt11.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 13",
+                    "src": "images/modeli/lite/price/pricelajt13p.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 15",
+                    "src": "images/modeli/lite/price/pricelajt15.jpg",
+                    "price": 31670
+                },
+                {
+                    "name": "Лайт 15_2",
+                    "src": "images/modeli/lite/Lajt15_2.jpg",
+                    "price": 54660
+                },
+                {
+                    "name": "Лайт 16",
+                    "src": "images/modeli/lite/price/pricelajt16.jpg",
+                    "price": 31670,
+                    "glass": [
+                        {
+                            "r": [
+                                0.26,
+                                0.08,
+                                0.52,
+                                0.85
+                            ],
+                            "seed": [
+                                0.5,
+                                0.15,
+                                0.25,
+                                0.75
+                            ]
+                        }
+                    ],
+                    "blank": "images/modeli/lite/price/pricelajt15.jpg"
+                },
+                {
+                    "name": "Лайт 16_2",
+                    "src": "images/modeli/lite/Lajt16_2.jpg",
+                    "price": 54660,
+                    "glass": [
+                        {
+                            "r": [
+                                0.169,
+                                0.12,
+                                0.271,
+                                0.78
+                            ],
+                            "seed": [
+                                0.19,
+                                0.15,
+                                0.12,
+                                0.7
+                            ]
+                        },
+                        {
+                            "r": [
+                                0.56,
+                                0.12,
+                                0.271,
+                                0.78
+                            ],
+                            "seed": [
+                                0.66,
+                                0.15,
+                                0.15,
+                                0.7
+                            ]
+                        }
+                    ],
+                    "blank": "images/modeli/lite/Lajt15_2.jpg"
+                },
+                {
+                    "name": "Лайт 23",
+                    "src": "images/modeli/lite/price/pricelajt23.jpg",
+                    "price": 31670
+                }
+            ]
+        },
+        "21-vek": {
+            "models": [
+                {
+                    "name": "Х11",
+                    "src": "images/modeli/21vek/price/21vek11.jpg",
+                    "price": 40540
+                },
+                {
+                    "name": "Х12",
+                    "src": "images/modeli/21vek/price/21vek12.jpg",
+                    "price": 40540
+                },
+                {
+                    "name": "Х21",
+                    "src": "images/modeli/21vek/price/21vek21.jpg",
+                    "price": 42730
+                },
+                {
+                    "name": "Х22",
+                    "src": "images/modeli/21vek/price/21vek22.jpg",
+                    "price": 42730
+                },
+                {
+                    "name": "Х23",
+                    "src": "images/modeli/21vek/price/21vek23.jpg",
+                    "price": 42730
+                },
+                {
+                    "name": "Х31",
+                    "src": "images/modeli/21vek/price/21vek31.jpg",
+                    "price": 46300
+                },
+                {
+                    "name": "Х31_2",
+                    "src": "images/modeli/21vek/price/21vek31_2.jpg",
+                    "price": 46300
+                },
+                {
+                    "name": "Х41",
+                    "src": "images/modeli/21vek/price/21vek41.jpg",
+                    "price": 46300,
+                    "glass": [
+                        {
+                            "r": [
+                                0.304,
+                                0.132,
+                                0.378,
+                                0.469
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "Х42",
+                    "src": "images/modeli/21vek/price/21vek42.jpg",
+                    "price": 46300,
+                    "glass": [
+                        {
+                            "r": [
+                                0.32,
+                                0.156,
+                                0.361,
+                                0.455
+                            ],
+                            "snap": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "neoklassika": {
+            "models": [
+                {
+                    "name": "С1",
+                    "src": "images/modeli/neoklassika/price/prajsS1.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "С2",
+                    "src": "images/modeli/neoklassika/price/prajsS2 .jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.279,
+                                0.115,
+                                0.447,
+                                0.788
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "С3",
+                    "src": "images/modeli/neoklassika/price/prajsS3.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "С4",
+                    "src": "images/modeli/neoklassika/price/prajsS4.jpg",
+                    "price": 38010,
+                    "glass": [
+                        {
+                            "r": [
+                                0.28,
+                                0.116,
+                                0.44,
+                                0.503
+                            ],
+                            "snap": false
+                        }
+                    ]
+                },
+                {
+                    "name": "С5",
+                    "src": "images/modeli/neoklassika/price/prajsS5.jpg",
+                    "price": 38010
+                },
+                {
+                    "name": "С7",
+                    "src": "images/modeli/neoklassika/price/prajsS7.jpg",
+                    "price": 40220
+                },
+                {
+                    "name": "С9",
+                    "src": "images/modeli/neoklassika/price/prajsS9.jpg",
+                    "price": 40220
+                }
+            ]
+        },
+        "martin": {
+            "models": [
+                {
+                    "name": "Мартин 1",
+                    "src": "images/modeli/martin/price/martin1.jpg",
+                    "price": 39880
+                },
+                {
+                    "name": "Мартин 3",
+                    "src": "images/modeli/martin/price/martin3.jpg",
+                    "price": 39880
+                },
+                {
+                    "name": "Мартин 5",
+                    "src": "images/modeli/martin/price/martin5.jpg",
+                    "price": 39880
+                },
+                {
+                    "name": "Мартин 7",
+                    "src": "images/modeli/martin/price/martin7.jpg",
+                    "price": 39880
+                },
+                {
+                    "name": "Мартин 9",
+                    "src": "images/modeli/martin/price/martin9.jpg",
+                    "price": 39880
+                }
+            ]
+        },
+        "lajn": {
+            "models": [
+                {
+                    "name": "Лайн 2",
+                    "src": "images/modeli/line/Lajn2.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 3",
+                    "src": "images/modeli/line/Lajn3.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 4",
+                    "src": "images/modeli/line/Lajn4.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 5",
+                    "src": "images/modeli/line/Lajn5.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 6",
+                    "src": "images/modeli/line/Lajn6.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 7",
+                    "src": "images/modeli/line/Lajn7.png",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 8",
+                    "src": "images/modeli/line/Lajn8.jpg",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 8Д",
+                    "src": "images/modeli/line/Lajn8_D.jpg",
+                    "price": null
+                },
+                {
+                    "name": "Лайн 9",
+                    "src": "images/modeli/line/Lajn9.png",
+                    "price": null
+                }
+            ]
+        },
+        "art-kraft": {
+            "models": [
+                {
+                    "name": "Сиэтл",
+                    "src": "images/modeli/art/sietl_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.48,
+                                0.83
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Флорида",
+                    "src": "images/modeli/art/florida_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.23,
+                                0.1,
+                                0.45999999999999996,
+                                0.83
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Детройт",
+                    "src": "images/modeli/art/detrojt_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.24,
+                                0.11,
+                                0.46,
+                                0.82
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Мемфис",
+                    "src": "images/modeli/art/memfis_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.48,
+                                0.83
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 1",
+                    "src": "images/modeli/art/02_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 2",
+                    "src": "images/modeli/art/03_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 3",
+                    "src": "images/modeli/art/04_700_01_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 4",
+                    "src": "images/modeli/art/05_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 5",
+                    "src": "images/modeli/art/06_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 6",
+                    "src": "images/modeli/art/07_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.46,
+                                0.15
+                            ],
+                            "keep": true
+                        }
+                    ]
+                },
+                {
+                    "name": "Вариант 7",
+                    "src": "images/modeli/art/2_1.5_700_01_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.15,
+                                0.1,
+                                0.14,
+                                0.81
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.42,
+                                0.1,
+                                0.42,
+                                0.81
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                },
+                {
+                    "name": "Вариант 8",
+                    "src": "images/modeli/art/3_04_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.11,
+                                0.1,
+                                0.07,
+                                0.8
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.26,
+                                0.1,
+                                0.21,
+                                0.8
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.55,
+                                0.1,
+                                0.21,
+                                0.8
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.85,
+                                0.1,
+                                0.07,
+                                0.8
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                },
+                {
+                    "name": "Вариант 9",
+                    "src": "images/modeli/art/3_1.5_700_01_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.15,
+                                0.1,
+                                0.14,
+                                0.82
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.45,
+                                0.1,
+                                0.39,
+                                0.16
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                },
+                {
+                    "name": "Вариант 10",
+                    "src": "images/modeli/art/5_04_700_03_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.07,
+                                0.1,
+                                0.08,
+                                0.82
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.22,
+                                0.1,
+                                0.25,
+                                0.82
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.53,
+                                0.1,
+                                0.24,
+                                0.82
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.85,
+                                0.1,
+                                0.08,
+                                0.82
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                },
+                {
+                    "name": "Вариант 11",
+                    "src": "images/modeli/art/5_1.5_700_01_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.13,
+                                0.1,
+                                0.14,
+                                0.82
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.52,
+                                0.1,
+                                0.32,
+                                0.17
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                },
+                {
+                    "name": "Вариант 12",
+                    "src": "images/modeli/art/7_1.5_700_02_.jpg",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.15,
+                                0.1,
+                                0.14,
+                                0.8
+                            ],
+                            "keep": true
+                        },
+                        {
+                            "r": [
+                                0.42,
+                                0.1,
+                                0.44,
+                                0.8
+                            ],
+                            "keep": true
+                        }
+                    ],
+                    "casing": false
+                }
+            ],
+            "glass": "keep"
+        },
+        "gladkie-m01": {
+            "models": [
+                {
+                    "name": "М01",
+                    "src": "images/modeli/m01/M01-_.png",
+                    "price": null
+                }
+            ]
+        },
+        "shponirovannye": {
+            "materials": [
+                "veneer"
+            ],
+            "grain": false,
+            "models": [
+                {
+                    "name": "Модель 1",
+                    "src": "images/modeli/shpon/modeli/2b106e44-fc6b-40eb-9feb-3776ef0123e1.webp",
+                    "price": null
+                },
+                {
+                    "name": "Модель 2",
+                    "src": "images/modeli/shpon/modeli/44faed37-b863-4ddf-8f7c-b2a945145868.webp",
+                    "price": null
+                },
+                {
+                    "name": "Модель 3",
+                    "src": "images/modeli/shpon/modeli/85480ed3-73b8-4be1-9fa6-4ea588445cc2.webp",
+                    "price": null
+                },
+                {
+                    "name": "Модель 4",
+                    "src": "images/modeli/shpon/modeli/bc1a754b-4273-4bf4-8310-f45628617dfd.webp",
+                    "price": null
+                },
+                {
+                    "name": "Модель 5",
+                    "src": "images/modeli/shpon/modeli/72e9d78d-3a25-44a1-bde8-ae3e5d8efdd6.webp",
+                    "price": null,
+                    "glass": [
+                        {
+                            "r": [
+                                0.19,
+                                0.07,
+                                0.62,
+                                0.86
+                            ],
+                            "bars": [
+                                3,
+                                6
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "glass": "none",
+            "detectMetal": false
+        },
+        "bolshie-proemy": {
+            "models": []
+        }
+    }
+}

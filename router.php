@@ -28,6 +28,67 @@ $path = '/' . ltrim($path, '/');
 // raw "%20" form against disk makes them 404.
 $file = __DIR__ . '/public_html' . rawurldecode($path);
 
+// Редактор стёкол конфигуратора (tools/glass-editor.html) и его сохранение.
+// Есть только здесь, в локальном роутере: на хостинг не попадает.
+if ($path === '/__kdc/glass-editor') {
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: no-cache');
+    // Скрипт конфигуратора - с датой правки в адресе, иначе браузер держит
+    // старую копию и редактор показывает не то, что сайт.
+    $cfgV = filemtime(__DIR__ . '/public_html/templates/agentik/js/kdc-configurator.js');
+    echo str_replace('kdc-configurator.js?editor', 'kdc-configurator.js?editor=' . $cfgV, file_get_contents(__DIR__ . '/tools/glass-editor.html'));
+    return true;
+}
+if ($path === '/__kdc/save-models') {
+    header('Content-Type: application/json; charset=utf-8');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $local = $ip === '127.0.0.1' || $ip === '::1' || preg_match('~^(192\.168|10)\.~', $ip);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$local) {
+        http_response_code(403);
+        echo '{"ok":false,"error":"forbidden"}';
+        return true;
+    }
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($data) || !isset($data['collections']) || !is_array($data['collections'])) {
+        http_response_code(400);
+        echo '{"ok":false,"error":"bad json"}';
+        return true;
+    }
+    $models = __DIR__ . '/public_html/images/konfigurator/models.json';
+    // Редактор открыт давно, а файл с тех пор менялся (другая вкладка,
+    // правка вручную) - не затираем, просим обновить.
+    clearstatcache();
+    $base = $_SERVER['HTTP_X_KDC_BASE'] ?? '';
+    if ($base !== '' && $base !== gmdate('D, d M Y H:i:s', filemtime($models)) . ' GMT') {
+        http_response_code(409);
+        echo '{"ok":false,"error":"stale"}';
+        return true;
+    }
+    $backups = __DIR__ . '/_backups/models';
+    if (!is_dir($backups)) {
+        mkdir($backups, 0777, true);
+    }
+    copy($models, $backups . '/models-' . date('Ymd-His') . '.json');
+    file_put_contents($models, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+
+    // Браузеры (и nginx на хостинге) держат старые копии: поднимаем VERSION
+    // в конфигураторе (models.json?v=) и ?v= у самого скрипта в custom.js.
+    $cfgJs = __DIR__ . '/public_html/templates/agentik/js/kdc-configurator.js';
+    $js = file_get_contents($cfgJs);
+    $js = preg_replace_callback("~var VERSION = '(\d+)';~", function ($m) { return "var VERSION = '" . ($m[1] + 1) . "';"; }, $js, 1);
+    file_put_contents($cfgJs, $js);
+    $customJs = __DIR__ . '/public_html/templates/agentik/js/custom.js';
+    $cj = file_get_contents($customJs);
+    $cj = preg_replace_callback('~kdc-configurator\.js\?v=(\d+)~', function ($m) { return 'kdc-configurator.js?v=' . ($m[1] + 1); }, $cj, 1);
+    file_put_contents($customJs, $cj);
+    foreach (glob(__DIR__ . '/public_html/cache/com_templates/templates/agentik/*.js') ?: [] as $f) {
+        unlink($f);
+    }
+    clearstatcache();
+    echo json_encode(['ok' => true, 'mtime' => gmdate('D, d M Y H:i:s', filemtime($models)) . ' GMT']);
+    return true;
+}
+
 if ($path !== '/' && is_file($file)) {
     // Only the two files we actually hand-edit are served through PHP with
     // no-cache. Everything else (the homepage alone pulls 183 CSS/JS files,
@@ -38,6 +99,8 @@ if ($path !== '/' && is_file($file)) {
     static $noCache = [
         '/templates/agentik/css/custom.css' => 'text/css',
         '/templates/agentik/js/custom.js'   => 'application/javascript',
+        // Редактор стёкол сверяет дату файла перед сохранением.
+        '/images/konfigurator/models.json'  => 'application/json',
     ];
 
     // Helix склеивает все скрипты шаблона в один файл в cache/com_templates,

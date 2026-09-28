@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор стёкол</title>
+<!--
+  Редактор разметки стёкол для конфигуратора двери (models.json → glass).
+  Открывается только на локальном сервере: http://localhost:8000/__kdc/glass-editor
+  Сохранение - POST /__kdc/save-models (см. router.php).
+-->
+<style>
+	:root { --bg: #f4f3f0; --panel: #fff; --ink: #1d1d1b; --mute: #77756f; --line: #e2e0da; --acc: #1f6fd1; --warn: #c2410c; }
+	* { box-sizing: border-box; }
+	[hidden] { display: none !important; }
+	body { margin: 0; font: 14px/1.4 -apple-system, "Segoe UI", Inter, sans-serif; color: var(--ink); background: var(--bg); }
+	.app { display: grid; grid-template-columns: 300px 1fr 300px; height: 100vh; }
+	aside { background: var(--panel); border-right: 1px solid var(--line); overflow: auto; padding: 14px; }
+	aside.right { border-right: 0; border-left: 1px solid var(--line); }
+	h1 { font-size: 15px; margin: 0 0 12px; }
+	h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); margin: 18px 0 8px; font-weight: 600; }
+	select, input[type=number] { font: inherit; padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: #fff; width: 100%; }
+	button { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+	button:hover { border-color: #bbb; }
+	button.primary { background: var(--acc); color: #fff; border-color: var(--acc); }
+	button.primary:disabled { opacity: .45; cursor: default; }
+	button.danger { color: var(--warn); }
+	.row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+	.row > label { flex: 1; font-size: 12px; color: var(--mute); }
+	.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+	.grid4 label { font-size: 11px; color: var(--mute); }
+	.models { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+	.models button { padding: 3px; display: flex; flex-direction: column; align-items: center; font-size: 11px; gap: 2px; position: relative; }
+	.models button img { width: 100%; aspect-ratio: 1 / 2; object-fit: contain; background: #faf9f7; }
+	.models button.on { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+	.models button .tag { position: absolute; top: 2px; right: 2px; font-size: 9px; background: #1f6fd1; color: #fff; border-radius: 3px; padding: 0 3px; }
+	main { display: flex; flex-direction: column; min-width: 0; }
+	.bar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; min-height: 52px; }
+	.bar .sp { flex: 1; }
+	.stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 16px; }
+	canvas { background: repeating-conic-gradient(#e8e6e1 0 25%, #f6f5f2 0 50%) 0 0 / 16px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.12); cursor: crosshair; touch-action: none; }
+	.hint { font-size: 12px; color: var(--mute); }
+	.hint kbd { font: 11px ui-monospace, monospace; background: #f1f0ec; border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; }
+	.status { font-size: 12px; color: var(--mute); }
+	.status.dirty { color: var(--warn); }
+	.list button { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
+	.list button.on { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+	pre { font: 11px/1.4 ui-monospace, monospace; background: #f7f6f3; border: 1px solid var(--line); border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-all; max-height: 220px; overflow: auto; }
+	.muted { color: var(--mute); font-size: 12px; }
+#loupe{position:fixed;width:220px;height:220px;border:1px solid #1f6fd1;border-radius:50%;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25);background:#fff;z-index:10}
+button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
+</style>
+</head>
+<body>
+<div class="app">
+	<aside>
+		<h1>Редактор стёкол</h1>
+		<div class="row"><select id="coll"></select></div>
+		<h2>Модели</h2>
+		<div class="models" id="models"></div>
+	</aside>
+	<main>
+		<div class="bar">
+			<b id="title">—</b>
+			<span class="muted" id="mode"></span>
+			<span class="sp"></span>
+			<label class="muted"><input type="checkbox" id="showRes" checked> результат скрипта</label>
+			<label class="muted"><input type="checkbox" id="showMark" checked> моя разметка</label>
+			<button id="check" title="Режим проверки: без разметки и ручек, тонкий контур стёкол, лупа под курсором (клавиша P)">Проверка</button>
+			<a id="open" target="_blank" class="muted">открыть на сайте ↗</a>
+			<span class="status" id="status">сохранено</span>
+			<button class="primary" id="save" disabled>Сохранить</button>
+		</div>
+		<div class="stage" id="stage"><canvas id="cv"></canvas></div><canvas id="loupe" width="440" height="440" hidden></canvas>
+		<div class="bar hint">
+			Тяните по пустому месту — новое стекло · тяните стекло/края — двигать/менять размер · тяните планку — сдвинуть
+			· <kbd>←↑→↓</kbd> сдвиг на 1 px (<kbd>Shift</kbd> — 10) · <kbd>Del</kbd> удалить выбранное · <kbd>⌘Z</kbd> отменить
+		</div>
+	</main>
+	<aside class="right">
+		<h2>Разметка модели</h2>
+		<div class="row">
+			<button id="toManual" title="Взять то, что нашёл скрипт, и править вручную">Взять найденное</button>
+			<button id="toAuto" title="Удалить ручную разметку - скрипт ищет стекло сам">Авто</button>
+			<button id="toNone" title="У модели нет стекла">Без стекла</button>
+		</div>
+		<div class="row" style="margin-top:8px">
+			<label title="То же фото двери без стекла: стекло вырежется ровно по разнице кадров">Глухая пара</label>
+			<select id="blank" style="flex:2"></select>
+		</div>
+		<div class="muted" id="blankNote" hidden style="font-size:12px;margin-top:4px">Стекло берётся из разницы с глухой парой - ручная разметка не нужна.</div>
+		<div class="list" id="panes"></div>
+		<div id="paneBox" hidden>
+			<h2>Выбранное стекло</h2>
+			<div class="grid4">
+				<label>x<input type="number" step="0.001" data-r="0"></label>
+				<label>y<input type="number" step="0.001" data-r="1"></label>
+				<label>ширина<input type="number" step="0.001" data-r="2"></label>
+				<label>высота<input type="number" step="0.001" data-r="3"></label>
+			</div>
+			<div class="row" style="margin-top:8px">
+				<label>Форма</label>
+				<select id="shape" style="flex:2">
+					<option value="rect">Прямоугольник</option>
+					<option value="tri">Треугольник</option>
+				</select>
+			</div>
+			<div class="row" style="margin-top:8px">
+				<label>Тип</label>
+				<select id="kind" style="flex:2">
+					<option value="plain">Стекло</option>
+					<option value="bars">Планки (раскладка)</option>
+					<option value="lines">Латунная решётка</option>
+					<option value="cross">Косой крест</option>
+					<option value="keep">Как на фото (витраж)</option>
+				</select>
+			</div>
+			<div id="gridBox">
+				<div class="row">
+					<label>Колонок<input type="number" min="1" max="12" id="cols"></label>
+					<label>Рядов<input type="number" min="1" max="20" id="rows"></label>
+				</div>
+				<div class="row" id="freeBox">
+					<button id="toFree" title="Планки поровну → отдельные планки, которые можно двигать">Двигать планки по одной</button>
+				</div>
+				<div class="row" id="freeBtns" hidden>
+					<button id="addV">+ вертикальная</button>
+					<button id="addH">+ горизонтальная</button>
+					<button id="toEven">Поровну</button>
+				</div>
+			</div>
+			<div class="row"><label><input type="checkbox" id="snap"> подгонять края к рамке (скрипт сдвинет край по фото)</label></div>
+			<div class="row"><button id="dup" title="Копия рядом (⌘D). ⌘C / ⌘V - копировать и вставить, в том числе в другую модель">Копировать стекло</button><button class="danger" id="del">Удалить стекло</button></div>
+		</div>
+		<h2>В models.json</h2>
+		<pre id="json"></pre>
+	</aside>
+</div>
+<script src="/templates/agentik/js/kdc-configurator.js?editor"></script>
+<script>
+(function () {
+	'use strict';
+	var K = window.KDCConfigurator;
+	var $ = function (id) { return document.getElementById(id); };
+	var cv = $('cv'), cx = cv.getContext('2d');
+	var DATA, coll, mi = 0, img = null, base = null, res = null, sel = -1, selLine = null, dirty = false;
+	var undo = [], blankImg = null;
+	// Глухая пара модели (фото без стекла) - для выреза по разнице кадров.
+	function loadBlank() {
+		var m = model(); blankImg = null;
+		$('blank').innerHTML = '<option value="">нет</option>' + DATA.collections[coll].models.map(function (x, k) {
+			return k === mi ? '' : '<option value="' + x.src + '"' + (x.src === m.blank ? ' selected' : '') + '>' + x.name + '</option>';
+		}).join('');
+		$('blankNote').hidden = !m.blank;
+		if (!m.blank) { return; }
+		var b = new Image();
+		b.onload = function () { if (model().blank === m.blank) { blankImg = b; recompute(); } };
+		b.src = '/' + m.blank + '?kdc=editor';
+	}
+	var r3 = function (v) { return Math.round(v * 1000) / 1000; };
+
+	function model() { return DATA.collections[coll].models[mi]; }
+	function cfgOpt(over) {
+		var c = DATA.collections[coll];
+		return { detectMetal: c.detectMetal, glass: c.glass, over: over, blank: over && over.blank ? blankImg : null };
+	}
+	// glass в models.json → удобный вид: {r, kind, bars, barX, barY, snap, rest}
+	function norm(g) {
+		return (g || []).map(function (f) {
+			if (Array.isArray(f)) { return { r: f.slice(0, 4), kind: 'plain', snap: f[4] !== 0, rest: {} }; }
+			var p = { r: f.r.slice(), snap: f.snap !== false, rest: {} };
+			p.kind = f.keep ? 'keep' : f.cross ? 'cross' : f.lines ? 'lines' : (f.bars || f.barX || f.barY) ? 'bars' : 'plain';
+			if (f.bars) { p.bars = f.bars.slice(); }
+			if (f.lines) { p.bars = f.lines.slice(); }
+			if (f.barX || f.barY) { p.barX = (f.barX || []).slice(); p.barY = (f.barY || []).slice(); }
+			if (f.tri) { p.tri = f.tri.map(function (v) { return v.slice(); }); }
+			Object.keys(f).forEach(function (k) { if (['r', 'snap', 'keep', 'cross', 'lines', 'bars', 'barX', 'barY', 'tri'].indexOf(k) < 0) { p.rest[k] = f[k]; } });
+			return p;
+		});
+	}
+	function denorm(ps) {
+		return ps.map(function (p) {
+			var r = p.r.map(r3), o = { r: r };
+			if (p.kind === 'keep') { o.keep = true; }
+			if (p.kind === 'cross') { o.cross = true; }
+			if (p.kind === 'lines') { o.lines = p.bars || [1, 1]; }
+			if (p.kind === 'bars') {
+				if (p.barX) { o.barX = p.barX.map(r3); o.barY = p.barY.map(r3); } else { o.bars = p.bars || [1, 1]; }
+			}
+			if (p.tri) { o.tri = p.tri.map(function (v) { return [r3(v[0]), r3(v[1])]; }); }
+			if (!p.snap) { o.snap = false; }
+			Object.keys(p.rest).forEach(function (k) { o[k] = p.rest[k]; });
+			return Object.keys(o).length === 1 ? r : o;
+		});
+	}
+	var panes = null; // null - авто (ручной разметки нет)
+
+	$('blank').onchange = function () {
+		if (this.value) { model().blank = this.value; } else { delete model().blank; }
+		dirty = true; ui(); loadBlank(); recompute();
+	};
+	function setGlass(ps, keepUndo) {
+		if (!keepUndo) { undo.push(JSON.stringify(model().glass === undefined ? null : model().glass)); if (undo.length > 100) { undo.shift(); } }
+		panes = ps;
+		if (ps === null) { delete model().glass; } else { model().glass = denorm(ps); }
+		dirty = true;
+		ui(); recompute();
+	}
+	function commit() { setGlass(panes); }
+
+	/* --- загрузка ------------------------------------------------------ */
+	// Когда файл был прочитан: сохранение не перезапишет чужие правки,
+	// сделанные после открытия редактора.
+	var baseMtime = '';
+	fetch('/images/konfigurator/models.json?e=' + Date.now()).then(function (r) { baseMtime = r.headers.get('Last-Modified') || ''; return r.json(); }).then(function (d) {
+		DATA = d;
+		var keys = Object.keys(d.collections);
+		$('coll').innerHTML = keys.map(function (k) { return '<option>' + k + '</option>'; }).join('');
+		var h = /c=([^&]+)&m=(\d+)/.exec(location.hash);
+		coll = h && d.collections[decodeURIComponent(h[1])] ? decodeURIComponent(h[1]) : keys[0];
+		$('coll').value = coll;
+		pickModel(h ? +h[2] : 0);
+	});
+	$('coll').onchange = function () { coll = this.value; pickModel(0); };
+
+	function pickModel(i) {
+		var ms = DATA.collections[coll].models;
+		mi = Math.min(i, ms.length - 1); sel = -1; selLine = null; undo = [];
+		history.replaceState(null, '', '#c=' + encodeURIComponent(coll) + '&m=' + mi);
+		$('models').innerHTML = ms.map(function (m, k) {
+			return '<button data-i="' + k + '" class="' + (k === mi ? 'on' : '') + '"><img loading="lazy" src="/' + m.src + '">' + m.name +
+				(m.glass ? '<span class="tag">' + (m.glass.length ? 'ручн.' : 'нет') + '</span>' : '') + '</button>';
+		}).join('');
+		var m = ms[mi];
+		$('title').textContent = m.name;
+		$('open').href = '/katalogproduktsii/' + coll + '#m=' + mi;
+		panes = m.glass === undefined ? null : norm(m.glass);
+		img = new Image();
+		img.onload = function () {
+			// Чистый кадр двери (без вырезанных стёкол) - фон для разметки.
+			base = K.analyse(img, cfgOpt({ glass: [] }));
+			fit(); recompute(); ui();
+		};
+		img.src = '/' + m.src + '?kdc=editor';
+		loadBlank();
+	}
+	$('models').onclick = function (e) {
+		var b = e.target.closest('button'); if (b) { pickModel(+b.dataset.i); }
+	};
+
+	var tmr;
+	function recompute() {
+		clearTimeout(tmr);
+		tmr = setTimeout(function () {
+			if (!img || !img.complete) { return; }
+			try { res = K.analyse(img, cfgOpt(model())); } catch (e) { res = null; console.error(e); }
+			draw(); ui();
+		}, 60);
+	}
+
+	/* --- рисование ----------------------------------------------------- */
+	var S = 1; // экранных px на px кадра
+	function fit() {
+		if (!base) { return; }
+		var st = $('stage'), aw = st.clientWidth - 32, ah = st.clientHeight - 32;
+		S = Math.min(aw / base.w, ah / base.h);
+		var dpr = window.devicePixelRatio || 1;
+		cv.style.width = base.w * S + 'px'; cv.style.height = base.h * S + 'px';
+		cv.width = Math.round(base.w * S * dpr); cv.height = Math.round(base.h * S * dpr);
+		cx.setTransform(S * dpr, 0, 0, S * dpr, 0, 0);
+		draw();
+	}
+	if (window.ResizeObserver) { new ResizeObserver(fit).observe($('stage')); } else { window.addEventListener('resize', fit); }
+
+	function shapePath(t, x, y, w, h) {
+		if (t) { cx.moveTo(t[0][0], t[0][1]); cx.lineTo(t[1][0], t[1][1]); cx.lineTo(t[2][0], t[2][1]); cx.closePath(); }
+		else { cx.rect(x, y, w, h); }
+	}
+	// Рамка треугольника = его r.
+	function triBox(q) {
+		var xs = q.tri.map(function (v) { return v[0]; }), ys = q.tri.map(function (v) { return v[1]; });
+		var l = Math.min.apply(0, xs), t = Math.min.apply(0, ys);
+		q.r = [l, t, Math.max.apply(0, xs) - l, Math.max.apply(0, ys) - t];
+	}
+	// Рамку растянули или сдвинули - вершины следом.
+	function moveTri(q, t0, a, b) {
+		if (!q.tri || !t0) { return; }
+		q.tri = t0.map(function (v) { return [b[0] + (v[0] - a[0]) / (a[2] || 1) * b[2], b[1] + (v[1] - a[1]) / (a[3] || 1) * b[3]]; });
+	}
+	function draw() {
+		if (!base) { return; }
+		var W = base.w, H = base.h, lw = 1 / S;
+		cx.clearRect(0, 0, W, H);
+		cx.drawImage(base.src, 0, 0);
+		if (check) { drawCheck(W, H, lw); return; }
+		if ($('showRes').checked && res) {
+			res.glass.forEach(function (g) {
+				cx.beginPath(); shapePath(g.tri, g[0], g[1], g[2], g[3]);
+				cx.fillStyle = 'rgba(40,140,90,.28)'; cx.fill();
+				cx.strokeStyle = 'rgba(20,110,60,.95)'; cx.lineWidth = 1.5 * lw; cx.stroke();
+				var bw = Math.max(1.5, (res.cr - res.cl) * 0.022);
+				cx.fillStyle = '#efece6'; cx.strokeStyle = 'rgba(0,0,0,.45)'; cx.lineWidth = lw;
+				var vb = function (x) { cx.fillRect(x - bw / 2, g[1], bw, g[3]); cx.strokeRect(x - bw / 2, g[1], bw, g[3]); };
+				var hb = function (y) { cx.fillRect(g[0], y - bw / 2, g[2], bw); cx.strokeRect(g[0], y - bw / 2, g[2], bw); };
+				var i;
+				if (g.bars) { for (i = 1; i < g.bars[0]; i++) { vb(g[0] + g[2] * i / g.bars[0]); } for (i = 1; i < g.bars[1]; i++) { hb(g[1] + g[3] * i / g.bars[1]); } }
+				if (g.barX) { g.barX.forEach(vb); g.barY.forEach(hb); }
+				if (g.lines) {
+					cx.strokeStyle = 'rgba(110,82,48,.9)'; cx.lineWidth = lw; cx.beginPath();
+					for (i = 1; i < g.lines[0]; i++) { var lx = g[0] + g[2] * i / g.lines[0]; cx.moveTo(lx, g[1]); cx.lineTo(lx, g[1] + g[3]); }
+					for (i = 1; i < g.lines[1]; i++) { var ly = g[1] + g[3] * i / g.lines[1]; cx.moveTo(g[0], ly); cx.lineTo(g[0] + g[2], ly); }
+					cx.stroke();
+				}
+				if (g.cross) {
+					cx.strokeStyle = '#efece6'; cx.lineWidth = Math.min(g[2], g[3]) * 0.07; cx.beginPath();
+					cx.moveTo(g[0], g[1]); cx.lineTo(g[0] + g[2], g[1] + g[3]); cx.moveTo(g[0] + g[2], g[1]); cx.lineTo(g[0], g[1] + g[3]); cx.stroke();
+				}
+			});
+		}
+		if ($('showMark').checked && panes) {
+			panes.forEach(function (p, k) {
+				var x = p.r[0] * W, y = p.r[1] * H, w = p.r[2] * W, h = p.r[3] * H, on = k === sel;
+				cx.strokeStyle = on ? 'rgba(31,111,209,.75)' : 'rgba(31,111,209,.5)'; cx.lineWidth = lw;
+				var tp = p.tri && p.tri.map(function (v) { return [v[0] * W, v[1] * H]; });
+				cx.beginPath(); shapePath(tp, x, y, w, h); cx.stroke();
+				if (tp && on) { cx.setLineDash([2 * lw, 3 * lw]); cx.strokeStyle = 'rgba(31,111,209,.35)'; cx.strokeRect(x, y, w, h); }
+				cx.setLineDash([]);
+				if (p.kind === 'keep') { cx.fillStyle = 'rgba(200,120,40,.18)'; cx.fillRect(x, y, w, h); }
+				if (on) {
+					cx.fillStyle = 'rgba(255,255,255,.5)'; cx.strokeStyle = 'rgba(31,111,209,.75)';
+					[[x, y], [x + w, y], [x, y + h], [x + w, y + h], [x + w / 2, y], [x + w / 2, y + h], [x, y + h / 2], [x + w, y + h / 2]].forEach(function (q) {
+						cx.fillRect(q[0] - 3 * lw, q[1] - 3 * lw, 6 * lw, 6 * lw); cx.strokeRect(q[0] - 3 * lw, q[1] - 3 * lw, 6 * lw, 6 * lw);
+					});
+					// Вершины треугольника - круглые ручки.
+					if (tp) {
+						cx.fillStyle = 'rgba(31,111,209,.85)';
+						tp.forEach(function (v) { cx.beginPath(); cx.arc(v[0], v[1], 4 * lw, 0, Math.PI * 2); cx.fill(); });
+					}
+				}
+				if (p.barX) {
+					cx.lineWidth = lw;
+					p.barX.forEach(function (bx, j) { cx.strokeStyle = selLine && selLine.p === k && selLine.a === 'x' && selLine.j === j ? 'rgba(225,29,72,.85)' : 'rgba(31,111,209,.6)'; cx.beginPath(); cx.moveTo(bx * W, y); cx.lineTo(bx * W, y + h); cx.stroke(); });
+					p.barY.forEach(function (by, j) { cx.strokeStyle = selLine && selLine.p === k && selLine.a === 'y' && selLine.j === j ? 'rgba(225,29,72,.85)' : 'rgba(31,111,209,.6)'; cx.beginPath(); cx.moveTo(x, by * H); cx.lineTo(x + w, by * H); cx.stroke(); });
+				}
+				cx.fillStyle = on ? 'rgba(31,111,209,.8)' : 'rgba(31,111,209,.55)';
+				cx.font = 12 * lw + 'px sans-serif'; cx.fillText(String(k + 1), x + 3 * lw, y + 13 * lw);
+			});
+		}
+	}
+	/* --- режим проверки ---------------------------------------------------- */
+	var check = false, lastPt = null;
+	function drawCheck(W, H, lw) {
+		// Контур в 1 px, бело-чёрный пунктир - виден и на светлом, и на тёмном.
+		var rects = [];
+		(res ? res.glass : []).forEach(function (g) {
+			if (g.tri) { rects.push({ tri: g.tri }); } else { rects.push([g[0], g[1], g[2], g[3]]); }
+			var i, bx = (g.barX || []).slice(), by = (g.barY || []).slice();
+			if (g.bars) { for (i = 1; i < g.bars[0]; i++) { bx.push(g[0] + g[2] * i / g.bars[0]); } for (i = 1; i < g.bars[1]; i++) { by.push(g[1] + g[3] * i / g.bars[1]); } }
+			bx.forEach(function (x) { rects.push([x, g[1], 0, g[3]]); });
+			by.forEach(function (y) { rects.push([g[0], y, g[2], 0]); });
+		});
+		cx.lineWidth = lw;
+		[['rgba(255,255,255,.9)', 0], ['rgba(0,0,0,.9)', 4 * lw]].forEach(function (st) {
+			cx.strokeStyle = st[0]; cx.setLineDash([4 * lw, 4 * lw]); cx.lineDashOffset = st[1];
+			rects.forEach(function (r) { if (r.tri) { cx.beginPath(); shapePath(r.tri); cx.stroke(); return; } cx.beginPath(); cx.moveTo(r[0], r[1]); cx.lineTo(r[0] + r[2], r[1]); if (r[2] && r[3]) { cx.lineTo(r[0] + r[2], r[1] + r[3]); cx.lineTo(r[0], r[1] + r[3]); cx.closePath(); } else { cx.lineTo(r[0] + r[2], r[1] + r[3]); } cx.stroke(); });
+		});
+		cx.setLineDash([]); cx.lineDashOffset = 0;
+		loupe();
+	}
+	function loupe() {
+		var L = $('loupe');
+		if (!check || !lastPt || !base || !cv.width) { L.hidden = true; return; }
+		var Z = 5, b = cv.getBoundingClientRect(), sw = 220 / (Z * S);
+		L.hidden = false;
+		L.style.left = Math.min(innerWidth - 230, lastPt.cx + 24) + 'px';
+		L.style.top = Math.max(10, lastPt.cy - 244) + 'px';
+		var lc = L.getContext('2d');
+		lc.imageSmoothingEnabled = false;
+		lc.fillStyle = '#fff'; lc.fillRect(0, 0, 440, 440);
+		lc.drawImage(cv, lastPt.x - sw / 2, lastPt.y - sw / 2, sw, sw, 0, 0, 440, 440);
+		lc.strokeStyle = 'rgba(225,29,72,.6)'; lc.lineWidth = 1;
+		lc.beginPath(); lc.moveTo(220, 200); lc.lineTo(220, 240); lc.moveTo(200, 220); lc.lineTo(240, 220); lc.stroke();
+	}
+	function setCheck(on) {
+		check = on; $('check').classList.toggle('on', on);
+		cv.style.cursor = on ? 'crosshair' : '';
+		draw(); if (!on) { $('loupe').hidden = true; }
+	}
+	$('check').onclick = function () { setCheck(!check); };
+	cv.addEventListener('pointermove', function (e) {
+		var p = pt(e); lastPt = { x: p[0], y: p[1], cx: e.clientX, cy: e.clientY };
+		if (check) { loupe(); }
+	});
+	cv.addEventListener('pointerleave', function () { lastPt = null; $('loupe').hidden = true; });
+
+	/* --- копирование стекла ----------------------------------------------- */
+	var clip = null;
+	function clonePane(q) { return JSON.parse(JSON.stringify(q)); }
+	function shiftPane(q, dx, dy) {
+		q.r[0] += dx; q.r[1] += dy;
+		if (q.tri) { q.tri = q.tri.map(function (v) { return [v[0] + dx, v[1] + dy]; }); }
+		if (q.barX) { q.barX = q.barX.map(function (v) { return v + dx; }); q.barY = q.barY.map(function (v) { return v + dy; }); }
+	}
+	function addPane(q) {
+		if (!panes) { panes = []; }
+		panes.push(q); sel = panes.length - 1; selLine = null; commit();
+	}
+	function duplicate() {
+		if (!panes || sel < 0) { return; }
+		var q = clonePane(panes[sel]), gap = 0.01;
+		// Копия справа, если влезает, иначе снизу, иначе чуть со сдвигом.
+		if (q.r[0] + 2 * q.r[2] + gap <= 1) { shiftPane(q, q.r[2] + gap, 0); }
+		else if (q.r[1] + 2 * q.r[3] + gap <= 1) { shiftPane(q, 0, q.r[3] + gap); }
+		else { shiftPane(q, 0.02, 0.02); }
+		addPane(q);
+	}
+	$('dup').onclick = duplicate;
+
+	$('showRes').onchange = draw; $('showMark').onchange = draw;
+
+	/* --- мышь ---------------------------------------------------------- */
+	var drag = null;
+	function pt(e) { var b = cv.getBoundingClientRect(); return [(e.clientX - b.left) / S, (e.clientY - b.top) / S]; }
+	function hit(p) {
+		if (!panes) { return null; }
+		var W = base.w, H = base.h, t = 7 / S, k, q;
+		// планки выбранного (и любого) стекла
+		for (k = panes.length - 1; k >= 0; k--) {
+			q = panes[k];
+			if (!q.barX) { continue; }
+			var x0 = q.r[0] * W, y0 = q.r[1] * H, x1 = x0 + q.r[2] * W, y1 = y0 + q.r[3] * H, j;
+			if (p[0] < x0 - t || p[0] > x1 + t || p[1] < y0 - t || p[1] > y1 + t) { continue; }
+			for (j = 0; j < q.barX.length; j++) { if (Math.abs(q.barX[j] * W - p[0]) < t) { return { p: k, line: 'x', j: j }; } }
+			for (j = 0; j < q.barY.length; j++) { if (Math.abs(q.barY[j] * H - p[1]) < t) { return { p: k, line: 'y', j: j }; } }
+		}
+		if (sel >= 0 && panes[sel] && panes[sel].tri) {
+			for (var jv = 0; jv < 3; jv++) { var tv = panes[sel].tri[jv]; if (Math.abs(tv[0] * W - p[0]) < t && Math.abs(tv[1] * H - p[1]) < t) { return { p: sel, vert: jv }; } }
+		}
+		var order = panes.map(function (_, i) { return i; });
+		if (sel >= 0) { order.splice(order.indexOf(sel), 1); order.push(sel); }
+		for (var n = order.length - 1; n >= 0; n--) {
+			k = order[n]; q = panes[k];
+			var l = q.r[0] * W, tp = q.r[1] * H, r = l + q.r[2] * W, b = tp + q.r[3] * H;
+			if (p[0] < l - t || p[0] > r + t || p[1] < tp - t || p[1] > b + t) { continue; }
+			var ed = (Math.abs(p[0] - l) < t ? 'l' : Math.abs(p[0] - r) < t ? 'r' : '') + (Math.abs(p[1] - tp) < t ? 't' : Math.abs(p[1] - b) < t ? 'b' : '');
+			if (ed && k === sel) { return { p: k, edge: ed }; }
+			if (p[0] >= l && p[0] <= r && p[1] >= tp && p[1] <= b) { return { p: k, move: true }; }
+			if (ed) { return { p: k, edge: ed }; }
+		}
+		return null;
+	}
+	var CUR = { l: 'ew-resize', r: 'ew-resize', t: 'ns-resize', b: 'ns-resize', lt: 'nwse-resize', rb: 'nwse-resize', rt: 'nesw-resize', lb: 'nesw-resize' };
+	cv.addEventListener('pointermove', function (e) {
+		if (!base) { return; }
+		var p = pt(e);
+		if (!drag) {
+			var h = hit(p);
+			cv.style.cursor = !h ? 'crosshair' : h.line ? (h.line === 'x' ? 'col-resize' : 'row-resize') : h.edge ? CUR[h.edge] : 'move';
+			return;
+		}
+		var W = base.w, H = base.h, dx = (p[0] - drag.p0[0]) / W, dy = (p[1] - drag.p0[1]) / H, q = panes[drag.k], o = drag.r0;
+		if (drag.type === 'new' || drag.type === 'edge') {
+			var l = o[0], t = o[1], r = o[0] + o[2], b = o[1] + o[3];
+			var ed = drag.edge;
+			if (ed.indexOf('l') >= 0) { l = Math.min(r - 0.005, o[0] + dx); }
+			if (ed.indexOf('r') >= 0) { r = Math.max(l + 0.005, o[0] + o[2] + dx); }
+			if (ed.indexOf('t') >= 0) { t = Math.min(b - 0.005, o[1] + dy); }
+			if (ed.indexOf('b') >= 0) { b = Math.max(t + 0.005, o[1] + o[3] + dy); }
+			q.r = [clamp(l), clamp(t), clamp(r) - clamp(l), clamp(b) - clamp(t)];
+			moveBars(q, drag.bx0, drag.by0, o, q.r);
+			moveTri(q, drag.t0, o, q.r);
+		} else if (drag.type === 'move') {
+			var nx = Math.max(0, Math.min(1 - o[2], o[0] + dx)), ny = Math.max(0, Math.min(1 - o[3], o[1] + dy));
+			q.r = [nx, ny, o[2], o[3]];
+			if (q.barX) { q.barX = drag.bx0.map(function (v) { return v + nx - o[0]; }); q.barY = drag.by0.map(function (v) { return v + ny - o[1]; }); }
+			moveTri(q, drag.t0, o, q.r);
+		} else if (drag.type === 'vert') {
+			q.tri[drag.j] = [clamp(drag.t0[drag.j][0] + dx), clamp(drag.t0[drag.j][1] + dy)];
+			triBox(q);
+		} else if (drag.type === 'line') {
+			var arr = drag.line === 'x' ? q.barX : q.barY, lo = drag.line === 'x' ? q.r[0] : q.r[1], hi = lo + (drag.line === 'x' ? q.r[2] : q.r[3]);
+			arr[drag.j] = Math.max(lo, Math.min(hi, drag.v0 + (drag.line === 'x' ? dx : dy)));
+		}
+		drag.moved = true;
+		draw(); ui(true);
+	});
+	function clamp(v) { return Math.max(0, Math.min(1, v)); }
+	// При растягивании стекла планки сохраняют относительное положение.
+	function moveBars(q, bx0, by0, a, b) {
+		if (!q.barX || !bx0) { return; }
+		q.barX = bx0.map(function (v) { return b[0] + (v - a[0]) / a[2] * b[2]; });
+		q.barY = by0.map(function (v) { return b[1] + (v - a[1]) / a[3] * b[3]; });
+	}
+	cv.addEventListener('pointerdown', function (e) {
+		if (!base || check) { return; }
+		cv.setPointerCapture(e.pointerId);
+		var p = pt(e), h = hit(p), snapBefore = JSON.stringify(model().glass === undefined ? null : model().glass);
+		if (h) {
+			sel = h.p; var q = panes[sel];
+			selLine = h.line ? { p: sel, a: h.line, j: h.j } : null;
+			drag = { k: sel, p0: p, r0: q.r.slice(), bx0: q.barX && q.barX.slice(), by0: q.barY && q.barY.slice(), t0: q.tri && q.tri.map(function (v) { return v.slice(); }), before: snapBefore };
+			if (h.vert !== undefined) { drag.type = 'vert'; drag.j = h.vert; }
+			else if (h.line) { drag.type = 'line'; drag.line = h.line; drag.j = h.j; drag.v0 = (h.line === 'x' ? q.barX : q.barY)[h.j]; }
+			else if (h.edge) { drag.type = 'edge'; drag.edge = h.edge; }
+			else { drag.type = 'move'; }
+		} else {
+			if (!panes) { panes = []; }
+			var r = [p[0] / base.w, p[1] / base.h, 0, 0];
+			panes.push({ r: r, kind: 'plain', snap: false, rest: {} });
+			sel = panes.length - 1; selLine = null;
+			drag = { k: sel, p0: p, r0: r.slice(), type: 'new', edge: 'rb', before: snapBefore };
+		}
+		draw(); ui(true);
+	});
+	cv.addEventListener('lostpointercapture', function () { if (drag) { endDrag(); } });
+	cv.addEventListener('pointerup', endDrag);
+	function endDrag() {
+		if (!drag) { return; }
+		var d = drag; drag = null;
+		if (d.type === 'new' && (panes[d.k].r[2] < 0.01 || panes[d.k].r[3] < 0.01)) {
+			panes.splice(d.k, 1); sel = -1; if (!panes.length && d.before === 'null') { panes = null; }
+			draw(); ui(); return;
+		}
+		if (d.moved || d.type === 'new') { panes[d.k].snap = false; undo.push(d.before); setGlass(panes, true); } else { ui(); }
+	}
+
+	document.addEventListener('keydown', function (e) {
+		if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') { return; }
+		var mod = e.metaKey || e.ctrlKey;
+		if (!mod && e.code === 'KeyP') { e.preventDefault(); setCheck(!check); return; }
+		if (e.key === 'Escape' && check) { setCheck(false); return; }
+		if (mod && e.code === 'KeyC' && panes && sel >= 0) { e.preventDefault(); clip = clonePane(panes[sel]); $('status').textContent = 'стекло скопировано'; return; }
+		if (mod && e.code === 'KeyV' && clip) { e.preventDefault(); addPane(clonePane(clip)); return; }
+		if (mod && e.code === 'KeyD') { e.preventDefault(); duplicate(); return; }
+		if (check) { return; }
+		if (mod && e.code === 'KeyZ') {
+			e.preventDefault();
+			if (!undo.length) { return; }
+			var g = JSON.parse(undo.pop());
+			if (g === null) { delete model().glass; } else { model().glass = g; }
+			panes = g === null ? null : norm(g); sel = Math.min(sel, panes ? panes.length - 1 : -1); selLine = null;
+			dirty = true; ui(); recompute(); return;
+		}
+		if (!panes || sel < 0) { return; }
+		var q = panes[sel];
+		if (e.key === 'Delete' || e.key === 'Backspace') {
+			e.preventDefault();
+			if (selLine) { (selLine.a === 'x' ? q.barX : q.barY).splice(selLine.j, 1); selLine = null; } else { panes.splice(sel, 1); sel = -1; }
+			commit(); return;
+		}
+		var k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+		if (k) {
+			e.preventDefault();
+			var st = e.shiftKey ? 10 : 1, dx = k[0] * st / base.w, dy = k[1] * st / base.h;
+			if (selLine) {
+				var arr = selLine.a === 'x' ? q.barX : q.barY; arr[selLine.j] += selLine.a === 'x' ? dx : dy;
+			} else {
+				q.r[0] += dx; q.r[1] += dy; q.snap = false;
+				if (q.tri) { q.tri = q.tri.map(function (v) { return [v[0] + dx, v[1] + dy]; }); }
+				if (q.barX) { q.barX = q.barX.map(function (v) { return v + dx; }); q.barY = q.barY.map(function (v) { return v + dy; }); }
+			}
+			commit();
+		}
+	});
+
+	/* --- правая панель ------------------------------------------------- */
+	$('toManual').onclick = function () {
+		if (!res) { return; }
+		setGlass(res.glass.map(function (g) {
+			var p = { r: [g[0] / res.w, g[1] / res.h, g[2] / res.w, g[3] / res.h], kind: 'plain', snap: false, rest: {} };
+			if (g.bars) { p.kind = 'bars'; p.bars = g.bars.slice(); }
+			if (g.lines) { p.kind = 'lines'; p.bars = g.lines.slice(); }
+			if (g.cross) { p.kind = 'cross'; }
+			return p;
+		}));
+		sel = panes.length ? 0 : -1; ui();
+	};
+	$('toAuto').onclick = function () { sel = -1; setGlass(null); };
+	$('toNone').onclick = function () { sel = -1; setGlass([]); };
+	$('panes').onclick = function (e) { var b = e.target.closest('button'); if (b) { sel = +b.dataset.k; selLine = null; ui(); draw(); } };
+	document.querySelectorAll('[data-r]').forEach(function (inp) {
+		inp.onchange = function () {
+			var q = panes[sel], a = q.r.slice(); q.r[+inp.dataset.r] = +inp.value; q.snap = false;
+			moveBars(q, q.barX && q.barX.slice(), q.barY && q.barY.slice(), a, q.r); moveTri(q, q.tri, a, q.r); commit();
+		};
+	});
+	$('shape').onchange = function () {
+		var q = panes[sel], r = q.r;
+		if (this.value === 'tri') {
+			// Вершина сверху посередине, основание внизу.
+			q.tri = [[r[0] + r[2] / 2, r[1]], [r[0] + r[2], r[1] + r[3]], [r[0], r[1] + r[3]]];
+			delete q.barX; delete q.barY; if (q.kind === 'bars' || q.kind === 'lines') { q.kind = 'plain'; }
+		} else { delete q.tri; }
+		q.snap = false; commit();
+	};
+	$('kind').onchange = function () {
+		var q = panes[sel]; q.kind = this.value;
+		if ((q.kind === 'bars' || q.kind === 'lines') && !q.bars && !q.barX) { q.bars = [2, 2]; }
+		if (q.kind !== 'bars') { delete q.barX; delete q.barY; }
+		commit();
+	};
+	$('cols').onchange = $('rows').onchange = function () {
+		var q = panes[sel]; q.bars = [Math.max(1, +$('cols').value || 1), Math.max(1, +$('rows').value || 1)];
+		if (q.barX) { evenToFree(q); }
+		commit();
+	};
+	function evenToFree(q) {
+		var c = (q.bars || [1, 1])[0], r = (q.bars || [1, 1])[1], i;
+		q.barX = []; q.barY = [];
+		for (i = 1; i < c; i++) { q.barX.push(q.r[0] + q.r[2] * i / c); }
+		for (i = 1; i < r; i++) { q.barY.push(q.r[1] + q.r[3] * i / r); }
+	}
+	$('toFree').onclick = function () { evenToFree(panes[sel]); commit(); };
+	$('toEven').onclick = function () { var q = panes[sel]; q.bars = [q.barX.length + 1, q.barY.length + 1]; delete q.barX; delete q.barY; selLine = null; commit(); };
+	$('addV').onclick = function () { var q = panes[sel]; q.barX.push(q.r[0] + q.r[2] / 2); selLine = { p: sel, a: 'x', j: q.barX.length - 1 }; commit(); };
+	$('addH').onclick = function () { var q = panes[sel]; q.barY.push(q.r[1] + q.r[3] / 2); selLine = { p: sel, a: 'y', j: q.barY.length - 1 }; commit(); };
+	$('snap').onchange = function () { panes[sel].snap = this.checked; commit(); };
+	$('del').onclick = function () { panes.splice(sel, 1); sel = -1; commit(); };
+
+	function ui(light) {
+		var m = DATA && model();
+		if (!m) { return; }
+		$('mode').textContent = m.glass === undefined ? '· авто: скрипт ищет стекло сам' : m.glass.length ? '· ручная разметка' : '· без стекла';
+		$('status').textContent = dirty ? 'есть несохранённые изменения' : 'сохранено';
+		$('status').className = 'status' + (dirty ? ' dirty' : '');
+		$('save').disabled = !dirty;
+		$('json').textContent = m.glass === undefined ? '(поля glass нет)' : '"glass": ' + JSON.stringify(m.glass).replace(/\],\{/g, '],\n  {').replace(/\},\{/g, '},\n  {').replace(/\],\[/g, '],\n  [');
+		var p = panes && panes[sel];
+		if (!light) {
+			$('panes').innerHTML = (panes || []).map(function (q, k) {
+				var t = { plain: 'стекло', bars: 'планки', lines: 'решётка', cross: 'крест', keep: 'как на фото' }[q.kind];
+				return '<button data-k="' + k + '" class="' + (k === sel ? 'on' : '') + '">' + (k + 1) + '. ' + t + '</button>';
+			}).join('');
+		}
+		$('paneBox').hidden = !p;
+		if (!p) { return; }
+		document.querySelectorAll('[data-r]').forEach(function (inp) { if (document.activeElement !== inp) { inp.value = r3(p.r[+inp.dataset.r]); } });
+		$('kind').value = p.kind;
+		$('shape').value = p.tri ? 'tri' : 'rect';
+		$('gridBox').hidden = !(p.kind === 'bars' || p.kind === 'lines');
+		var free = !!p.barX;
+		$('cols').value = free ? p.barX.length + 1 : (p.bars || [1, 1])[0];
+		$('rows').value = free ? p.barY.length + 1 : (p.bars || [1, 1])[1];
+		$('cols').disabled = $('rows').disabled = free;
+		$('freeBox').hidden = free || p.kind !== 'bars';
+		$('freeBtns').hidden = !free;
+		$('snap').checked = p.snap;
+	}
+
+	$('save').onclick = function () {
+		$('save').disabled = true;
+		fetch('/__kdc/save-models', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-KDC-Base': baseMtime }, body: JSON.stringify(DATA) })
+			.then(function (r) { return r.json(); })
+			.then(function (j) {
+				if (j.error === 'stale') { throw new Error('файл models.json изменился после открытия редактора. Обновите страницу (правки этой модели придётся повторить).'); }
+				if (!j.ok) { throw new Error(j.error); }
+				baseMtime = j.mtime || baseMtime;
+				dirty = false; ui();
+				var ms = DATA.collections[coll].models; pickModelTags(ms);
+			})
+			.catch(function (e) { alert('Не сохранилось: ' + e.message); $('save').disabled = false; });
+	};
+	function pickModelTags(ms) {
+		document.querySelectorAll('#models button').forEach(function (b, k) {
+			var t = b.querySelector('.tag'); if (t) { t.remove(); }
+			if (ms[k].glass) { b.insertAdjacentHTML('beforeend', '<span class="tag">' + (ms[k].glass.length ? 'ручн.' : 'нет') + '</span>'); }
+		});
+	}
+	window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+})();
+</script>
+</body>
+</html>
