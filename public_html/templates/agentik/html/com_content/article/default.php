@@ -88,6 +88,154 @@ $useDefList = (
         echo $this->item->pagination;
     }
     ?>
+    <?php
+    // Статьи блога: ссылка назад к ленте. Политика и прочие одиночные
+    // статьи этой кнопки не получают - у них своя страница в меню.
+    $isBlogArticle = ($this->item->category_alias ?? '') === 'blog-kleverdors'
+        || ($this->item->parent_alias ?? '') === 'blog-kleverdors';
+    ?>
+    <?php
+    // Статьи блога - «как в каталоге»: слева категория, заголовок, дата и
+    // первый абзац (вводка), справа обложка 4:5. Фото из ВК почти все
+    // вертикальные - в широкой полосе на всю статью от них оставалась
+    // середина кадра. Статья с клипом (обложку заменяет плеер) и прочие
+    // форматы - по-старому.
+    $coverImage = $attribs->helix_ultimate_image ?? '';
+    $useHero    = $isBlogArticle && empty($this->print) && $articleFormat === 'standard'
+        && $coverImage !== '' && strpos((string) $this->item->text, 'kdc-article-video') === false;
+    $heroLead   = '';
+
+    // Вводкой становится абзац, только если текст с него и начинается:
+    // в старых статьях первым идёт подзаголовок, и абзац из середины
+    // сломал бы порядок.
+    if ($useHero && preg_match('~^\s*(<p\b[^>]*>.*?</p>)~su', (string) $this->item->text, $leadMatch, PREG_OFFSET_CAPTURE)) {
+        $heroLead = $leadMatch[1][0];
+        $this->item->text = substr_replace($this->item->text, '', $leadMatch[1][1], strlen($heroLead));
+    }
+
+    // «Предыдущая / Следующая» в статьях блога - по порядку ленты блога
+    // (все его категории, от новых к старым), а не как у Joomla: та
+    // листает внутри одной категории и в своём порядке, из-за чего
+    // переход перескакивал через половину ленты. «Следующая» - следующая
+    // карточка ленты (более ранняя запись).
+    if ($isBlogArticle && empty($this->print)) {
+        $db    = Factory::getContainer()->get('DatabaseDriver');
+        $nowDb = Factory::getDate()->toSql();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['a.id', 'a.title', 'a.alias', 'a.catid', 'a.language']))
+            ->from($db->quoteName('#__content', 'a'))
+            ->join('INNER', $db->quoteName('#__categories', 'c'), $db->quoteName('c.id') . ' = ' . $db->quoteName('a.catid'))
+            ->where($db->quoteName('a.state') . ' = 1')
+            ->where($db->quoteName('c.published') . ' = 1')
+            ->where('(' . $db->quoteName('c.alias') . ' = ' . $db->quote('blog-kleverdors')
+                . ' OR ' . $db->quoteName('c.path') . ' LIKE ' . $db->quote('blog-kleverdors/%') . ')')
+            ->where('(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= ' . $db->quote($nowDb) . ')')
+            ->where('(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' > ' . $db->quote($nowDb) . ')')
+            ->whereIn($db->quoteName('a.access'), $user->getAuthorisedViewLevels())
+            ->order($db->quoteName('a.created') . ' DESC, ' . $db->quoteName('a.id') . ' DESC');
+        $feed = $db->setQuery($query)->loadObjectList();
+        $pos  = null;
+
+        foreach ($feed as $i => $row) {
+            if ((int) $row->id === (int) $this->item->id) {
+                $pos = $i;
+                break;
+            }
+        }
+
+        if ($pos !== null) {
+            $navLink = function ($row, $rel, $label) {
+                $href = Route::_(RouteHelper::getArticleRoute($row->id . ':' . $row->alias, $row->catid, $row->language));
+
+                return '<a class="btn btn-sm btn-secondary ' . ($rel === 'prev' ? 'previous' : 'next') . '" href="' . $href . '" rel="' . $rel . '">'
+                    . '<span class="kdc-nav-label">' . ($rel === 'prev' ? '<span aria-hidden="true">←</span> ' : '') . $label
+                    . ($rel === 'next' ? ' <span aria-hidden="true">→</span>' : '') . '</span>'
+                    . '<span class="visually-hidden">: ' . htmlspecialchars($row->title, ENT_QUOTES, 'UTF-8') . '</span></a>';
+            };
+
+            $prevRow = $feed[$pos - 1] ?? null;
+            $nextRow = $feed[$pos + 1] ?? null;
+
+            $this->item->pagination = ($prevRow || $nextRow)
+                ? '<nav class="pagenavigation kdc-article-nav" aria-label="Соседние записи блога"><span class="pagination ms-0">'
+                    . ($prevRow ? $navLink($prevRow, 'prev', 'Предыдущая') : '')
+                    . ($nextRow ? $navLink($nextRow, 'next', 'Следующая') : '')
+                    . '</span></nav>'
+                : '';
+            $this->item->paginationposition = 1;
+            $this->item->paginationrelative = 0;
+        }
+    }
+
+    // Ниже шапки - та же сетка: текст в левой колонке под заголовком,
+    // дополнительные фото (галерея из ВК) - в правой под обложкой.
+    if ($useHero) {
+        $bodyGallery = '';
+
+        if (preg_match('~<div class="kdc-article-gallery">.*?</div>~su', (string) $this->item->text, $galleryMatch)) {
+            $bodyGallery = $galleryMatch[0];
+            $this->item->text = str_replace($bodyGallery, '', $this->item->text);
+        }
+
+        $this->item->text = '<div class="kdc-article-cols"><div class="kdc-article-cols-text">' . $this->item->text . '</div>'
+            . ($bodyGallery !== '' ? '<div class="kdc-article-cols-media">' . $bodyGallery . '</div>' : '')
+            . '</div>';
+    }
+    ?>
+
+    <?php if ($useHero) : ?>
+    <div class="kdc-article-hero">
+        <div class="kdc-article-hero-text">
+            <?php if ($isBlogArticle && empty($this->print)) : ?>
+                <a class="kdc-article-back" href="<?php echo Route::_('index.php?Itemid=115'); ?>">
+                    <span aria-hidden="true">←</span> Назад
+                </a>
+            <?php endif; ?>
+
+            <div class="article-head">
+                <?php if ($params->get('show_title') || $params->get('show_author')) : ?>
+                    <div class="article-header">
+                        <?php if ($params->get('show_title')) : ?>
+                            <<?php echo $pageHeaderTag; ?> itemprop="headline">
+                                <?php echo $this->escape($this->item->title); ?>
+                            </<?php echo $pageHeaderTag; ?>>
+                        <?php endif; ?>
+
+                        <?php if ($isUnpublished) : ?>
+                            <span class="badge bg-warning text-dark"><?php echo Text::_('JUNPUBLISHED'); ?></span>
+                        <?php endif; ?>
+
+                        <?php if ($isNotPublishedYet) : ?>
+                            <span class="badge bg-warning text-dark"><?php echo Text::_('JNOTPUBLISHEDYET'); ?></span>
+                        <?php endif; ?>
+
+                        <?php if ($isExpired) : ?>
+                            <span class="badge bg-warning text-dark mb-2"><?php echo Text::_('JEXPIRED'); ?></span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($useDefList && ($info == 0 || $info == 2)) : ?>
+                    <?php echo LayoutHelper::render('joomla.content.info_block', ['item' => $this->item, 'params' => $params, 'position' => 'above']); ?>
+                <?php endif; ?>
+
+            </div>
+
+            <?php if ($heroLead !== '') : ?>
+                <div class="kdc-article-lead"><?php echo $heroLead; ?></div>
+            <?php endif; ?>
+        </div>
+        <div class="kdc-article-hero-media">
+            <?php echo LayoutHelper::render('joomla.content.full_image', $this->item); ?>
+        </div>
+    </div>
+    <?php else : ?>
+    <?php if ($isBlogArticle && empty($this->print)) : ?>
+        <a class="kdc-article-back" href="<?php echo Route::_('index.php?Itemid=115'); ?>">
+            <span aria-hidden="true">←</span> Назад
+        </a>
+    <?php endif; ?>
+
     <div class="article-head">
         <?php if ($params->get('show_title') || $params->get('show_author')) : ?>
             <div class="article-header">
@@ -133,6 +281,7 @@ $useDefList = (
             break;
     }
     ?>
+    <?php endif; ?>
 
     <?php if ($this->item->featured) : ?>
         <span class="badge bg-danger featured-article-badge"><?php echo Text::_('HELIX_ULTIMATE_FEATURED'); ?></span>

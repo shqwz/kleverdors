@@ -39,6 +39,29 @@ if ($path === '/__kdc/glass-editor') {
     echo str_replace('kdc-configurator.js?editor', 'kdc-configurator.js?editor=' . $cfgV, file_get_contents(__DIR__ . '/tools/glass-editor.html'));
     return true;
 }
+// Готовая разметка дверей (baked/<коллекция>/<N>.json|png): её считает
+// браузер по кнопке (см. tools/bake-doors.md), роутер только пишет файлы.
+if ($path === '/__kdc/save-baked') {
+    header('Content-Type: application/json; charset=utf-8');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $local = $ip === '127.0.0.1' || $ip === '::1' || preg_match('~^(192\.168|10)\.~', $ip);
+    $d = json_decode(file_get_contents('php://input'), true);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$local || !is_array($d)
+        || !preg_match('~^[a-z0-9-]+$~', (string) ($d['col'] ?? '')) || !is_int($d['i'] ?? null)
+        || !preg_match('~^data:image/png;base64,~', (string) ($d['png'] ?? ''))) {
+        http_response_code(400);
+        echo '{"ok":false,"error":"bad request"}';
+        return true;
+    }
+    $dir = __DIR__ . '/public_html/images/konfigurator/baked/' . $d['col'];
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+    file_put_contents($dir . '/' . $d['i'] . '.json', json_encode($d['meta'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    file_put_contents($dir . '/' . $d['i'] . '.png', base64_decode(substr($d['png'], strlen('data:image/png;base64,'))));
+    echo '{"ok":true}';
+    return true;
+}
 if ($path === '/__kdc/save-models') {
     header('Content-Type: application/json; charset=utf-8');
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -70,6 +93,8 @@ if ($path === '/__kdc/save-models') {
     }
     copy($models, $backups . '/models-' . date('Ymd-His') . '.json');
     file_put_contents($models, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+    require_once __DIR__ . '/tools/split-models.php';
+    kdcSplitModels(__DIR__);
 
     // Браузеры (и nginx на хостинге) держат старые копии: поднимаем VERSION
     // в конфигураторе (models.json?v=) и ?v= у самого скрипта в custom.js.

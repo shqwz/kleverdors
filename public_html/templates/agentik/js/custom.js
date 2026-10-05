@@ -2,6 +2,34 @@
  * Site-specific JS overrides for the Agentik template.
  * Loaded automatically by templates/agentik/index.php if this file exists.
  */
+/*
+ * Ленивая загрузка картинок (lazysizes подключается после этого файла).
+ * По умолчанию картинка начинает грузиться за ~500px до экрана: при быстрой
+ * прокрутке она не успевает, и фото «проявляются» уже на глазах, а их
+ * загрузка и декодирование приходятся ровно на момент прокрутки. Берём
+ * запас чуть больше экрана - картинки приходят заранее.
+ */
+window.lazySizesConfig = window.lazySizesConfig || {};
+window.lazySizesConfig.expand = Math.round(Math.max(window.innerHeight || 0, 600) * 1.25);
+
+/*
+ * Уменьшенные копии (data-srcset, см. index.php шаблона): lazysizes берёт
+ * ширину картинки на странице. Но карточка с object-fit: cover обрезает
+ * снимок, а не сжимает: широкое фото в высокой карточке растянуто по высоте,
+ * и нужная ширина - высота × пропорции снимка. Без поправки браузер взял
+ * бы слишком мелкий файл, и фото стало бы мыльным.
+ */
+document.addEventListener("lazybeforesizes", function (e) {
+	var img = e.target;
+	var ratio = Number(img.getAttribute("data-kdc-ratio"));
+
+	if (!ratio || !img.offsetHeight || window.getComputedStyle(img).objectFit !== "cover") {
+		return;
+	}
+
+	e.detail.width = Math.max(e.detail.width, Math.ceil(img.offsetHeight * ratio));
+});
+
 (function ($) {
 	"use strict";
 
@@ -37,11 +65,104 @@
 		initMarquee();
 		initTeamReveal();
 		initJournalReveal();
+		initFeedLowRes();
 		initArticlesLoadMore();
 		initCarouselAutoplayOnView();
 		initCarouselClickSelect();
 		initDoorConfigurator();
+		initLazyBackgrounds();
+		initMobileMenuContacts();
 	});
+
+	/**
+	 * Меню на телефоне: под кнопкой с телефоном - «Написать в MAX» и
+	 * Telegram-канал (ссылки те же, что на сайте: чат MAX из подвала,
+	 * канал Telegram из hero главной). Вид - custom.css.
+	 */
+	function initMobileMenuContacts() {
+		var box = document.querySelector(".offcanvas-menu .offcanvas-inner");
+
+		if (!box || box.querySelector(".kdc-menu-contacts")) {
+			return;
+		}
+
+		/*
+		 * Меню выезжает под шапкой, а шапка остаётся на месте: её «бургер»
+		 * становится крестиком и закрывает меню. Штатно Helix по нему
+		 * только открывает - перехватываем раньше его обработчика. Заодно
+		 * отдаём в CSS высоту шапки, чтобы меню начиналось ровно под ней.
+		 */
+		var header = document.getElementById("sp-header");
+
+		document.addEventListener(
+			"click",
+			function (e) {
+				var toggler = e.target.closest("#offcanvas-toggler, .offcanvas-toggler-secondary");
+
+				if (!toggler || !header || !header.contains(toggler)) {
+					return;
+				}
+
+				document.documentElement.style.setProperty("--kdc-menu-top", header.offsetHeight + "px");
+
+				if (document.body.classList.contains("offcanvas-active")) {
+					e.preventDefault();
+					e.stopPropagation();
+
+					var close = document.querySelector(".close-offcanvas");
+
+					if (close) {
+						close.click();
+					}
+				}
+			},
+			true
+		);
+
+		var links = document.createElement("div");
+		links.className = "kdc-menu-contacts";
+		links.innerHTML =
+			'<a href="https://max.ru/u/f9LHodD0cOKRfg5uDmdnqx6xUrXV8DrqTvOpOUtZpFRVLFV-lvqyAo9GJiY" target="_blank" rel="noopener">Написать в MAX</a>' +
+			'<a href="https://t.me/kleverdors" target="_blank" rel="noopener">Telegram-канал</a>';
+		box.appendChild(links);
+	}
+
+	/**
+	 * Фон секции «CTA» на главной (fonvangog.webp, ~250 КБ) - почти в самом
+	 * низу страницы, а грузился вместе с первым экраном и отнимал канал у
+	 * hero. Пока секция далеко, custom.css снимает фон (.kdc-bg-in ещё нет);
+	 * за полтора экрана до неё возвращаем - к появлению он уже загружен.
+	 */
+	function initLazyBackgrounds() {
+		var sections = document.querySelectorAll(".cta-mockup-section");
+
+		if (!sections.length) {
+			return;
+		}
+
+		if (!("IntersectionObserver" in window)) {
+			Array.prototype.forEach.call(sections, function (el) {
+				el.classList.add("kdc-bg-in");
+			});
+			return;
+		}
+
+		var observer = new IntersectionObserver(
+			function (entries) {
+				entries.forEach(function (entry) {
+					if (entry.isIntersecting) {
+						entry.target.classList.add("kdc-bg-in");
+						observer.unobserve(entry.target);
+					}
+				});
+			},
+			{ rootMargin: "150% 0px" }
+		);
+
+		Array.prototype.forEach.call(sections, function (el) {
+			observer.observe(el);
+		});
+	}
 
 	/**
 	 * Конфигуратор двери на странице коллекции (первый экран). Скрипт
@@ -52,8 +173,11 @@
 			return;
 		}
 
+		// Адрес (и сжатую копию, если она свежая) выбирает шаблон - ссылка
+		// preload в <head>; без неё - исходник.
+		var pre = document.getElementById("kdc-cfg-js");
 		var s = document.createElement("script");
-		s.src = "/templates/agentik/js/kdc-configurator.js?v=79";
+		s.src = pre ? pre.getAttribute("href") : "/templates/agentik/js/kdc-configurator.js?v=151";
 		s.defer = true;
 		document.body.appendChild(s);
 	}
@@ -436,6 +560,55 @@
 					observer.observe(article);
 				});
 			}).observe(row, { childList: true });
+		});
+	}
+
+	/**
+	 * «Из жизни Клевердорс»: мелкая обложка в крупной ячейке.
+	 *
+	 * Снимок не уже ячейки - занимает её на всю ширину, как обычно: так
+	 * видно больше всего. Заметно уже (растягивать больше чем на 15%) - он
+	 * размылся бы; тогда ставим его по центру во всю высоту, а ячейку
+	 * заполняет его же размытая копия (стили - .kdc-lowres в custom.css).
+	 * Сравниваем с шириной ячейки в CSS-пикселях: на ретине фото шире
+	 * ячейки смотрится нормально. Картинки грузятся лениво, поэтому
+	 * проверяем по загрузке и заново при смене ширины.
+	 */
+	function initFeedLowRes() {
+		var imgs = document.querySelectorAll(".kdc-jh-feed .sppb-article-img-wrap img");
+
+		if (!imgs.length) {
+			return;
+		}
+
+		var check = function (img) {
+			var wrap = img.closest(".sppb-article-img-wrap");
+
+			if (!wrap || !img.naturalWidth) {
+				return;
+			}
+
+			var low = wrap.clientWidth / img.naturalWidth > 1.15;
+
+			wrap.classList.toggle("kdc-lowres", low);
+			wrap.style.setProperty("--kdc-cover", low ? 'url("' + img.currentSrc.replace(/"/g, "%22") + '")' : "");
+		};
+
+		Array.prototype.forEach.call(imgs, function (img) {
+			img.addEventListener("load", function () { check(img); });
+
+			if (img.complete) {
+				check(img);
+			}
+		});
+
+		var timer;
+
+		window.addEventListener("resize", function () {
+			clearTimeout(timer);
+			timer = setTimeout(function () {
+				Array.prototype.forEach.call(imgs, check);
+			}, 150);
 		});
 	}
 
@@ -869,12 +1042,26 @@
 		 * и блок выехал на экран) - считаем пересечение сами. Наблюдатель в
 		 * таких случаях иногда не присылает первую запись.
 		 */
-		function check() {
+		function measure() {
+			queued = false;
+
 			var box = section.getBoundingClientRect();
 			var visible = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
 
 			if (box.height && visible / box.height >= 0.25) {
 				open();
+			}
+		}
+
+		// Замер геометрии - раз в кадр, а не на каждое событие прокрутки:
+		// getBoundingClientRect посреди обработчика заставлял браузер
+		// досчитывать раскладку вне очереди.
+		var queued = false;
+
+		function check() {
+			if (!queued) {
+				queued = true;
+				window.requestAnimationFrame(measure);
 			}
 		}
 
@@ -895,7 +1082,7 @@
 		observer.observe(section);
 		window.addEventListener("scroll", check, { passive: true });
 		window.addEventListener("load", check);
-		check();
+		measure();
 	}
 
 	/**
@@ -1268,7 +1455,16 @@
 			return new Promise(function (resolve) {
 				var img = new Image();
 
-				img.crossOrigin = "anonymous";
+				// crossOrigin нужен только чужому домену: для своего он
+				// превращал запрос в CORS, и тот же снимок hero скачивался и
+				// декодировался второй раз мимо уже загруженного фона.
+				try {
+					if (new URL(url, window.location.href).origin !== window.location.origin) {
+						img.crossOrigin = "anonymous";
+					}
+				} catch (e) {
+					img.crossOrigin = "anonymous";
+				}
 
 				img.onerror = function () {
 					resolve(null);

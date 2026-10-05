@@ -3892,7 +3892,7 @@ joomla-dialog.loaded .joomla-dialog-body {
     }
 }
 //creative stack
-.sppb-addon-wrapper:has(> [class*="infinity-scroller"]) {
+.sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
     display: flex;
     justify-content: center;
     position: relative;
@@ -3945,7 +3945,7 @@ joomla-dialog.loaded .joomla-dialog-body {
     margin: 0px auto;
 }
 .scroller-wrap2 {
-    .sppb-addon-wrapper:has(> [class*="infinity-scroller"]) {
+    .sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
         [class*="infinity-scroller"] {
             height: 60px;
             gap: 25px !important;

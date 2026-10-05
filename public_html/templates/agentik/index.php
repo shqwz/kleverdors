@@ -19,6 +19,505 @@ $app = Factory::getApplication();
 $this->setHtml5(true);
 
 /**
+ * Собранный скрипт темы (cache/com_templates/templates/agentik/<хэш>.js)
+ * Helix пересобирает только раз в cachetime минут, а имя у него не меняется.
+ * После заливки новых custom.js/main.js сайт до этого момента отдавал старый
+ * код вместе с новыми стилями. Если исходники новее сборки - удаляем её,
+ * и Helix соберёт свежую на этой же странице (compress_js идёт позже, в
+ * onBeforeCompileHead).
+ */
+if ($app->isClient('site'))
+{
+	$kdcBundles = glob(JPATH_ROOT . '/cache/com_templates/templates/agentik/*.js') ?: [];
+
+	if ($kdcBundles)
+	{
+		$kdcSources = max(array_map('filemtime', glob(__DIR__ . '/js/*.js') ?: [__FILE__]));
+
+		foreach ($kdcBundles as $kdcBundle)
+		{
+			if (filemtime($kdcBundle) < $kdcSources)
+			{
+				@unlink($kdcBundle);
+			}
+		}
+	}
+}
+
+/**
+ * Лёгкие картинки: рядом с фото в images/ лежат сжатые копии
+ * <файл>.jpg.webp. На хостинге статику отдаёт nginx мимо .htaccess,
+ * поэтому подставляем WebP прямо в готовую страницу - только там, где
+ * копия есть. Теги <meta> (картинки для соцсетей) не трогаем.
+ */
+if ($app->isClient('site') && $app->input->get('helixMode', '') !== 'edit')
+{
+	$app->getDispatcher()->addListener('onAfterRender', static function () use ($app) {
+		$body = $app->getBody();
+
+		if (!$body || stripos($body, 'images/') === false)
+		{
+			return;
+		}
+
+		// Класс на <html> - одним атрибутом (второй class браузер игнорирует).
+		$kdcHtmlClass = static function ($html, $cls) {
+			return preg_replace_callback('~<html\b([^>]*)>~i', static function ($m) use ($cls) {
+				if (preg_match('~\sclass\s*=\s*(["\'])(.*?)\1~i', $m[1], $c))
+				{
+					$attrs = str_replace($c[0], ' class="' . trim($c[2] . ' ' . $cls) . '"', $m[1]);
+				}
+				else
+				{
+					$attrs = $m[1] . ' class="' . $cls . '"';
+				}
+
+				return '<html' . $attrs . '>';
+			}, $html, 1);
+		};
+
+		/**
+		 * Лишние стили, которые тема подключает второй раз:
+		 * - шрифты Google (Inter, Source Serif Pro): те же начертания уже лежат
+		 *   на сайте (media/com_sppagebuilder/assets/google-fonts) и подключаются
+		 *   конструктором страниц. Внешняя копия - лишний запрос к стороннему
+		 *   серверу и те же файлы второй раз; у Source Serif Pro она к тому же
+		 *   ничего не добавляет (начертания 500 нет и у Google);
+		 * - joomla-fontawesome: те же иконки Font Awesome 6 приходят из
+		 *   font-awesome-6.min.css конструктора страниц (около 255 КБ вместе со
+		 *   шрифтом).
+		 */
+		$body = preg_replace(
+			'~<link\b[^>]*(?:fonts\.googleapis\.com/css|media/system/css/joomla-fontawesome(?:\.min)?\.css)[^>]*>\s*~i',
+			'',
+			$body
+		);
+
+		/**
+		 * Скрипты и стили, которыми на сайте никто не пользуется (проверено по
+		 * всем 52 страницам: ни окон, ни тостов, ни поповеров, ни кнопок-
+		 * переключателей Bootstrap, ни переключателя цвета конструктора).
+		 * 8 запросов на каждой странице. Если такие элементы появятся в
+		 * редакторе страниц - убрать соответствующее имя из списка.
+		 */
+		$body = preg_replace(
+			'~<(?:script|link)\b[^>]*(?:bootstrap/js/(?:alert|button|popover|scrollspy|toast|modal)\.min\.js|com_sppagebuilder/assets/(?:js|css)/color-switcher\.(?:js|css))[^>]*>(?:\s*</script>)?\s*~i',
+			'',
+			$body
+		);
+
+		/**
+		 * Font Awesome (~275 КБ: стили FA6, сдвиги FA4, шрифт) ради трёх значков:
+		 * стрелка вправо, «наверх», шеврон - их рисует custom.css (html.kdc-no-fa).
+		 * Выкидываем FA только если на странице нет других значков FA: любой
+		 * другой класс fa-* (добавили в редакторе) оставляет FA как есть.
+		 * Значки, которые скрипты создают на лету, проверены по всем 52
+		 * страницам - кроме этих трёх их нет.
+		 */
+		$kdcMarkup = preg_replace('~<(script|style)\b.*?</\1>~is', '', $body);
+		preg_match_all('~\bclass\s*=\s*["\']([^"\']*)["\']~i', $kdcMarkup, $kdcClasses);
+		$kdcFa = array_filter(preg_split('~\s+~', implode(' ', $kdcClasses[1])), static function ($c) {
+			return preg_match('~^fa[srb]?(-|$)~', $c) && !in_array($c, ['fa', 'fas', 'fa-arrow-right-long', 'fa-angle-up', 'fa-chevron-right'], true);
+		});
+
+		if (!$kdcFa)
+		{
+			$body = preg_replace(
+				'~<link\b[^>]*(?:font-awesome-[56]\.min\.css|font-awesome-v4-shims\.css)[^>]*>\s*~i',
+				'',
+				$body
+			);
+			$body = $kdcHtmlClass($body, 'kdc-no-fa');
+		}
+
+		/**
+		 * Облегчение страницы (замерено по всем 52 страницам сайта):
+		 *
+		 * 1. Строки перевода в настройках скриптов (joomla-script-options):
+		 *    конструктор кладёт туда 862 строки своего РЕДАКТОРА (~63 КБ на
+		 *    каждой странице), а код сайта использует 10 (обратный отсчёт и
+		 *    сообщения Joomla). Оставляем только их.
+		 */
+		$body = preg_replace_callback('~(<script type="application/json" class="joomla-script-options[^"]*">)(.*?)(</script>)~s', static function ($m) {
+			$opt = json_decode($m[2], true);
+
+			if (!is_array($opt) || empty($opt['joomla.jtext']) || !is_array($opt['joomla.jtext']))
+			{
+				return $m[0];
+			}
+
+			$keep = ['COM_SPPAGEBUILDER_DAY', 'COM_SPPAGEBUILDER_DAYS', 'COM_SPPAGEBUILDER_HOUR', 'COM_SPPAGEBUILDER_HOURS',
+				'COM_SPPAGEBUILDER_MINUTE', 'COM_SPPAGEBUILDER_MINUTES', 'COM_SPPAGEBUILDER_SECOND', 'COM_SPPAGEBUILDER_SECONDS',
+				'ERROR', 'MESSAGE', 'NOTICE', 'WARNING', 'JCLOSE', 'JOK', 'JOPEN'];
+			$opt['joomla.jtext'] = array_intersect_key($opt['joomla.jtext'], array_flip($keep));
+
+			return $m[1] . json_encode($opt, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . $m[3];
+		}, $body, 1);
+
+		/**
+		 * 2. Цветовые переменные конструктора: встроенный скрипт (~19 КБ) на
+		 *    каждой странице заново выбирал значения для активной темы, а тема
+		 *    у сайта всегда «Default». Тот же результат пишем прямо в <html>
+		 *    (style - как это делал скрипт) и в <body> (data-sppb-color-mode).
+		 */
+		$body = preg_replace_callback('~<script>\s*const initColorMode = .*?</script>~s', static function ($m) use (&$kdcColorCss) {
+			if (!preg_match('~window\.sppbColorVariables\s*=\s*(\[.*?\]);~s', $m[0], $v) || !preg_match('~activeColorMode = "([^"]+)";\s*const modes~', $m[0], $mode))
+			{
+				return $m[0];
+			}
+
+			$vars = json_decode($v[1], true);
+
+			if (!is_array($vars))
+			{
+				return $m[0];
+			}
+
+			$css = [];
+
+			foreach ($vars as $var)
+			{
+				if (isset($var['path'][0], $var['path'][1], $var['value']) && $var['path'][1] === $mode[1])
+				{
+					$css[] = '--sppb-' . str_replace(' ', '-', strtolower(trim((string) $var['path'][0]))) . ': ' . $var['value'];
+				}
+			}
+
+			$kdcColorCss = [implode(';', $css), $mode[1]];
+
+			return '';
+		}, $body, 1);
+
+		if (!empty($kdcColorCss))
+		{
+			$body = preg_replace_callback('~<html\b([^>]*)>~i', static function ($m) use ($kdcColorCss) {
+				return '<html' . $m[1] . ' style="' . htmlspecialchars($kdcColorCss[0], ENT_QUOTES) . '">';
+			}, $body, 1);
+			$body = preg_replace('~<body\b~i', '<body data-sppb-color-mode="' . htmlspecialchars($kdcColorCss[1], ENT_QUOTES) . '"', $body, 1);
+		}
+
+		/**
+		 * 3. Файлы, которые ничего не делают:
+		 *    - animate.min.css (69 КБ): все анимации появления сайт и так
+		 *      заменяет своей (custom.css, kdc-reveal), нужное правило
+		 *      .sppb-wow перенесено в custom.css;
+		 *    - chosen.css: стили выпадающих списков Helix, на сайте их нет;
+		 *    - jquery.parallax.js: параллакс-фонов на сайте нет (конструктор
+		 *      вызывает его только если он подключён).
+		 */
+		$body = preg_replace(
+			'~<(?:link|script)\b[^>]*(?:com_sppagebuilder/assets/css/animate\.min\.css|helixultimate/assets/css/chosen\.css|com_sppagebuilder/assets/js/jquery\.parallax\.js)[^>]*>(?:\s*</script>)?\s*~i',
+			'',
+			$body
+		);
+
+		/**
+		 * 4. Скрипты не блокируют отрисовку. Раньше 11 скриптов в <head>
+		 *    (jQuery, конструктор, тема, lazysizes) грузились и выполнялись по
+		 *    одному, и пока последний не выполнен, браузер не показывал
+		 *    страницу. С defer они грузятся параллельно с разбором страницы
+		 *    и выполняются в том же порядке после него, до DOMContentLoaded.
+		 *    Встроенные скрипты, которые ждут jQuery (jQuery(function($){...}) -
+		 *    проверено по всем 52 страницам, других нет), запускаем на
+		 *    DOMContentLoaded: к этому моменту отложенный jQuery уже выполнен.
+		 *    ?kdcsync в адресе - старый порядок, для сравнения.
+		 */
+		if (strpos((string) ($_SERVER['QUERY_STRING'] ?? ''), 'kdcsync') === false)
+		{
+			$body = preg_replace_callback('~<script\b([^>]*)\bsrc=("[^"]*"|\'[^\']*\')([^>]*)>~i', static function ($m) {
+				$attrs = $m[1] . $m[3];
+
+				if (preg_match('~\b(?:defer|async)\b|type\s*=\s*["\']?(?:module|application/json)~i', $attrs))
+				{
+					return $m[0];
+				}
+
+				return '<script' . $m[1] . 'src=' . $m[2] . $m[3] . ' defer>';
+			}, $body);
+			$body = preg_replace_callback('~(<script\b(?![^>]*\bsrc=)(?![^>]*json)[^>]*>)(\s*jQuery\s*\(\s*function\s*\(.*?)(</script>)~is', static function ($m) {
+				return $m[1] . 'document.addEventListener("DOMContentLoaded",function(){' . $m[2] . "\n});" . $m[3];
+			}, $body);
+		}
+
+		/**
+		 * 5. Слайдер bxslider (CSS + 2 скрипта, ~35 КБ) конструктор подключает
+		 *    ко всем галереям, а включается он только у галереи с
+		 *    data-enable-slider="true". Таких на сайте нет - галереи плиткой.
+		 */
+		if (strpos($body, 'data-enable-slider="true"') === false)
+		{
+			$body = preg_replace(
+				'~<(?:link|script)\b[^>]*(?:jquery\.bxslider\.min\.(?:css|js)|addons/dc-gallery-bxslider\.js)[^>]*>(?:\s*</script>)?\s*~i',
+				'',
+				$body
+			);
+		}
+
+		$metas = [];
+		$body  = preg_replace_callback('~<meta\b[^>]*>~i', static function ($m) use (&$metas) {
+			$metas[] = $m[0];
+
+			return "\x01kdcmeta" . (\count($metas) - 1) . "\x01";
+		}, $body);
+
+		/**
+		 * Двойной слэш в адресах картинок (http://сайт//images/...): его даёт
+		 * аддон динамического контента. Браузер и nginx считают такой адрес
+		 * отдельным файлом - кэш не переиспользуется между страницами.
+		 */
+		$body = preg_replace('~((?:(?:src|data-src|data-large|href|content)=["\']|url\(["\']?)https?://[^/"\')]+)//(images/)~i', '$1/$2', $body);
+
+		$body = preg_replace_callback(
+			'~(?<![\w/.-])(?:(?:https?:)?//[^/"\'\s()<>]+)?/{0,2}images/[^"\'\s()<>?#\\\\]+?\.(?:jpe?g|png)(?=["\'\s)?#&<])~i',
+			static function ($m) {
+				$rel = ltrim(preg_replace('~^(?:https?:)?//[^/]+~i', '', $m[0]), '/');
+				$rel = rawurldecode(html_entity_decode($rel, ENT_QUOTES));
+
+				if (strpos($rel, '..') !== false || strpos($rel, 'images/') !== 0)
+				{
+					return $m[0];
+				}
+
+				return is_file(JPATH_ROOT . '/' . $rel . '.webp') ? $m[0] . '.webp' : $m[0];
+			},
+			$body
+		);
+
+		/**
+		 * Уменьшенные копии: к большим снимкам рядом лежат <файл>.w480/.w800/
+		 * .w1200.webp. Картинки грузит lazysizes (data-src), поэтому отдаём ему
+		 * data-srcset + data-sizes="auto": он подставит реальную ширину
+		 * картинки на странице, и браузер возьмёт ближайший файл, а не
+		 * 1600px-оригинал для карточки в 320px. Для object-fit: cover ширину
+		 * поправляет custom.js по data-kdc-ratio (пропорции исходника).
+		 */
+		$body = preg_replace_callback('~<img\b[^>]*>~i', static function ($m) {
+			$tag = $m[0];
+
+			if (stripos($tag, 'srcset') !== false
+				|| !preg_match('~\sdata-src=(["\'])([^"\'\s,]+\.webp)\1~i', $tag, $src))
+			{
+				return $tag;
+			}
+
+			$url = $src[2];
+			$rel = ltrim(preg_replace('~^(?:https?:)?//[^/]+~i', '', $url), '/');
+			$rel = rawurldecode(html_entity_decode($rel, ENT_QUOTES));
+
+			if (strpos($rel, '..') !== false || strpos($rel, 'images/') !== 0 || preg_match('~\.w\d+\.webp$~', $rel))
+			{
+				return $tag;
+			}
+
+			$set = [];
+
+			foreach ([480, 800, 1200] as $w)
+			{
+				if (is_file(JPATH_ROOT . '/' . substr($rel, 0, -5) . '.w' . $w . '.webp'))
+				{
+					$set[] = substr($url, 0, -5) . '.w' . $w . '.webp ' . $w . 'w';
+				}
+			}
+
+			$size = $set ? @getimagesize(JPATH_ROOT . '/' . $rel) : false;
+
+			if (!$size || !$size[1])
+			{
+				return $tag;
+			}
+
+			$set[] = $url . ' ' . $size[0] . 'w';
+			$attrs = ' data-srcset="' . implode(', ', $set) . '" data-sizes="auto" data-kdc-ratio="' . round($size[0] / $size[1], 4) . '"';
+
+			return preg_replace('~\s*/?>$~', addcslashes($attrs, '\\$') . '$0', $tag, 1);
+		}, $body);
+
+		/**
+		 * Сжатая копия custom.css (tools/build-min.sh): вдвое меньше. Берём её
+		 * только пока она не старше исходника - после правки custom.css без
+		 * пересборки отдаётся сам custom.css, а не устаревшая копия.
+		 */
+		$kdcCss = JPATH_THEMES . '/agentik/css/custom.css';
+		$kdcMin = JPATH_THEMES . '/agentik/css/custom.min.css';
+
+		if (is_file($kdcMin) && is_file($kdcCss) && filemtime($kdcMin) >= filemtime($kdcCss))
+		{
+			$body = preg_replace('~(templates/agentik/css/)custom\.css~', '$1custom.min.css', $body);
+		}
+
+		/**
+		 * Версия у стилей и скриптов шаблона. custom.css, template.css и
+		 * собранный скрипт темы (cache/com_templates/...js - его имя зависит
+		 * только от списка файлов, не от содержимого) подключаются без
+		 * версии, а nginx на хостинге отдаёт статику с долгим кэшем: телефон,
+		 * который уже был на сайте, продолжал показывать старые файлы -
+		 * без свежих правок. Дата изменения файла в адресе меняется с каждой
+		 * правкой, и браузер берёт новый файл.
+		 */
+		$body = preg_replace_callback(
+			'~(\s(?:href|src)=")((?:https?://[^/"]+)?/*((?:templates/agentik/(?:css|js)|cache/com_templates/templates/agentik)/[^"?#]+\.(?:css|js)))(")~i',
+			static function ($m) {
+				$file = JPATH_ROOT . '/' . $m[3];
+
+				if (!is_file($file))
+				{
+					return $m[0];
+				}
+
+				$version = filemtime($file);
+
+				// Собранный скрипт Helix перезаписывает раз в 15 минут и без
+				// правок - версию берём по его исходникам, а не по нему самому.
+				if (strpos($m[3], 'cache/') === 0)
+				{
+					$version = max(array_map('filemtime', glob(JPATH_THEMES . '/agentik/js/*.js') ?: [$file]));
+				}
+
+				return $m[1] . $m[2] . '?v=' . $version . $m[4];
+			},
+			$body
+		);
+
+		/**
+		 * Картинки без подписи и без ленивой загрузки (портфолио на страницах
+		 * коллекций, превью в блоге): у них нет alt - для читалок экрана и
+		 * поиска это пустое место, а без lazy все 30-60 снимков страницы
+		 * грузятся сразу. alt берём из заголовка страницы, а ленивую
+		 * загрузку включаем только там, где её ещё нет (lazysizes и
+		 * loading уже стоящие не трогаем).
+		 */
+		$kdcTitle = htmlspecialchars(trim((string) $app->getDocument()->getTitle()), ENT_QUOTES);
+		$body     = preg_replace_callback('~<img\b[^>]*>~is', static function ($m) use ($kdcTitle) {
+			$tag = $m[0];
+			$add = '';
+
+			// Логотип в шапке грузим сразу, а не лениво: он на первом экране,
+			// а lazysizes подставлял его последним - шапка секунды стояла без лого.
+			if (preg_match('~\sclass\s*=\s*["\'][^"\']*\blogo-image\b~i', $tag) && stripos($tag, 'data-src') !== false)
+			{
+				$tag = preg_replace('~\sdata-srcset\s*=~i', ' srcset=', $tag);
+				$tag = preg_replace('~\sdata-src\s*=~i', ' src=', $tag);
+				$tag = preg_replace('~\blazyload\b~i', '', $tag);
+				$tag = preg_replace('~\s*/?>$~', ' loading="eager" decoding="async"$0', $tag, 1);
+			}
+
+			if (!preg_match('~\salt\s*=~i', $tag) && $kdcTitle !== '')
+			{
+				$add .= ' alt="' . $kdcTitle . '"';
+			}
+
+			if (!preg_match('~\sloading\s*=~i', $tag) && !preg_match('~\sclass\s*=\s*["\'][^"\']*\blazyload\b~i', $tag)
+				&& !preg_match('~\sfetchpriority\s*=~i', $tag))
+			{
+				$add .= ' loading="lazy" decoding="async"';
+			}
+
+			// Декодирование картинок - не в основном потоке: большая картинка,
+			// выехавшая при прокрутке, иначе даёт короткий рывок кадра.
+			if (!preg_match('~\sdecoding\s*=~i', $tag) && strpos($add, 'decoding=') === false)
+			{
+				$add .= ' decoding="async"';
+			}
+
+			return $add === '' ? $tag : preg_replace('~\s*/?>$~', addcslashes($add, '\\$') . '$0', $tag, 1);
+		}, $body);
+
+		/**
+		 * Страница коллекции с конфигуратором: фото комнаты и скрипт
+		 * конфигуратора начинают грузиться сразу вместе со страницей, а не
+		 * по цепочке после неё (скрипт подключает custom.js после загрузки
+		 * страницы, а фото комнаты - сам скрипт).
+		 */
+		/**
+		 * Раскладка «дверь в интерьере» сразу в HTML, а не после скрипта:
+		 * иначе при каждой загрузке секунду была видна старая раскладка
+		 * (заголовок на белом, пустое место под фото). Классы те же, что
+		 * ставит конфигуратор, - только у коллекций, где он есть (есть модели
+		 * в models.json). Старое фото в первом экране не нужно - убираем,
+		 * чтобы оно не качалось зря.
+		 */
+		$kdcRoom = false;
+
+		if (strpos($body, 'kdc-cd-hero') !== false)
+		{
+			$kdcAlias  = rawurldecode(basename(rtrim((string) parse_url(\Joomla\CMS\Uri\Uri::getInstance()->toString(), PHP_URL_PATH), '/')));
+			// Файл своей коллекции (1-5 КБ), а не общий на 100 КБ.
+			$kdcModels = json_decode((string) @file_get_contents(JPATH_ROOT . '/images/konfigurator/models/' . $kdcAlias . '.json'), true);
+			$kdcRoom   = !empty($kdcModels['collections'][$kdcAlias]['models']);
+		}
+
+		if ($kdcRoom)
+		{
+			$body = preg_replace('~(<div\b[^>]*\bclass="[^"]*\bkdc-cd-hero)(?=[\s"])~', '$1 kdc-room', $body, 1);
+			$body = preg_replace('~(<div\b[^>]*\bclass="[^"]*\bkdc-cd-hero-photo\b[^"]*"[^>]*>)\s*<img\b[^>]*>~', '$1', $body, 1);
+			$body = $kdcHtmlClass($body, 'kdc-room-page');
+		}
+
+		if ($kdcRoom && stripos($body, '</head>') !== false)
+		{
+			// Версии - из начала файлов, целиком их читать не нужно (128 + 57 КБ на каждый запрос).
+			$kdcJs  = (string) @file_get_contents(JPATH_THEMES . '/agentik/js/custom.js', false, null, 0, 16000);
+			$kdcPre = '<link rel="preload" as="image" href="/images/konfigurator/room-classic-wall.webp" fetchpriority="high">';
+
+			if (preg_match('~/templates/agentik/js/kdc-configurator\.js\?v=\d+~', $kdcJs, $kdcSrc))
+			{
+				// Сжатая копия (tools/build-min.sh) - только если она не старше
+				// исходника. custom.js берёт адрес скрипта из этой ссылки.
+				$kdcMin = JPATH_THEMES . '/agentik/js/kdc-configurator.min.js';
+
+				if (is_file($kdcMin) && filemtime($kdcMin) >= filemtime(JPATH_THEMES . '/agentik/js/kdc-configurator.js'))
+				{
+					$kdcSrc[0] = str_replace('.js?', '.min.js?', $kdcSrc[0]);
+				}
+
+				$kdcPre .= "\n" . '<link rel="preload" as="script" id="kdc-cfg-js" href="' . $kdcSrc[0] . '">';
+			}
+
+			/*
+			 * Фото первой модели - по тому же адресу, что запросит конфигуратор
+			 * ('/' + src + '?kdc=' + VERSION): дверь не ждёт ни скрипта, ни
+			 * списка моделей. Ссылка с #m=N откроет другую модель - тогда
+			 * просто лишняя загрузка, ничего не ломается.
+			 */
+			$kdcCfgJs = (string) @file_get_contents(JPATH_THEMES . '/agentik/js/kdc-configurator.js', false, null, 0, 3000);
+			$kdcFirst = $kdcModels['collections'][$kdcAlias]['models'][0] ?? null;
+
+			if ($kdcFirst && !empty($kdcFirst['src']) && preg_match("~var VERSION = '(\\d+)'~", $kdcCfgJs, $kdcVer))
+			{
+				$kdcImg = '/' . ltrim($kdcFirst['src'], '/');
+				$kdcImg = implode('/', array_map('rawurlencode', explode('/', $kdcImg))) . '?kdc=' . $kdcVer[1];
+				$kdcPre .= "\n" . '<link rel="preload" as="image" href="' . htmlspecialchars($kdcImg, ENT_QUOTES) . '" fetchpriority="high">';
+
+				// Список моделей коллекции и готовая разметка первой двери
+				// (адреса - как у запросов конфигуратора, с ?v=<версия>).
+				$kdcBase = '/images/konfigurator/';
+				$kdcV    = '?v=' . $kdcVer[1];
+				$kdcA    = rawurlencode($kdcAlias);
+				$kdcPre .= "\n" . '<link rel="preload" as="fetch" crossorigin="anonymous" href="' . $kdcBase . 'models/' . $kdcA . '.json' . $kdcV . '">';
+
+				if (is_file(JPATH_ROOT . $kdcBase . 'baked/' . $kdcAlias . '/0.json'))
+				{
+					$kdcPre .= "\n" . '<link rel="preload" as="fetch" crossorigin="anonymous" href="' . $kdcBase . 'baked/' . $kdcA . '/0.json' . $kdcV . '">';
+					$kdcPre .= "\n" . '<link rel="preload" as="image" href="' . $kdcBase . 'baked/' . $kdcA . '/0.png' . $kdcV . '">';
+				}
+			}
+
+			// В самое начало <head> (после meta viewport): браузер начинает
+			// грузить эти файлы до стилей и скриптов шаблона, а не после них.
+			$body = preg_match('~<meta name="viewport"[^>]*>~i', $body)
+				? preg_replace('~<meta name="viewport"[^>]*>~i', '$0' . "\n" . $kdcPre, $body, 1)
+				: preg_replace('~<head>~i', '$0' . "\n" . $kdcPre, $body, 1);
+		}
+
+		$body = preg_replace_callback('~\x01kdcmeta(\d+)\x01~', static function ($m) use ($metas) {
+			return $metas[(int) $m[1]];
+		}, $body);
+
+		$app->setBody($body);
+	});
+}
+
+/**
  * Load the framework bootstrap file for enabling the HelixUltimate\Framework namespacing.
  *
  * @since	2.0.0
@@ -150,6 +649,7 @@ if ($custom_js = $this->params->get('custom_js', null))
 		<?php endif; ?>
 	</head>
 	<body class="<?php echo $theme->bodyClass(); ?>">
+
 
 		<?php if ($this->params->get('after_body', '')): ?>
 			<?php echo $this->params->get('after_body') . "\n"; ?>

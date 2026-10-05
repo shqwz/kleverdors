@@ -32,6 +32,43 @@ function move() {
     }
 }
 
+/**
+ * Покадровый цикл, который работает, только пока элемент на экране.
+ *
+ * Бегущие ленты ниже крутились через requestAnimationFrame всегда - и когда
+ * блок далеко за экраном, и на странице, где лента пустая: каждый кадр
+ * читали offsetWidth и писали transform, занимая главный поток посреди
+ * прокрутки. Теперь кадр запрашивается, только пока лента видна (с запасом
+ * 100px), и продолжает с того же места.
+ */
+function huLoopWhileVisible(el, step) {
+    var visible = !("IntersectionObserver" in window);
+    var frame = 0;
+
+    function tick() {
+        frame = 0;
+        if (!visible) return;
+        step();
+        frame = requestAnimationFrame(tick);
+    }
+
+    // Первый шаг сразу - как раньше: плитки встают на стартовые места.
+    step();
+
+    if (visible) {
+        frame = requestAnimationFrame(tick);
+        return;
+    }
+
+    new IntersectionObserver(
+        function (entries) {
+            visible = entries[entries.length - 1].isIntersecting;
+            if (visible && !frame) frame = requestAnimationFrame(tick);
+        },
+        { rootMargin: "100px 0px" },
+    ).observe(el);
+}
+
 jQuery(function ($) {
     /**
      * Helix settings data
@@ -58,9 +95,18 @@ jQuery(function ($) {
                 $stickyOffset = settings.header.stickyOffset || "100";
             }
 
+            // Классы и высоту плейсхолдера трогаем только при смене
+            // состояния: раньше они переписывались на каждое событие
+            // прокрутки, и браузер пересчитывал стили шапки каждый кадр.
+            var isSticky = null;
             var stickyHeader = function () {
                 var scrollTop = $(window).scrollTop();
-                if (scrollTop >= offsetTop + Number($stickyOffset)) {
+                var sticky = scrollTop >= offsetTop + Number($stickyOffset);
+                if (sticky === isSticky) {
+                    return;
+                }
+                isSticky = sticky;
+                if (sticky) {
                     $header.addClass("header-sticky");
                     $stickyHeaderPlaceholder.height(headerHeight);
                 } else {
@@ -143,13 +189,25 @@ jQuery(function ($) {
     }
 
     // go to top
-    $(window).scroll(function () {
-        if ($(this).scrollTop() > 100) {
-            $(".sp-scroll-up").fadeIn();
-        } else {
-            $(".sp-scroll-up").fadeOut(400);
-        }
-    });
+    // Раньше fadeIn/fadeOut запускались на каждое событие прокрутки -
+    // десятки jQuery-анимаций в секунду. Теперь - только при пересечении
+    // порога.
+    var $scrollUp = $(".sp-scroll-up");
+    var scrollUpShown = null;
+    if ($scrollUp.length) {
+        $(window).scroll(function () {
+            var show = $(this).scrollTop() > 100;
+            if (show === scrollUpShown) {
+                return;
+            }
+            scrollUpShown = show;
+            if (show) {
+                $scrollUp.stop(true).fadeIn();
+            } else {
+                $scrollUp.stop(true).fadeOut(400);
+            }
+        });
+    }
 
     $(".sp-scroll-up").click(function () {
         $("html, body").animate(
@@ -426,25 +484,18 @@ jQuery(function ($) {
         });
     }
 
-    $(window).on("scroll", function () {
-        var scrollBar = $(".sp-reading-progress-bar");
-        if (scrollBar.length > 0) {
+    // Полоса чтения есть только в статьях: без неё обработчик не вешаем
+    // (раньше он на каждом событии прокрутки искал её по всему документу).
+    var scrollBar = $(".sp-reading-progress-bar");
+    if (scrollBar.length > 0) {
+        $(window).on("scroll", function () {
             var s = $(window).scrollTop(),
                 d = $(document).height(),
                 c = $(window).height();
             var scrollPercent = (s / (d - c)) * 100;
-            const position = scrollBar.data("position");
-            if (position === "top") {
-                // var sticky = $('.header-sticky');
-                // if( sticky.length > 0 ){
-                //     sticky.css({ top: scrollBar.height() })
-                // }else{
-                //     sticky.css({ top: 0 })
-                // }
-            }
             scrollBar.css({ width: `${scrollPercent}%` });
-        }
-    });
+        });
+    }
 
     // Error Alert close issue fix for Joomla 3
     var observer = new MutationObserver(function (mutations) {
@@ -454,9 +505,13 @@ jQuery(function ($) {
         );
     });
     var target = document.querySelector("#system-message-container");
-    observer.observe(target, {
-        attributes: true,
-    });
+    // На части страниц (разделы блога) блока сообщений нет - без проверки
+    // здесь падала ошибка и обрывала остальной код этого обработчика.
+    if (target) {
+        observer.observe(target, {
+            attributes: true,
+        });
+    }
 });
 
 // Handle accessibility on off-canvas dropdown menus
@@ -964,6 +1019,8 @@ $(function () {
     const items = Array.from(container.children).filter(
         (el) => el.tagName.toLowerCase() === "p",
     );
+    // Пустая лента (на главной сейчас так) - двигать нечего.
+    if (!items.some((el) => el.textContent.trim())) return;
     const speed = 2.2;
     const spacing = 50;
     let positions = [];
@@ -991,10 +1048,9 @@ $(function () {
             }
             item.style.transform = `translateX(${positions[index]}px) translateY(-50%)`;
         });
-        requestAnimationFrame(animate);
     }
     // Start animation
-    animate();
+    huLoopWhileVisible(container, animate);
 });
 
 $(function () {
@@ -1024,9 +1080,8 @@ $(function () {
                 }
                 item.style.transform = `translateX(${positions2[index]}px) translateY(-50%)`;
             });
-            requestAnimationFrame(animate2);
         }
-        animate2();
+        huLoopWhileVisible(logoWrap2, animate2);
     }
     // Use anywhere
     startSrollerRTL(".rtl-infinity-scroller1");
@@ -1055,9 +1110,8 @@ $(function () {
                 }
                 item.style.transform = `translateX(${positions[i]}px) translateY(-50%)`;
             });
-            requestAnimationFrame(animate3);
         }
-        animate3();
+        huLoopWhileVisible(container, animate3);
     }
 
     startSliderLTR(".ltr-infinity-scroller1");

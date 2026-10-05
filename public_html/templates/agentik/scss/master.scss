@@ -5,6 +5,14 @@
  * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 or Later
 */
 
+// Ленты «бегущих» плиток, которые узнаёт :has() ниже (theme/responsive).
+// Раньше там стоял :has(> [class*="infinity-scroller"]): атрибутный селектор
+// внутри :has() заставляет Chrome на ЛЮБУЮ смену класса где угодно на
+// странице (lazyload у картинок, появление карточек, шапка) пересчитывать
+// стили всего body - при прокрутке это десятки миллисекунд на кадр.
+// Явный список классов даёт те же совпадения без этой цены.
+$infinity-scroller-lanes: unquote("> .rtl-infinity-scroller1, > .rtl-infinity-scroller2, > .ltr-infinity-scroller1, > .ltr-infinity-scroller3, > .rtl-infinity-scroller-kdc, > .ltr-infinity-scroller-kdc");
+
 @import "theme";
 @import "legacy";
 @import "menu";

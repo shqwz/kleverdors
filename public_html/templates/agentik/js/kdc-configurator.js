@@ -15,14 +15,20 @@
 
 	var BASE = '/images/konfigurator/';
 	// Поменяйте после правки models.json - браузеры возьмут свежий список.
-	var VERSION = '68';
+	var VERSION = '130';
 
-	var RAL = [
-		['RAL 9016', 'Белый кварц', '#f6f5f0'], ['RAL 9001', 'Топлёное молоко', '#f3e6d6'], ['RAL 1015', 'Слоновая кость', '#e2d3bd'],
-		['RAL 7032', 'Галечный серый', '#c3bfb2'], ['RAL 7036', 'Урбанистый туман', '#979799'], ['RAL 7044', 'Льняная гладь', '#cdcac1'],
-		['RAL 6019', 'Белая мята', '#c4e2c1'], ['RAL 6021', 'Мшистая олива', '#8a9c78'], ['RAL 5014', 'Утреннее небо', '#7a96bb'],
-		['RAL 1015', 'Солнечный свет', '#fbe9c9'], ['RAL 3015', 'Лепесток розы', '#f3bfc4'], ['RAL 6003', 'Оливковая роща', '#545c42']
-	];
+	// Каталоги цветов грузятся из colors.json (RAL Classic и NCS): [код, название, hex].
+	// Пока файл не пришёл - несколько базовых RAL, чтобы конфигуратор не остался без цветов.
+	var RAL = [['9016', 'Транспортный белый', '#f7fbf5'], ['7044', 'Серый шёлк', '#bdbdb2'], ['7016', 'Антрацитово-серый', '#373f43']];
+	var NCS = [];
+	var DEFAULT_RAL = '7044';
+	var RAL_GROUPS = [['1', 'Жёлтые и бежевые'], ['2', 'Оранжевые'], ['3', 'Красные'], ['4', 'Фиолетовые'], ['5', 'Синие'], ['6', 'Зелёные'], ['7', 'Серые'], ['8', 'Коричневые'], ['9', 'Белые и чёрные']];
+	// Оттенки NCS как в атласе: Y, Y10R ... Y90R, R, R10B ... G90Y (по 40) и нейтральные.
+	var NCS_HUES = [['N', 'Нейтральные (серые)']];
+	[['Y', 'R', 'Жёлтый'], ['R', 'B', 'Красный'], ['B', 'G', 'Синий'], ['G', 'Y', 'Зелёный']].forEach(function (f) {
+		NCS_HUES.push([f[0], f[2] + ' (' + f[0] + ')']);
+		for (var n = 10; n <= 90; n += 10) { NCS_HUES.push([f[0] + n + f[1], f[0] + n + f[1]]); }
+	});
 	var VENEER = [
 		['Дуб белёный', '#dccfb9', 'oak'], ['Дуб натуральный', '#c9a171', 'oak'], ['Дуб золотой', '#bb8a50', 'oak'],
 		['Дуб серый', '#9c948a', 'oak'], ['Орех', '#7a5a3c', 'walnut'], ['Орех тёмный', '#553e2d', 'walnut']
@@ -46,6 +52,8 @@
 	];
 	var ALL_GLASS = [].concat.apply([], GLASS.map(function (g) { return g.items; }));
 	// Фон превью: цвет стены и пол.
+	// Шпон в выборе цвета временно скрыт (см. Configurator).
+	var HIDE_VENEER = true;
 	var WALLS = [
 		['Светлая', '#f4f3f0'], ['Бежевая', '#e7dfd2'], ['Серая', '#cfd0cc'], ['Графит', '#56585a']
 	];
@@ -59,6 +67,21 @@
 	];
 	var PMAX = 1.5;
 	var ROOM = BASE + 'room.jpg';
+	// Интерьер вместо нарисованных стены и пола: фото на всю ширину экрана,
+	// дверь встаёт на стену. open - место полотна с коробкой в пикселях
+	// исходника [лево, верх, право, пол]: на этом фото проёма нет, дверь
+	// ставим между большим молдингом и узкой панелью справа в масштабе
+	// комнаты (стена ~2.75 м = 715 px, полотно с коробкой ~0.87 x 2.06 м),
+	// увеличено на 10% по просьбе владельца.
+	// focus - где на экране держать середину двери (доля ширины сцены)
+	// на компьютере и на телефоне. null - прежняя сцена.
+	// Фото с проёмом: room-classic.webp, open [1016, 126, 1302, 790].
+	// top - с какой строки кадра показывать сверху (потолок и карниз
+	// отрезаны: 40% свободного места над дверью).
+	// bottom - докуда показываем кадр снизу: пола на фото много, нижнюю
+	// половину пола (755-941 px) отрезаем. Просвет под полотном в интерьере
+	// не заливаем: сквозь него виден паркет (полоса .kdc-cfg-underfloor).
+	var INTERIOR = { src: BASE + 'room-classic-wall.webp', w: 1672, h: 941, top: 68, bottom: 812, open: [1088, 169, 1336, 757], focus: [0.7, 0.5] };
 	var WOOD = { walnut: BASE + 'wood-walnut.jpg', oak: BASE + 'wood-oak.jpg' };
 
 	function assign(a, b) { for (var k in b) { a[k] = b[k]; } return a; }
@@ -83,7 +106,7 @@
 	function analyse(img, opt) {
 		var MAXS = 1100;
 		var k = Math.min(1, MAXS / Math.max(img.naturalWidth, img.naturalHeight));
-		var W = Math.round(img.naturalWidth * k), H = Math.round(img.naturalHeight * k);
+		var W = Math.round(img.naturalWidth * k), H = Math.round(img.naturalHeight * k), KS = k;
 		var c = document.createElement('canvas');
 		c.width = W; c.height = H;
 		var cx = c.getContext('2d', { willReadFrequently: true });
@@ -311,6 +334,52 @@
 			};
 			var r = pass(m, H2, W2, function (i, j) { return i * W2 + j; });
 			return pass(r, W2, H2, function (i, j) { return j * W2 + i; });
+		}
+		// Точка (x, y) внутри рамки «не заливать» (с поворотом).
+		function inWall(wl, x, y) {
+			var dx = x - wl.cx, dy = y - wl.cy;
+			return Math.abs(dx * wl.cs + dy * wl.sn) <= wl.hw && Math.abs(-dx * wl.sn + dy * wl.cs) <= wl.hh;
+		}
+		// «Не трогать» (hold в models.json): участок, где дверь остаётся как
+		// на фото, даже если он внутри стекла. Форма - прямоугольник r, овал
+		// в рамке r (oval) или треугольник (tri).
+		function holdIn(hd, x, y) {
+			if (hd.rot) { return inWall(hd.rot, x, y); }
+			if (hd.tri) { return inTri(hd.tri, x, y); }
+			if (hd.oval) { var ux = (x - hd.cx) / hd.rx, uy = (y - hd.cy) / hd.ry; return ux * ux + uy * uy < 1; }
+			return x >= hd.x0 && x < hd.x1 && y >= hd.y0 && y < hd.y1;
+		}
+		// Доля пикселя (px, py) вне всех участков: у края - по 4x4 точкам,
+		// чтобы дуга шла без ступенек.
+		function holdCover(hs, px, py) {
+			var near = [], k, i, j, n = 0;
+			for (k = 0; k < hs.length; k++) {
+				var hd = hs[k];
+				if (px + 1 > hd.x0 && px < hd.x1 && py + 1 > hd.y0 && py < hd.y1) { near.push(hd); }
+			}
+			if (!near.length) { return 1; }
+			for (j = 0; j < 4; j++) {
+				for (i = 0; i < 4; i++) {
+					var sx = px + (i + 0.5) / 4, sy = py + (j + 0.5) / 4, out = true;
+					for (k = 0; k < near.length && out; k++) { if (holdIn(near[k], sx, sy)) { out = false; } }
+					if (out) { n++; }
+				}
+			}
+			return n / 16;
+		}
+		// Доля пикселя (px, py) внутри треугольника: у края - по 4x4 точкам.
+		function triCover(t, px, py) {
+			var c = 0, i, j;
+			for (i = 0; i < 4; i += 3) { for (j = 0; j < 4; j += 3) { if (inTri(t, px + (i + 0.5) / 4, py + (j + 0.5) / 4)) { c++; } } }
+			if (c === 4) { return 1; }
+			if (!c && !inTri(t, px + 0.5, py + 0.5)) {
+				// Вершина могла попасть внутрь пикселя - тогда считаем честно.
+				var hit = t.some(function (v) { return v[0] >= px && v[0] < px + 1 && v[1] >= py && v[1] < py + 1; });
+				if (!hit) { return 0; }
+			}
+			var n = 0;
+			for (j = 0; j < 4; j++) { for (i = 0; i < 4; i++) { if (inTri(t, px + (i + 0.5) / 4, py + (j + 0.5) / 4)) { n++; } } }
+			return n / 16;
 		}
 		function inTri(t, px, py) {
 			var s1 = (t[1][0] - t[0][0]) * (py - t[0][1]) - (t[1][1] - t[0][1]) * (px - t[0][0]);
@@ -675,6 +744,34 @@
 		// Стекло, отмеченное в models.json вручную (доли кадра двери):
 		// края уточняем по рамке.
 		var ov = opt.over && opt.over.glass;
+		// Участки «не трогать» - не стёкла: откладываем отдельно. Если в
+		// разметке только они - стекло ищет скрипт.
+		var holds = (ov || []).filter(function (f0) { return f0 && f0.hold; }).map(function (f0) {
+			var x0 = f0.r[0] * w, y0 = f0.r[1] * h, x1 = (f0.r[0] + f0.r[2]) * w, y1 = (f0.r[1] + f0.r[3]) * h;
+			var hd = { x0: x0, y0: y0, x1: x1, y1: y1 };
+			if (f0.oval) { hd.oval = true; hd.cx = (x0 + x1) / 2; hd.cy = (y0 + y1) / 2; hd.rx = (x1 - x0) / 2; hd.ry = (y1 - y0) / 2; }
+			if (f0.tri && f0.tri.length === 3) { hd.tri = f0.tri.map(function (v) { return [v[0] * w, v[1] * h]; }); }
+			return hd;
+		});
+		// Рамки «не заливать» ({"r": [...], "wall": true, "rot": градусы}):
+		// повёрнутый прямоугольник, которым обводят то, что на фото должно
+		// остаться дверью (планки креста). Стекла там нет - это те же участки
+		// «не трогать», только с поворотом.
+		var walls = (ov || []).filter(function (f0) { return f0 && f0.wall && f0.r; }).map(function (f0) {
+			var wl = { cx: (f0.r[0] + f0.r[2] / 2) * w, cy: (f0.r[1] + f0.r[3] / 2) * h, hw: f0.r[2] * w / 2, hh: f0.r[3] * h / 2, a: (f0.rot || 0) * Math.PI / 180 };
+			wl.cs = Math.cos(wl.a); wl.sn = Math.sin(wl.a);
+			var ex = Math.abs(wl.hw * wl.cs) + Math.abs(wl.hh * wl.sn), ey = Math.abs(wl.hw * wl.sn) + Math.abs(wl.hh * wl.cs);
+			// Для редактора - углы (рисует контур).
+			var poly = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (sg) {
+				return [wl.cx + sg[0] * wl.hw * wl.cs - sg[1] * wl.hh * wl.sn, wl.cy + sg[0] * wl.hw * wl.sn + sg[1] * wl.hh * wl.cs];
+			});
+			return { x0: wl.cx - ex, y0: wl.cy - ey, x1: wl.cx + ex, y1: wl.cy + ey, rot: wl, poly: poly };
+		});
+		holds = holds.concat(walls);
+		if (holds.length || walls.length) {
+			ov = ov.filter(function (f0) { return !f0.hold && !f0.wall; });
+			if (!ov.length) { ov = null; }
+		}
 		if (!ov && opt.glass === 'none') { ov = []; }
 		// Есть такое же фото глухой двери (blank): стекло - ровно то, чем
 		// кадры отличаются. Форма любая (полукруг, вырез под ручку), край -
@@ -733,6 +830,57 @@
 				return o2;
 			};
 			dm2 = morph(morph(dm2, true), false);
+			var crisp = false;
+			// Чёткий край: разница кадров дрожит на кромке (отсвет стекла на
+			// штапике). У глухой двери на месте стекла - гладкая филёнка,
+			// обведённая той же канавкой, что и стекло. Заливаем филёнку
+			// глухого фото изнутри маски до канавки - край идёт ровно по
+			// линии на фото. Не вышло (филёнка не гладкая) - остаётся маска.
+			(function () {
+				var Lb = new Float32Array(w * h), ii, er = morph(dm2, false), zone = morph(dm2, true);
+				er = morph(er, false);
+				for (ii = 0; ii < w * h; ii++) { var ob = ii * 4; Lb[ii] = bd[ob] * 0.3 + bd[ob + 1] * 0.59 + bd[ob + 2] * 0.11; }
+				zone = morph(zone, true);
+				var vals = [], seeds = [];
+				for (ii = 0; ii < w * h; ii++) { if (er[ii]) { seeds.push(ii); if (!(ii % 7)) { vals.push(Lb[ii]); } } }
+				if (!seeds.length) { return; }
+				vals.sort(function (p, q) { return p - q; });
+				var fl = vals[vals.length >> 1], seen = new Uint8Array(w * h), st = seeds.slice(), n0 = 0, n1 = 0;
+				seeds.forEach(function (q) { seen[q] = 1; });
+				var okp = function (a2, b2) { return zone[b2] && !seen[b2] && Math.abs(Lb[b2] - Lb[a2]) <= 5 && Lb[b2] > fl - 32 && Lb[b2] < fl + 20; };
+				while (st.length) {
+					var q = st.pop(), qx = q % w;
+					if (qx > 0 && okp(q, q - 1)) { seen[q - 1] = 1; st.push(q - 1); }
+					if (qx < w - 1 && okp(q, q + 1)) { seen[q + 1] = 1; st.push(q + 1); }
+					if (q >= w && okp(q, q - w)) { seen[q - w] = 1; st.push(q - w); }
+					if (q < w * (h - 1) && okp(q, q + w)) { seen[q + w] = 1; st.push(q + w); }
+				}
+				// Заливка прошла через бледную линию на штапик - там кадры
+				// одинаковые: стекло только там, где хоть немного отличаются.
+				for (ii = 0; ii < w * h; ii++) {
+					if (!seen[ii]) { continue; }
+					var o4 = ii * 4;
+					if (Math.abs(src0[o4] - bd[o4]) + Math.abs(src0[o4 + 1] - bd[o4 + 1]) + Math.abs(src0[o4 + 2] - bd[o4 + 2]) <= 4) { seen[ii] = 0; }
+				}
+				for (ii = 0; ii < w * h; ii++) { n0 += dm2[ii]; n1 += seen[ii]; }
+				// Заливка должна почти совпасть с маской: утекла или застряла -
+				// филёнка не гладкая, оставляем разницу кадров.
+				if (n1 > n0 * 0.9 && n1 < n0 * 1.1) {
+					// Одиночные выступы и щербины на кромке - большинством 3x3
+					// (дважды), сам край не сдвигается.
+					for (var rep = 0; rep < 2; rep++) {
+						var sm = new Uint8Array(w * h);
+						for (var yy = 1; yy < h - 1; yy++) {
+							for (var xx = 1; xx < w - 1; xx++) {
+								var k3 = yy * w + xx;
+								sm[k3] = seen[k3 - w - 1] + seen[k3 - w] + seen[k3 - w + 1] + seen[k3 - 1] + seen[k3] + seen[k3 + 1] + seen[k3 + w - 1] + seen[k3 + w] + seen[k3 + w + 1] >= 5 ? 1 : 0;
+							}
+						}
+						seen = sm;
+					}
+					dm2 = seen; crisp = true;
+				}
+			})();
 			var dl = new Int32Array(w * h), dn = 0;
 			for (var s9 = 0; s9 < w * h; s9++) {
 				if (!dm2[s9] || dl[s9]) { continue; }
@@ -751,7 +899,7 @@
 				if (px9.length < leafArea * 0.01) { continue; }
 				var bw9 = bx1 - bx0 + 1, bh9 = by1 - by0 + 1, md = new Uint8Array(bw9 * bh9);
 				px9.forEach(function (q) { md[(((q / w) | 0) - by0) * bw9 + (q % w) - bx0] = 1; });
-				md = smoothMask(md, bw9, bh9);
+				if (!crisp) { md = smoothMask(md, bw9, bh9); }
 				var gd = [bx0, by0, bw9, bh9];
 				gd.mk = { x0: bx0, y0: by0, W: bw9, H: bh9, d: md };
 				gd.exact = true;
@@ -807,7 +955,10 @@
 				// Тонкая латунная решётка поверх стекла (как в макете).
 				if (!Array.isArray(f0) && f0.lines) { gr.lines = f0.lines; }
 				// Косой крест из планок цвета полотна.
-				if (!Array.isArray(f0) && f0.cross) { gr.cross = f0.cross; }
+				// Планки креста обведены рамками - они уже на фото, свой крест
+				// не рисуем.
+				var traced = walls.some(function (wl) { return wl.x1 > gr[0] && wl.x0 < gr[0] + gr[2] && wl.y1 > gr[1] && wl.y0 < gr[1] + gr[3]; });
+				if (!Array.isArray(f0) && f0.cross && !traced) { gr.cross = f0.cross; }
 				glass.push(gr);
 			});
 		}
@@ -907,6 +1058,7 @@
 		// стекло кладём под дверь - край совпадает с фото до пикселя.
 		glass.forEach(function (g) {
 			var gx = g[0], gy = g[1], gw4 = g[2], gh4 = g[3], loc = new Uint8Array(gw4 * gh4), xx, yy, mk = g.mk;
+			var cov = holds.length || g.tri ? new Float32Array(gw4 * gh4).fill(1) : null;
 			// Фурнитура (ручка), заходящая в стекло снаружи, остаётся как на
 			// фото: иначе прямоугольник стекла срезает её край.
 			var guard = new Uint8Array(gw4 * gh4);
@@ -954,7 +1106,8 @@
 						var mx8 = gx + xx - mk.x0, my8 = gy + yy - mk.y0;
 						inm = mx8 >= 0 && my8 >= 0 && mx8 < mk.W && my8 < mk.H ? mk.d[my8 * mk.W + mx8] : 0;
 					}
-					if (g.tri) { inm = inTri(g.tri, gx + xx + 0.5, gy + yy + 0.5) ? 1 : 0; }
+					// Треугольник: доля пикселя внутри - край без ступенек.
+					if (g.tri) { cov[yy * gw4 + xx] = triCover(g.tri, gx + xx, gy + yy); inm = cov[yy * gw4 + xx] > 0 ? 1 : 0; }
 					loc[yy * gw4 + xx] = inm;
 				}
 			}
@@ -976,12 +1129,27 @@
 				}
 				for (j8 = 0; j8 < gw4 * gh4; j8++) { if (!loc[j8] && !reach[j8]) { loc[j8] = 1; } }
 			}
+			// «Не трогать»: вычитаем из стекла, край - со сглаживанием.
+			// (cov есть и у треугольника - там уже доля пикселя.)
+			if (cov) {
+				for (yy = 0; yy < gh4; yy++) {
+					for (xx = 0; xx < gw4; xx++) {
+						var ci = yy * gw4 + xx;
+						if (!loc[ci]) { continue; }
+						if (holds.length) { cov[ci] *= holdCover(holds, gx + xx, gy + yy); }
+						if (cov[ci] <= 0) { loc[ci] = 0; }
+					}
+				}
+			}
 			for (yy = 0; yy < gh4; yy++) {
 				for (xx = 0; xx < gw4; xx++) {
 					var gi8 = (gy + yy) * w + gx + xx;
 					// Латунная решётка внутри стекла - как на фото.
 					if (guard[yy * gw4 + xx]) { continue; }
 					if (!loc[yy * gw4 + xx]) { if (cm[gi8] && !g.tri) { keep[gi8] = 1; } continue; }
+					// Край выреза: полотно полупрозрачное поверх стекла и
+					// перекрашивается вместе с дверью - дуга без ступенек.
+					if (cov && cov[yy * gw4 + xx] < 1) { dd[gi8 * 4 + 3] = Math.round(255 * (1 - cov[yy * gw4 + xx])); continue; }
 					keep[gi8] = 1;
 					dd[gi8 * 4 + 3] = 0;
 				}
@@ -992,7 +1160,8 @@
 
 		return {
 			src: out, w: w, h: h, cl: cl, cr: cr, ct: ct, casing: hasCasing,
-			baseLum: baseLum, keep: keep, glass: glass, keepGlass: keepGlass
+			baseLum: baseLum, keep: keep, glass: glass, keepGlass: keepGlass, holds: holds,
+			x0: X0, y0: Y0, ks: KS
 		};
 	}
 
@@ -1073,6 +1242,38 @@
 		if (u >= cw - I) { return P - (cw - u); }
 		return Math.min(P - I - 1, O + Math.floor((u - O) * (P - O - I) / (cw - O - I)));
 	}
+	/* Планка наличника из исходного фото бывает с огрехами вырезки:
+	   - у края - редкие крошки фона (светлые точки за наличником): столбец,
+	     где непрозрачна меньшая часть, - не наличник, очищаем его целиком;
+	     а пропуски в столбцах наличника (край срезан) заполняем по столбцу;
+	   - низ обрезан неровно: последние ряды частично прозрачные, сквозь них
+	     видна стена. Нижние 12 рядов заменяем рядом над обрезом. */
+	function cleanStrip(cv) {
+		var W = cv.width, H = cv.height, x = cv.getContext('2d');
+		if (!W || H < 40) { return; }
+		var im = x.getImageData(0, 0, W, H), d = im.data, u, y;
+		for (u = 0; u < W; u++) {
+			var n = 0;
+			for (y = 0; y < H; y++) { if (d[(y * W + u) * 4 + 3] > 128) { n++; } }
+			if (n < H * 0.5) { for (y = 0; y < H; y++) { d[(y * W + u) * 4 + 3] = 0; } continue; }
+			// Столбец наличника, но с пропусками (на фото край местами срезан):
+			// профиль по длине одинаковый - заполняем пропуск ближайшим
+			// непрозрачным пикселем этого же столбца.
+			var last = -1;
+			for (y = 0; y < H; y++) {
+				var o = (y * W + u) * 4;
+				if (d[o + 3] > 128) { last = o; continue; }
+				var src = last, k;
+				if (src < 0) { for (k = y + 1; k < H; k++) { if (d[(k * W + u) * 4 + 3] > 128) { src = (k * W + u) * 4; break; } } }
+				if (src >= 0) { d[o] = d[src]; d[o + 1] = d[src + 1]; d[o + 2] = d[src + 2]; d[o + 3] = 255; }
+			}
+		}
+		x.putImageData(im, 0, 0);
+		var B = 12;
+		x.clearRect(0, H - B, W, B);
+		x.drawImage(cv, 0, H - B - 1, W, 1, 0, H - B, W, B);
+	}
+
 	function frame(A) {
 		if (!A.casing) { return { CW: A.w, CH: A.h }; }
 		return { CW: Math.ceil(A.cr - A.cl + 2 * A.cl * PMAX + 2), CH: Math.ceil(A.h - A.ct + A.ct * PMAX + 2) };
@@ -1094,6 +1295,7 @@
 			lx.drawImage(src, sl, A.ct, 1, bodyH, u, cw, 1, bodyH); lx.drawImage(src, sl, A.ct, 1, cw, u, 0, 1, cw);
 			rx.drawImage(src, sr, A.ct, 1, bodyH, u, cw, 1, bodyH); rx.drawImage(src, sr, A.ct, 1, cw, u, 0, 1, cw);
 		}
+		cleanStrip(vl); cleanStrip(vr);
 		x.drawImage(src, A.cl, A.ct, leafW, bodyH, x0 + cw, y0 + cw, leafW, bodyH);
 		x.drawImage(vl, x0, y0);
 		x.save(); x.translate(x0 + Wd, y0); x.scale(-1, 1); x.drawImage(vr, 0, 0); x.restore();
@@ -1112,8 +1314,8 @@
 	/* Просвет под полотном в исходнике прозрачный - сквозь него виден пол.
 	   Снизу вверх закрашиваем прозрачные пиксели между стойками коробки,
 	   пока строки с такими «дырами» не кончатся. */
-	function sealGap(cv) {
-		var W = cv.width, H = cv.height, x = cv.getContext('2d');
+	function sealGap(cv, rgb) {
+		var W = cv.width, H = cv.height, x = cv.getContext('2d'), c = rgb || [14, 13, 12];
 		var maxH = Math.max(4, Math.round(H * 0.03)), y0 = H - maxH;
 		var im = x.getImageData(0, y0, W, maxH), d = im.data, hit = false;
 		for (var y = maxH - 1; y >= 0; y--) {
@@ -1124,7 +1326,7 @@
 				var o = row + k * 4, a = d[o + 3];
 				if (a < 250) {
 					var t = a / 255;
-					d[o] = Math.round(d[o] * t + 14 * (1 - t)); d[o + 1] = Math.round(d[o + 1] * t + 13 * (1 - t)); d[o + 2] = Math.round(d[o + 2] * t + 12 * (1 - t));
+					d[o] = Math.round(d[o] * t + c[0] * (1 - t)); d[o + 1] = Math.round(d[o + 1] * t + c[1] * (1 - t)); d[o + 2] = Math.round(d[o + 2] * t + c[2] * (1 - t));
 					d[o + 3] = 255; n++;
 				}
 			}
@@ -1150,17 +1352,106 @@
 	}
 
 	/* ------------------------------------------------------------------
+	 * Готовая разметка двери (images/konfigurator/baked/<коллекция>/<N>.*).
+	 * Разбор фото (analyse) - 0.3 с на компьютере и 1-2 с на телефоне, и
+	 * результат у модели всегда один и тот же. Поэтому он считается заранее
+	 * (tools/bake-doors.html, локально) и кладётся рядом: .json - размеры и
+	 * разметка стёкол, .png - маска двери (канал R) и карта «оставить как на
+	 * фото» (канал G). На сайте остаётся собрать дверь из фото и маски - ~20 мс.
+	 * Файлы действуют, пока совпадает подпись (sig): правка модели, стёкол
+	 * или алгоритма меняет подпись - тогда дверь разбирается как раньше.
+	 * ------------------------------------------------------------------ */
+	var ANALYSE_VERSION = 1;
+	// ?nobaked в адресе - сравнить скорость с разбором фото (для проверки).
+	var BAKED = !/[?&]nobaked\b/.test(location.search);
+	var PRE = {};
+
+	// Разметка двери и маска: один раз на модель; init запрашивает первую
+	// модель заранее - пока собирается панель выбора, файлы уже в пути.
+	function bakedLoad(alias, i) {
+		var key = alias + '/' + i;
+		if (!PRE[key]) {
+			var base = BASE + 'baked/' + encodeURIComponent(alias) + '/' + i;
+			PRE[key] = Promise.all([
+				fetch(base + '.json?v=' + VERSION, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }),
+				loadImg(base + '.png?v=' + VERSION)
+			]);
+		}
+		return PRE[key];
+	}
+
+	function bakeSig(m, col) {
+		// Цена и название на разбор фото не влияют - правка цены не должна
+		// сбрасывать готовую разметку.
+		var mm = {}, k;
+		for (k in m) { if (k !== 'price' && k !== 'name') { mm[k] = m[k]; } }
+		var str = JSON.stringify([ANALYSE_VERSION, mm, col.detectMetal, col.glass]), h = 5381, i;
+		for (i = 0; i < str.length; i++) { h = ((h << 5) + h + str.charCodeAt(i)) | 0; }
+		return (h >>> 0).toString(36);
+	}
+
+	function bakeDoor(A, m, col) {
+		var w = A.w, h = A.h, cv = document.createElement('canvas');
+		cv.width = w; cv.height = h;
+		var x = cv.getContext('2d', { willReadFrequently: true });
+		var sd = A.src.getContext('2d').getImageData(0, 0, w, h).data, od = x.createImageData(w, h), i;
+		for (i = 0; i < w * h; i++) {
+			od.data[i * 4] = sd[i * 4 + 3];
+			od.data[i * 4 + 1] = Math.round(A.keep[i] * 255);
+			od.data[i * 4 + 3] = 255;
+		}
+		x.putImageData(od, 0, 0);
+		var meta = { sig: bakeSig(m, col), w: w, h: h, cl: A.cl, cr: A.cr, ct: A.ct, casing: A.casing, baseLum: A.baseLum,
+			keepGlass: A.keepGlass, glass: A.glass, holds: A.holds, x0: A.x0, y0: A.y0, ks: A.ks };
+		return { meta: meta, png: cv.toDataURL('image/png') };
+	}
+
+	function unbakeDoor(img, meta, pack) {
+		var W = Math.round(img.naturalWidth * meta.ks), H = Math.round(img.naturalHeight * meta.ks), w = meta.w, h = meta.h;
+		var c = document.createElement('canvas');
+		c.width = W; c.height = H;
+		// willReadFrequently - как в analyse: иначе масштабирование у программной
+		// и аппаратной канвы чуть разное, и фото расходится с разобранным.
+		c.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, W, H);
+		var out = document.createElement('canvas');
+		out.width = w; out.height = h;
+		var ox = out.getContext('2d', { willReadFrequently: true });
+		ox.drawImage(c, meta.x0, meta.y0, w, h, 0, 0, w, h);
+		var od = ox.getImageData(0, 0, w, h), dd = od.data;
+		var pc = document.createElement('canvas');
+		pc.width = w; pc.height = h;
+		var px = pc.getContext('2d', { willReadFrequently: true });
+		px.drawImage(pack, 0, 0);
+		var pd = px.getImageData(0, 0, w, h).data, keep = new Float32Array(w * h), i;
+		for (i = 0; i < w * h; i++) { dd[i * 4 + 3] = pd[i * 4]; keep[i] = pd[i * 4 + 1] / 255; }
+		ox.putImageData(od, 0, 0);
+		return { src: out, w: w, h: h, cl: meta.cl, cr: meta.cr, ct: meta.ct, casing: meta.casing, baseLum: meta.baseLum,
+			keep: keep, glass: meta.glass, keepGlass: meta.keepGlass, holds: meta.holds };
+	}
+
+	/* ------------------------------------------------------------------
 	 * Конфигуратор
 	 * ------------------------------------------------------------------ */
 	function Configurator(hero, cfg) {
 		this.hero = hero;
 		this.cfg = cfg;
+		this.alias = cfg.alias || '';
 		this.models = cfg.models;
 		this.mats = (cfg.materials || ['ral', 'veneer']).filter(function (m) { return m === 'ral' || m === 'veneer'; });
-		var mat = this.mats[0];
+		// Шпон как вариант цвета пока скрыт (решение владельца): остаётся
+		// только у коллекций, где других материалов нет («Шпонированные»).
+		// Вернуть - HIDE_VENEER = false.
+		if (HIDE_VENEER && this.mats.length > 1) {
+			this.mats = this.mats.filter(function (m) { return m !== 'veneer'; });
+		}
+		if (this.mats.indexOf('ral') >= 0) { this.mats.splice(this.mats.indexOf('ral') + 1, 0, 'ncs'); }
+		var mat = this.mats[0], defRal = 0;
+		RAL.forEach(function (c, i) { if (c[0] === DEFAULT_RAL) { defRal = i; } });
 		this.s = {
-			tab: 'model', model: 0, mat: mat, color: mat === 'ral' ? 5 : 1, glass: 'm2',
-			portal: 'classic', wall: 0, floor: 0
+			tab: 'model', model: 0, mat: mat, color: mat === 'ral' ? defRal : 1, glass: 'm2',
+			portal: 'classic', wall: 0, floor: 0,
+			// Каталог в панели цвета: какой открыт, группа/оттенок и строка поиска.
+			cat: mat === 'veneer' ? 'ral' : mat, grp: { ral: '*', ncs: '*' }, q: ''
 		};
 		// #m=3 - открыть сразу модель 3 (ссылка из редактора стёкол).
 		var hm = /(?:^#|&)m=(\d+)/.exec(location.hash);
@@ -1170,10 +1461,34 @@
 		this.cache = {};  // готовые картинки двери
 		this.thumbs = {};
 		this.thumbPending = {};
+		// Миниатюры моделей (картинки + вырезка двери на каждой) - после первого
+		// показа двери: их обработка занимала основной поток ровно тогда, когда
+		// нужно рисовать саму дверь.
+		var selfD = this;
+		if (window.performance && performance.mark) { performance.mark('kdc-start'); }
+		this.doorReady = new Promise(function (res) { selfD.doorOk = res; });
+		setTimeout(function () { selfD.doorOk(); }, 4000);
 		this.crops = {};
 		this.token = 0;
 		this.build();
+		if (window.performance && performance.mark) { performance.mark('kdc-built'); }
 	}
+
+	/* Каталоги RAL и NCS пришли после первого показа: подменяем списки,
+	   текущий цвет находим по коду в новом списке, панель цвета обновляем. */
+	Configurator.prototype.setCatalogs = function (cols) {
+		if (!cols || !cols.ral || !cols.ral.length) { return; }
+		var s = this.s, cur = s.mat === 'ral' ? RAL[s.color] : null;
+		RAL = cols.ral; NCS = cols.ncs || [];
+		if (cur) {
+			var at = -1;
+			RAL.forEach(function (c, i) { if (c[0] === cur[0]) { at = i; } });
+			if (at >= 0) { s.color = at; }
+		}
+		this.cache = {}; this.urls = {};
+		this.renderPanel();
+		this.renderStage();
+	};
 
 	Configurator.prototype.color = function () {
 		var s = this.s;
@@ -1181,8 +1496,12 @@
 			var v = VENEER[s.color];
 			return { id: 'v' + s.color, name: v[0], hex: v[1], kind: v[2] };
 		}
+		if (s.mat === 'ncs') {
+			var n = NCS[s.color];
+			return { id: 'n' + s.color, name: 'NCS ' + n[0], hex: n[2] };
+		}
 		var r = RAL[s.color];
-		return { id: 'r' + s.color, name: r[0] + ' ' + r[1], hex: r[2] };
+		return { id: 'r' + s.color, name: 'RAL ' + r[0] + ' ' + r[1], hex: r[2] };
 	};
 
 	Configurator.prototype.analysis = function (i) {
@@ -1193,12 +1512,23 @@
 		// ?kdc - сервер отдаёт исходник, а не сжатую WebP-копию: разметка
 		// двери по пикселям проверена на исходниках.
 		// blank - то же фото без стекла: стекло вырезаем по разнице кадров.
-		var bl = m.blank ? loadImg('/' + m.blank.replace(/^\//, '') + '?kdc=' + VERSION) : Promise.resolve(null);
-		return (this.pending[i] = Promise.all([loadImg('/' + m.src.replace(/^\//, '') + '?kdc=' + VERSION), bl]).then(function (r2) {
+		var main = loadImg('/' + m.src.replace(/^\//, '') + '?kdc=' + VERSION);
+		// Готовая разметка (см. выше): ищем рядом, пока грузится фото. Нет файла
+		// или не совпала подпись - обычный разбор фото, как раньше.
+		var baked = (BAKED && this.alias) ? bakedLoad(this.alias, i)
+			.then(function (r2) { return r2[0] && r2[1] && r2[0].sig === bakeSig(m, self.cfg) ? r2 : null; }).catch(function () { return null; }) : Promise.resolve(null);
+		return (this.pending[i] = Promise.all([main, baked]).then(function (r2) {
 			var img = r2[0], a = null;
-			try { a = img ? analyse(img, { detectMetal: self.cfg.detectMetal, glass: self.cfg.glass, over: m, blank: r2[1] }) : null; } catch (e) { a = null; }
-			self.A[i] = a;
-			return a;
+			if (img && r2[1]) {
+				try { a = unbakeDoor(img, r2[1][0], r2[1][1]); } catch (e0) { a = null; }
+			}
+			if (a) { self.A[i] = a; return a; }
+			var bl = m.blank ? loadImg('/' + m.blank.replace(/^\//, '') + '?kdc=' + VERSION) : Promise.resolve(null);
+			return bl.then(function (blank) {
+				try { a = img ? analyse(img, { detectMetal: self.cfg.detectMetal, glass: self.cfg.glass, over: m, blank: blank }) : null; } catch (e) { a = null; }
+				self.A[i] = a;
+				return a;
+			});
 		}));
 	};
 
@@ -1212,7 +1542,7 @@
 			var p = PORTALS.filter(function (x) { return x.id === portalId; })[0] || PORTALS[0];
 			var cd = compose(A, this.cache[rk], p.s);
 			if (cd.canvas === this.cache[rk]) { cd.canvas = copyCanvas(cd.canvas); }
-			sealGap(cd.canvas);
+			if (!INTERIOR) { sealGap(cd.canvas); }
 			this.cache[ck] = cd;
 		}
 		return this.cache[ck];
@@ -1224,68 +1554,298 @@
 		var text = this.hero.querySelector('.kdc-cd-hero-text');
 		if (!photo || !text) { return; }
 		this.hero.classList.add('kdc-cfg-on');
+		// Флаг страницы для правил на body (custom.css): вместо body:has(.kdc-cfg-on),
+		// из-за которого браузер проверял весь body при каждой смене класса.
+		document.body.classList.add('kdc-cfg-page');
 
 		var stage = document.createElement('div');
 		stage.className = 'kdc-cfg-stage';
 		stage.innerHTML =
+			(INTERIOR ? '<img class="kdc-cfg-room" src="' + INTERIOR.src + '" alt="" decoding="async">' : '') +
 			'<div class="kdc-cfg-floor"><canvas></canvas></div>' +
 			'<div class="kdc-cfg-skirt"></div>' +
 			'<div class="kdc-cfg-shadow"></div>' +
+			(INTERIOR ? '<div class="kdc-cfg-underfloor"></div>' : '') +
 			'<div class="kdc-cfg-scene">' +
 				'<div class="kdc-cfg-door"><div class="kdc-cfg-glass-layer"></div><img class="kdc-cfg-door-img" alt=""></div>' +
 			'</div>' +
-			'<div class="kdc-cfg-env" role="group" aria-label="Стена и пол">' +
-				'<div class="kdc-cfg-env-title">Стена</div>' +
+			// Стена и пол: по кружку с текущим цветом - на стене справа и под
+			// ним на полу. Касание раскрывает варианты: стены - столбиком,
+			// пола - строкой (custom.css).
+			// В интерьере стена и пол - фото, кружки выбора скрыты (custom.css) -
+			// их ламинат (канвас + toDataURL на каждый пол) собирать незачем.
+			(INTERIOR ? '' : '<div class="kdc-cfg-env" role="group" aria-label="Стена и пол">' +
+				'<div class="kdc-cfg-env-group is-wall">' +
+				'<button type="button" class="kdc-cfg-env-cur" data-kdc="envopen:wall" aria-label="Цвет стены" title="Цвет стены"><span></span></button>' +
+				'<div class="kdc-cfg-env-list">' +
 				WALLS.map(function (w, i) {
 					return '<button type="button" class="kdc-cfg-env-sw" data-kdc="wall:' + i + '" title="Стена: ' + w[0].toLowerCase() + '" aria-label="Стена: ' + w[0].toLowerCase() + '"><span style="background:' + w[1] + '"></span></button>';
 				}).join('') +
-				'<div class="kdc-cfg-env-title">Пол</div>' +
+				'</div></div>' +
+				'<div class="kdc-cfg-env-group is-floor">' +
+				'<button type="button" class="kdc-cfg-env-cur" data-kdc="envopen:floor" aria-label="Пол" title="Пол"><span></span></button>' +
+				'<div class="kdc-cfg-env-list">' +
 				FLOORS.map(function (f, i) {
 					return '<button type="button" class="kdc-cfg-env-sw" data-kdc="floor:' + i + '" title="' + f[0] + '" aria-label="' + f[0] + '"><span style="background:url(' + laminate(f[1]) + ') 40% 0 / auto 260%,' + f[1] + '"></span></button>';
 				}).join('') +
-			'</div>' +
+				'</div></div>' +
+			'</div>') +
+			(INTERIOR ? '<div class="kdc-cfg-ghost" aria-hidden="true"></div>' : '') +
 			'<div class="kdc-cfg-loading">Загрузка…</div>';
 		photo.innerHTML = '';
 		photo.appendChild(stage);
 		this.stage = stage;
+		if (INTERIOR) {
+			var cfg0 = this;
+			stage.classList.add('is-room');
+			this.hero.classList.add('kdc-room');
+			// Без «резинки» вверх (custom.css): над фото комнаты не должен
+			// мелькать белый фон страницы.
+			document.documentElement.classList.add('kdc-room-page');
+			// Размер фото известен заранее - раскладку пересчитываем на всякий
+			// случай, когда оно догрузится.
+			stage.querySelector('.kdc-cfg-room').addEventListener('load', function () { cfg0.layoutStage(); });
+		}
+
+		this.buildStory(text);
 
 		var panel = document.createElement('div');
 		panel.className = 'kdc-cfg-panel';
-		panel.innerHTML = '<div class="kdc-cfg-tabs" role="tablist"></div><div class="kdc-cfg-body"></div><div class="kdc-cfg-summary"></div>';
+		panel.innerHTML =
+			'<div class="kdc-cfg-picker"><div class="kdc-cfg-tabs" role="tablist"></div><div class="kdc-cfg-body"></div></div>' +
+			'<button type="button" class="kdc-cfg-open" aria-haspopup="dialog">Выбрать модель и материал' +
+				'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7h11M18 7h3M3 17h4M11 17h10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="9" cy="17" r="2.2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>' +
+			'</button>' +
+			'<div class="kdc-cfg-summary"></div>';
 		this.panel = panel;
+		// Вкладки и варианты. На телефоне они уезжают в шторку, поэтому
+		// ищем их через picker, а не через panel.
+		this.picker = panel.querySelector('.kdc-cfg-picker');
+
+		/* Телефон: выбор - в шторке снизу на пол-экрана, поверх страницы
+		   (как у Волховца); дверь над ней меняется сразу. Шторка живёт в
+		   body: у обёрток SPPB есть transform/overflow, внутри них fixed
+		   ведёт себя как absolute. */
+		var sheet = document.createElement('div');
+		sheet.className = 'kdc-cfg-sheet';
+		sheet.setAttribute('role', 'dialog');
+		sheet.setAttribute('aria-label', 'Выбор модели и материала');
+		sheet.innerHTML = '<div class="kdc-cfg-sheet-head"><span class="kdc-cfg-sheet-grip"></span>' +
+			'<button type="button" class="kdc-cfg-sheet-close" aria-label="Закрыть">&times;</button></div>';
+		var backdrop = document.createElement('div');
+		backdrop.className = 'kdc-cfg-sheet-backdrop';
+		this.sheet = sheet;
+
 		// На телефоне и планшете выбор - под превью, на компьютере - под
 		// описанием слева.
 		var photoWrap = this.hero.querySelector('.addon-root-dynamic-content-image') || photo.parentNode;
 		var mq = window.matchMedia('(max-width: 991px)');
+		var mqPhone = window.matchMedia('(max-width: 575px)');
+		var self = this;
 		var place = function () {
 			if (mq.matches) { photoWrap.appendChild(panel); panel.classList.add('is-below'); } else { text.appendChild(panel); panel.classList.remove('is-below'); }
+			if (mqPhone.matches) {
+				if (!sheet.parentNode) { document.body.appendChild(backdrop); document.body.appendChild(sheet); }
+				sheet.appendChild(self.picker);
+			} else {
+				self.closeSheet();
+				panel.insertBefore(self.picker, panel.firstChild);
+			}
 		};
-		if (mq.addEventListener) { mq.addEventListener('change', place); } else if (mq.addListener) { mq.addListener(place); }
+		[mq, mqPhone].forEach(function (m) {
+			if (m.addEventListener) { m.addEventListener('change', place); } else if (m.addListener) { m.addListener(place); }
+		});
+
+		this.openSheet = function () {
+			if (!mqPhone.matches || sheet.classList.contains('is-open')) { return; }
+			// Сцена поднимается так, чтобы кружки стены и пола целиком стояли
+			// над шторкой, но верх двери не уходил за край экрана; шапка
+			// уезжает вверх. Страницу замораживаем на этой позиции: иначе
+			// iPhone листал её жестом по шторке - Safari начинает прокрутку
+			// раньше, чем её можно отменить из touchmove.
+			var from = window.pageYOffset;
+			var door = stage.querySelector('.kdc-cfg-door-img');
+			var env = stage.querySelector('.kdc-cfg-env-group.is-floor');
+			var free = window.innerHeight - sheet.offsetHeight;
+			var maxY = document.documentElement.scrollHeight - window.innerHeight;
+			var bottom = (env && env.offsetHeight ? env : stage).getBoundingClientRect().bottom;
+			var shift = bottom - (free - 12);
+			if (door && door.offsetHeight) { shift = Math.min(shift, door.getBoundingClientRect().top - 8); }
+			lockY = Math.max(0, Math.min(maxY, Math.round(from + shift)));
+			var bs = document.body.style;
+			bs.position = 'fixed'; bs.top = -from + 'px'; bs.left = '0'; bs.right = '0'; bs.width = '100%';
+			void document.body.offsetHeight;
+			bs.transition = 'top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+			bs.top = -lockY + 'px';
+			document.documentElement.classList.add('kdc-sheet-open');
+			sheet.style.transform = '';
+			sheet.style.height = '';
+			sheet.classList.add('is-open');
+			backdrop.classList.add('is-open');
+			halfH = sheet.offsetHeight;
+			self.toListStart();
+		};
+		var lockY = null;
+		this.closeSheet = function () {
+			sheet.style.transform = '';
+			sheet.classList.remove('is-open');
+			backdrop.classList.remove('is-open');
+			document.documentElement.classList.remove('kdc-sheet-open');
+			if (lockY !== null) {
+				var bs = document.body.style, html = document.documentElement, sb = html.style.scrollBehavior;
+				bs.position = bs.top = bs.left = bs.right = bs.width = bs.transition = '';
+				// Возвращаем позицию мгновенно, без плавной прокрутки темы.
+				html.style.scrollBehavior = 'auto';
+				window.scrollTo(0, lockY);
+				html.style.scrollBehavior = sb;
+				lockY = null;
+			}
+		};
+		panel.querySelector('.kdc-cfg-open').addEventListener('click', this.openSheet);
+		sheet.querySelector('.kdc-cfg-sheet-close').addEventListener('click', this.closeSheet);
+		// Мимо шторки - закрыть. Но кружки стены и пола видны над ней:
+		// касание по ним передаём кружку, шторка остаётся.
+		backdrop.addEventListener('click', function (e) {
+			backdrop.style.pointerEvents = 'none';
+			var under = document.elementFromPoint(e.clientX, e.clientY);
+			backdrop.style.pointerEvents = '';
+			var sw = under && under.closest('.kdc-cfg-env-sw, .kdc-cfg-env-cur');
+			if (sw) { sw.click(); } else { self.closeSheet(); }
+		});
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { self.closeSheet(); } });
+
+		// Ручка/вкладки: потянуть вверх - шторка растёт за пальцем (до 85%
+		// экрана) и остаётся, где отпустили; вниз ниже обычной высоты -
+		// возвращается к ней, а дальше чем на 60px - закрывается.
+		var dragY = null, dragStartH = 0, dragH = 0, halfH = 0;
+		var dragTo = function (h) {
+			dragH = h;
+			var maxH = window.innerHeight * 0.85;
+			if (h >= halfH) {
+				sheet.style.height = Math.min(maxH, h) + 'px';
+				sheet.style.transform = '';
+			} else {
+				sheet.style.height = halfH + 'px';
+				sheet.style.transform = 'translateY(' + (halfH - h) + 'px)';
+			}
+		};
+		sheet.addEventListener('touchstart', function (e) {
+			if (!e.target.closest('.kdc-cfg-sheet-head, .kdc-cfg-tabs')) { return; }
+			dragY = e.touches[0].clientY;
+			dragStartH = dragH = sheet.offsetHeight;
+			sheet.style.transition = 'none';
+		}, { passive: true });
+		sheet.addEventListener('touchmove', function (e) {
+			if (dragY === null) { return; }
+			dragTo(dragStartH - (e.touches[0].clientY - dragY));
+		}, { passive: true });
+		// Жест внутри шторки листает только список, но не страницу под ней.
+		// overscroll-behavior не помогает, когда список короткий и сам не
+		// прокручивается: тогда браузер отдаёт жест странице.
+		var lastY = 0;
+		sheet.addEventListener('touchstart', function (e) { lastY = e.touches[0].clientY; }, { passive: true });
+		sheet.addEventListener('touchmove', function (e) {
+			var y = e.touches[0].clientY, dy = y - lastY, list = e.target.closest('.kdc-cfg-body');
+			lastY = y;
+			if (!e.cancelable) { return; }
+			if (!list) { e.preventDefault(); return; }
+			// Короткий список прокручивать нечего - жест гасим целиком.
+			if (list.scrollHeight <= list.clientHeight + 1) { e.preventDefault(); return; }
+			var atTop = list.scrollTop <= 0, atEnd = list.scrollTop + list.clientHeight >= list.scrollHeight - 1;
+			if ((dy > 0 && atTop) || (dy < 0 && atEnd)) { e.preventDefault(); }
+		}, { passive: false });
+		sheet.addEventListener('touchend', function () {
+			if (dragY === null) { return; }
+			dragY = null;
+			sheet.style.transition = '';
+			if (dragH < halfH - 60) {
+				self.closeSheet();
+			} else if (dragH < halfH) {
+				sheet.style.height = '';
+				sheet.style.transform = '';
+			} else {
+				sheet.style.transform = '';
+			}
+		});
 		place();
 
-		var self = this;
-		this.hero.addEventListener('click', function (e) {
+		var onPick = function (e) {
 			var b = e.target.closest('[data-kdc]');
-			if (!b || !self.hero.contains(b)) { return; }
+			if (!b || !(self.hero.contains(b) || sheet.contains(b))) { return; }
 			var a = b.getAttribute('data-kdc').split(':');
 			var v = a[1];
 			// Стена и пол - только фон превью, дверь не пересчитываем.
+			if (a[0] === 'envopen') {
+				var grp = self.stage.querySelector('.kdc-cfg-env-group.is-' + v);
+				var was = grp.classList.contains('is-open');
+				[].forEach.call(self.stage.querySelectorAll('.kdc-cfg-env-group'), function (g) { g.classList.remove('is-open'); });
+				grp.classList.toggle('is-open', !was);
+				return;
+			}
 			if (a[0] === 'wall' || a[0] === 'floor') {
 				self.s[a[0]] = +v;
 				self.renderEnv();
+				[].forEach.call(self.stage.querySelectorAll('.kdc-cfg-env-group'), function (g) { g.classList.remove('is-open'); });
 				return;
 			}
+			if (a[0] === 'cat') {
+				self.s.cat = v; self.s.q = '';
+				self.renderPanel();
+				return;
+			}
+			var newTab = a[0] === 'tab' && self.s.tab !== v;
 			if (a[0] === 'tab') { self.s.tab = v; } else if (a[0] === 'model') { self.s.model = +v; } else if (a[0] === 'color') {
 				self.s.mat = v.split('-')[0]; self.s.color = +v.split('-')[1];
 			} else if (a[0] === 'glass') { self.s.glass = v; } else if (a[0] === 'portal') { self.s.portal = v; }
 			self.update();
+			if (newTab) { self.toListStart(); }
+		};
+		this.hero.addEventListener('click', onPick);
+		// Касание мимо раскрытых кружков - свернуть их.
+		document.addEventListener('click', function (e) {
+			if (self.stage && !e.target.closest('.kdc-cfg-env')) {
+				[].forEach.call(self.stage.querySelectorAll('.kdc-cfg-env-group.is-open'), function (g) { g.classList.remove('is-open'); });
+			}
 		});
+		sheet.addEventListener('click', onPick);
+		// Поиск и выбор группы: перерисовываем только сетку образцов, чтобы поле не теряло фокус.
+		var onFilter = function (e) {
+			var t = e.target, box = t.closest && t.closest('.kdc-cfg-body');
+			if (!box || !(self.hero.contains(t) || sheet.contains(t))) { return; }
+			if (t.hasAttribute('data-kdc-search')) { self.s.q = t.value; }
+			else if (t.hasAttribute('data-kdc-group')) { self.s.grp[self.s.cat] = t.value; self.s.q = ''; var si = box.querySelector('[data-kdc-search]'); if (si) { si.value = ''; } }
+			else { return; }
+			var sw = box.querySelector('[data-swatches]');
+			if (sw) { sw.innerHTML = self.swatchesHtml(); }
+		};
+		this.hero.addEventListener('input', onFilter);
+		sheet.addEventListener('input', onFilter);
+		this.hero.addEventListener('change', onFilter);
+		sheet.addEventListener('change', onFilter);
 		var ro = window.ResizeObserver ? new ResizeObserver(function () { self.layoutStage(); }) : null;
 		if (ro) { ro.observe(stage); } else { window.addEventListener('resize', function () { self.layoutStage(); }); }
 
 		this.renderEnv();
-		this.buildRange();
+		// Блок «Модельный ряд» ниже на странице скрыт (custom.css), его карточки
+		// грузили и обрабатывали те же 16 картинок второй раз - не строим.
+		// Интерьер: комнату и силуэт двери раскладываем сразу, не дожидаясь
+		// ResizeObserver (он срабатывает кадром позже - мелькал пустой фон).
+		if (INTERIOR) { stage.classList.add('is-loading'); this.layoutStage(); }
 		this.update();
+	};
+
+	/* Новая вкладка открывается с начала списка. На телефоне список
+	   прокручивается вместе со страницей под закреплёнными вкладками:
+	   долистали модели до конца, нажали «Цвет» - и оказывались внизу
+	   цветов. Возвращаем страницу так, чтобы список начинался сразу под
+	   вкладками. На компьютере у списка своя прокрутка - сбрасываем её. */
+	Configurator.prototype.toListStart = function () {
+		var body = this.picker.querySelector('.kdc-cfg-body');
+		var tabs = this.picker.querySelector('.kdc-cfg-tabs');
+		if (!body || !tabs) { return; }
+		body.scrollTop = 0;
+		var gap = body.getBoundingClientRect().top - tabs.getBoundingClientRect().bottom;
+		if (gap < -1) { window.scrollTo(0, window.pageYOffset + gap); }
 	};
 
 	// Ламинат: доски вдоль стены, у каждой свой оттенок, продольный
@@ -1402,12 +1962,23 @@
 
 	Configurator.prototype.renderEnv = function () {
 		var st = this.stage, s = this.s, self = this;
-		if (!st) { return; }
+		if (!st || INTERIOR) { return; }
 		var w = WALLS[s.wall] || WALLS[0], f = FLOORS[s.floor] || FLOORS[0];
 		st.style.setProperty('--kdc-wall', w[1]);
 		this.drawFloor();
 		// Светлая дверь на тёмной стене - тень заметнее.
 		st.classList.toggle('is-dark-wall', s.wall === 3);
+		// Кружки-«текущие»: стена - цветом, пол - тем же ламинатом.
+		var cw = st.querySelector('.is-wall .kdc-cfg-env-cur span'), cf = st.querySelector('.is-floor .kdc-cfg-env-cur span');
+		var sf = st.querySelector('[data-kdc="floor:' + s.floor + '"] span');
+		if (cw) { cw.style.background = w[1]; }
+		if (cf && sf) { cf.style.background = sf.style.background; }
+		// На светлой стене/полу кружки и раскрытый список - тёмные, иначе
+		// белая обводка теряется на фоне.
+		var light = function (hx) { var t = hex(hx); return t[0] * 0.3 + t[1] * 0.59 + t[2] * 0.11 > 150; };
+		var gw = st.querySelector('.kdc-cfg-env-group.is-wall'), gf = st.querySelector('.kdc-cfg-env-group.is-floor');
+		if (gw) { gw.classList.toggle('is-dark-ui', light(w[1])); }
+		if (gf) { gf.classList.toggle('is-dark-ui', light(f[1])); }
 		[].forEach.call(st.querySelectorAll('[data-kdc^="wall:"],[data-kdc^="floor:"]'), function (b) {
 			var k = b.getAttribute('data-kdc').split(':'), on = +k[1] === s[k[0]];
 			b.classList.toggle('is-on', on);
@@ -1428,6 +1999,29 @@
 		});
 	};
 
+	/* Есть ли у модели стекло: по разбору фото, если он уже есть, иначе -
+	   по признаку glazed из models.json (проставлен заранее, чтобы группы
+	   не перестраивались по мере разбора), иначе - по ручной разметке. */
+	Configurator.prototype.glazed = function (i) {
+		var A = this.A[i], m = this.models[i];
+		var keep = Array.isArray(m.glass) && m.glass.some(function (g) { return g && g.keep; });
+		if (A) { return A.glass.length > 0 || keep; }
+		if (typeof m.glazed === 'boolean') { return m.glazed; }
+		if (Array.isArray(m.glass)) { return m.glass.length > 0; }
+		return false;
+	};
+
+	/* Загрузка новой модели показывается на её плитке в меню, а на сцене
+	   остаётся прежняя дверь, пока новая не готова. */
+	Configurator.prototype.setBusy = function (i) {
+		this.busy = i;
+		[].forEach.call(this.picker.querySelectorAll('.kdc-cfg-model'), function (b) {
+			var on = +b.getAttribute('data-kdc').split(':')[1] === i;
+			b.classList.toggle('is-busy', on);
+			if (on) { b.setAttribute('aria-busy', 'true'); } else { b.removeAttribute('aria-busy'); }
+		});
+	};
+
 	Configurator.prototype.update = function () {
 		var self = this, s = this.s;
 		// Выбранная модель - в адресе (#m=N): после обновления страницы
@@ -1436,13 +2030,18 @@
 		if (location.hash !== hash && (!location.hash || /^#m=\d+$/.test(location.hash)) && window.history && history.replaceState) {
 			history.replaceState(history.state, '', location.pathname + location.search + hash);
 		}
-		if (s.tab === 'color' || s.mat === 'veneer') { this.ensureTex(); }
+		if ((s.tab === 'color' && this.mats.indexOf('veneer') >= 0) || s.mat === 'veneer') { this.ensureTex(); }
 		// Шпон без текстуры не рисуем - иначе в кэш попадёт дверь без
 		// рисунка дерева.
 		if (s.mat === 'veneer' && !this.texReady) { this.renderPanel(); return; }
-		// Новая модель ещё не разобрана - показываем «Загрузка…».
-		if (this.A[s.model] === undefined && this.stage) { this.stage.classList.add('is-loading'); }
+		// Новая модель ещё не разобрана. Пока на сцене ничего нет (первый
+		// показ) - «Загрузка…» на сцене; дальше сцена держит прежнюю дверь,
+		// а загрузку показывает плитка модели в меню.
+		if (this.A[s.model] === undefined && this.stage) {
+			if (this.dr) { this.busy = s.model; } else { this.stage.classList.add('is-loading'); }
+		}
 		this.analysis(s.model).then(function (A) {
+			if (window.performance && performance.mark && !self.markedAn) { self.markedAn = true; performance.mark('kdc-analysed'); }
 			// Модель без стекла под замену - вкладка «Стекло» не нужна.
 			if (s.tab === 'glass' && !(A && A.glass.length)) { s.tab = 'model'; }
 			if (s.tab === 'portal' && !(A && A.casing)) { s.tab = 'model'; }
@@ -1455,34 +2054,74 @@
 		if (s.tab === 'model') { this.renderThumbs(); }
 	};
 
+	// Панель цвета: переключатель каталогов RAL / NCS, поиск по номеру, группа
+	// (серия RAL или оттенок NCS) и сетка образцов. Шпон (только у шпонированных
+	// коллекций) - отдельной группой, как раньше.
+	Configurator.prototype.colorPanelHtml = function () {
+		var s = this.s, self = this, html = '', hasCat = this.mats.indexOf('ral') >= 0;
+		if (hasCat) {
+			var cats = [['ral', 'RAL'], ['ncs', 'NCS']];
+			var groups = s.cat === 'ral' ? RAL_GROUPS : NCS_HUES;
+			html += '<div class="kdc-cfg-cat"><div class="kdc-cfg-cats" role="tablist">' + cats.map(function (c) {
+				return '<button type="button" role="tab" aria-selected="' + (s.cat === c[0]) + '" class="kdc-cfg-catbtn' + (s.cat === c[0] ? ' is-on' : '') + '" data-kdc="cat:' + c[0] + '">' + c[1] + '</button>';
+			}).join('') + '</div><div class="kdc-cfg-filters">' +
+				'<input type="search" class="kdc-cfg-search" data-kdc-search placeholder="' + (s.cat === 'ral' ? 'Номер RAL' : 'Номер NCS') + '" value="' + esc(s.q) + '" autocomplete="off" inputmode="search" aria-label="Поиск цвета">' +
+				'<select class="kdc-cfg-group-sel" data-kdc-group aria-label="' + (s.cat === 'ral' ? 'Серия RAL' : 'Оттенок NCS') + '">' +
+				[['*', 'Все цвета (' + (s.cat === 'ral' ? RAL.length : NCS.length) + ')']].concat(groups).map(function (g) { return '<option value="' + g[0] + '"' + (s.grp[s.cat] === g[0] ? ' selected' : '') + '>' + (s.cat === 'ral' && g[0] !== '*' ? g[0] + '000 - ' + g[1] : g[1]) + '</option>'; }).join('') +
+				'</select></div></div><div class="kdc-cfg-swatches" data-swatches>' + this.swatchesHtml() + '</div>' +
+				'<div class="kdc-cfg-note kdc-cfg-colornote">Цвета на экране приблизительные: точный оттенок подбирается по каталогу RAL или NCS.</div>';
+		}
+		if (this.mats.indexOf('veneer') >= 0) {
+			html += '<div class="kdc-cfg-group"><div class="kdc-cfg-group-title">Шпон</div><div class="kdc-cfg-swatches">' + VENEER.map(function (c, i) {
+				var on = s.mat === 'veneer' && s.color === i;
+				return '<button type="button" class="kdc-cfg-swatch' + (on ? ' is-on' : '') + '" aria-pressed="' + on + '" data-kdc="color:veneer-' + i + '" title="' + esc(c[0]) + '">' +
+					'<span style="background:' + c[1] + ' url(' + woodSwatch(c[1], c[2]) + ') center/cover"></span></button>';
+			}).join('') + '</div></div>';
+		}
+		return html;
+	};
+
+	// Образцы текущего каталога с учётом поиска и группы.
+	Configurator.prototype.swatchesHtml = function () {
+		var s = this.s, cat = s.cat, list = cat === 'ral' ? RAL : NCS, q = s.q.trim().toLowerCase().replace(/^(ral|ncs)\s*/, '').replace(/^s\s+/, ''), g = s.grp[cat], out = [];
+		list.forEach(function (c, i) {
+			var code = c[0].toLowerCase();
+			if (q) { if (code.indexOf(q) < 0 && (cat !== 'ral' || c[1].toLowerCase().indexOf(q) < 0)) { return; } }
+			else if (g !== '*' && (cat === 'ral' ? code.charAt(0) !== g : c[1] !== g)) { return; }
+			var on = s.mat === cat && s.color === i, name = cat === 'ral' ? 'RAL ' + c[0] + ' ' + c[1] : 'NCS ' + c[0], hex = c[2];
+			out.push('<button type="button" class="kdc-cfg-swatch' + (on ? ' is-on' : '') + '" aria-pressed="' + on + '" data-kdc="color:' + cat + '-' + i + '" title="' + esc(name) + '">' +
+				'<span style="background:' + hex + '"></span></button>');
+		});
+		return out.length ? out.join('') : '<div class="kdc-cfg-empty">Ничего не найдено</div>';
+	};
+
 	Configurator.prototype.renderPanel = function () {
 		var s = this.s, A = this.A[s.model], m = this.models[s.model], color = this.color(), self = this;
 		var tabs = [['model', 'Модель'], ['color', 'Цвет']];
 		if (A && A.glass.length) { tabs.push(['glass', 'Стекло']); }
 		if (A && A.casing) { tabs.push(['portal', 'Наличник']); }
-		this.panel.querySelector('.kdc-cfg-tabs').innerHTML = tabs.map(function (t) {
+		this.picker.querySelector('.kdc-cfg-tabs').innerHTML = tabs.map(function (t) {
 			var on = s.tab === t[0];
 			return '<button type="button" role="tab" aria-selected="' + on + '" class="kdc-cfg-tab' + (on ? ' is-on' : '') + '" data-kdc="tab:' + t[0] + '">' + t[1] + '</button>';
 		}).join('');
 
 		var html = '';
 		if (s.tab === 'model') {
-			html = '<div class="kdc-cfg-models">' + this.models.map(function (md, i) {
-				var on = i === s.model;
-				return '<button type="button" class="kdc-cfg-model' + (on ? ' is-on' : '') + '" aria-pressed="' + on + '" data-kdc="model:' + i + '" title="' + esc(md.name) + '">' +
-					'<span class="kdc-cfg-model-img" data-thumb="' + i + '"></span><span class="kdc-cfg-model-name">' + esc(md.name) + '</span></button>';
-			}).join('') + '</div>';
-		} else if (s.tab === 'color') {
-			html = this.mats.map(function (mat) {
-				var list = mat === 'ral' ? RAL : VENEER;
-				return '<div class="kdc-cfg-group"><div class="kdc-cfg-group-title">' + (mat === 'ral' ? 'Цвета RAL' : 'Шпон') + '</div><div class="kdc-cfg-swatches">' +
-					list.map(function (c, i) {
-						var on = s.mat === mat && s.color === i, name = mat === 'ral' ? c[0] + ' ' + c[1] : c[0], bg = mat === 'ral' ? c[2] : c[1];
-						var tex = mat === 'veneer' ? woodSwatch(c[1], c[2]) : '';
-						return '<button type="button" class="kdc-cfg-swatch' + (on ? ' is-on' : '') + '" aria-pressed="' + on + '" data-kdc="color:' + mat + '-' + i + '" title="' + esc(name) + '">' +
-							'<span style="background:' + bg + (tex ? ' url(' + tex + ') center/cover' : '') + '"></span></button>';
+			// Модели - двумя группами: без стекла и со стеклом (как у
+			// Волховца). Заголовки - только если есть обе группы.
+			var groups = [['Без остекления', []], ['С остеклением', []]];
+			this.models.forEach(function (md, i) { groups[self.glazed(i) ? 1 : 0][1].push(i); });
+			var both = groups[0][1].length && groups[1][1].length;
+			html = groups.filter(function (g) { return g[1].length; }).map(function (g) {
+				return '<div class="kdc-cfg-group">' + (both ? '<div class="kdc-cfg-group-title">' + g[0] + '</div>' : '') +
+					'<div class="kdc-cfg-models">' + g[1].map(function (i) {
+						var md = self.models[i], on = i === s.model, busy = i === self.busy;
+						return '<button type="button" class="kdc-cfg-model' + (on ? ' is-on' : '') + (busy ? ' is-busy' : '') + '" aria-pressed="' + on + '"' + (busy ? ' aria-busy="true"' : '') + ' data-kdc="model:' + i + '" title="' + esc(md.name) + '">' +
+							'<span class="kdc-cfg-model-img" data-thumb="' + i + '"></span><span class="kdc-cfg-model-name">' + esc(md.name) + '</span></button>';
 					}).join('') + '</div></div>';
 			}).join('');
+		} else if (s.tab === 'color') {
+			html = this.colorPanelHtml();
 		} else if (s.tab === 'glass') {
 			html = GLASS.map(function (g) {
 				return '<div class="kdc-cfg-group"><div class="kdc-cfg-group-title">' + g.title + '</div><div class="kdc-cfg-glasses">' +
@@ -1500,7 +2139,7 @@
 			}).join('') + '</div>' +
 			'<div class="kdc-cfg-note">Возможен заказ гладких наличников на классическом коробе: широкий гладкий - 100, 120 или 150 мм; широкий компланарный - 90, 100, 120 или 150 мм.</div>';
 		}
-		this.panel.querySelector('.kdc-cfg-body').innerHTML = html;
+		this.picker.querySelector('.kdc-cfg-body').innerHTML = html;
 
 		var g = ALL_GLASS.filter(function (x) { return x.id === s.glass; })[0];
 		var parts = [m.name, color.name];
@@ -1509,12 +2148,19 @@
 			parts.push(PORTALS.filter(function (p) { return p.id === s.portal; })[0].name);
 		}
 		var price = m.price ? '<div class="kdc-cfg-price">от ' + Number(m.price).toLocaleString('ru-RU') + ' ₽<span>цена за комплект</span></div>' : '';
+		// Телефон: состав двери списком «название - значение» (как у
+		// Волховца). На компьютере - прежняя строка: там панель постоянной
+		// высоты, а список менял бы её от модели к модели.
+		var specs = [['Модель', m.name], ['Отделка', s.mat === 'veneer' ? 'Шпон, ' + color.name.toLowerCase() : color.name]];
+		if (A && A.glass.length) { specs.push(['Стекло', g.name]); }
+		if (A && A.casing) { specs.push(['Наличник', PORTALS.filter(function (p) { return p.id === s.portal; })[0].name]); }
 		this.panel.querySelector('.kdc-cfg-summary').innerHTML =
-			'<div class="kdc-cfg-caption">' + esc(parts.join(', ')) + '</div>' + price +
+			'<div class="kdc-cfg-caption">' + esc(parts.join(', ')) + '</div>' +
+			'<dl class="kdc-cfg-specs">' + specs.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' + price +
 			'<div class="kdc-cfg-note">Фурнитура подбирается отдельно. Итоговую стоимость рассчитает менеджер.</div>';
 
 		// Уже готовые миниатюры - сразу на место.
-		[].forEach.call(this.panel.querySelectorAll('[data-thumb]'), function (el) {
+		[].forEach.call(this.picker.querySelectorAll('[data-thumb]'), function (el) {
 			var t = self.thumbs[el.getAttribute('data-thumb')];
 			if (t) { el.appendChild(copyCanvas(t)); }
 		});
@@ -1582,41 +2228,85 @@
 
 	Configurator.prototype.renderThumbs = function () {
 		var self = this;
-		this.models.forEach(function (m, idx) {
-			var put = function () {
-				var el = self.panel.querySelector('[data-thumb="' + idx + '"]');
-				if (el && self.thumbs[idx] && !el.firstChild) { el.appendChild(copyCanvas(self.thumbs[idx])); }
+		if (this.thumbsRun) { return; }
+		this.thumbsRun = true;
+		this.doorReady.then(function () {
+			var order = self.models.map(function (m, i) { return i; });
+			// Сначала выбранная модель и соседние - их видно в первую очередь.
+			order.sort(function (a, b) { return Math.abs(a - self.s.model) - Math.abs(b - self.s.model); });
+			var idle = window.requestIdleCallback ? function (f) { window.requestIdleCallback(f, { timeout: 300 }); } : function (f) { setTimeout(f, 16); };
+			var next = function () {
+				var idx = order.shift();
+				if (idx === undefined) { self.thumbsRun = false; return; }
+				var put = function () {
+					var el = self.picker.querySelector('[data-thumb="' + idx + '"]');
+					if (el && self.thumbs[idx] && !el.firstChild) { el.appendChild(copyCanvas(self.thumbs[idx])); }
+				};
+				if (self.thumbs[idx]) { put(); next(); return; }
+				self.loadCrop(idx).then(function (o) {
+					if (o && !self.thumbs[idx]) {
+						var r = o.r, H = 200, c = document.createElement('canvas');
+						c.height = H; c.width = Math.max(1, Math.round(r[2] * H / r[3]));
+						c.getContext('2d').drawImage(o.img, r[0], r[1], r[2], r[3], 0, 0, c.width, H);
+						self.thumbs[idx] = c;
+					}
+					put();
+					idle(next);
+				});
 			};
-			if (self.thumbs[idx]) { put(); return; }
-			self.loadCrop(idx).then(function (o) {
-				if (!o || self.thumbs[idx]) { put(); return; }
-				var r = o.r, H = 200, c = document.createElement('canvas');
-				c.height = H; c.width = Math.max(1, Math.round(r[2] * H / r[3]));
-				c.getContext('2d').drawImage(o.img, r[0], r[1], r[2], r[3], 0, 0, c.width, H);
-				self.thumbs[idx] = c;
-				put();
-			});
+			// Две очереди: загрузка картинок идёт параллельно, обработка - по одной.
+			next(); next();
 		});
 	};
 
-	/* Модельный ряд ниже на странице: вместо картинок с впечатанными
-	   подписями - дверь отдельно, справа название и цена текстом. Клик -
-	   модель выбирается в конфигураторе наверху. */
+	/* Модельный ряд ниже на странице (по макету владельца): надпись
+	   «Коллекция», заголовок, подзаголовок, переключатель «Все модели /
+	   Глухие / Со стеклом» и карточки: дверь без фона, название, цена. Клик - модель выбирается в конфигураторе. */
 	Configurator.prototype.buildRange = function () {
 		var self = this;
 		var gal = document.querySelector('#section-id-edb79f02-d4c8-4d8a-ab69-f4c8e73b8b1f .sppb-dynamic-content-gallery');
 		if (!gal) { return; }
-		var grid = document.createElement('div');
-		grid.className = 'kdc-range';
-		grid.innerHTML = this.models.map(function (m, i) {
-			var price = m.price ? '<span class="kdc-range-price">' + Number(m.price).toLocaleString('ru-RU') + ' ₽</span><span class="kdc-range-note">цена за комплект</span>' : '';
-			return '<button type="button" class="kdc-range-item" data-kdc-pick="' + i + '" title="Выбрать модель ' + esc(m.name) + '">' +
-				'<span class="kdc-range-img" data-range="' + i + '"></span>' +
-				'<span class="kdc-range-meta"><span class="kdc-range-label">модель</span><span class="kdc-range-name">' + esc(m.name) + '</span>' + price + '</span></button>';
-		}).join('');
+		// Штатный заголовок секции заменяем своим (ниже, вместе с фильтром).
+		var col = gal.closest('.sppb-column');
+		var oldTitle = col && [].filter.call(col.querySelectorAll('.sppb-addon-title'), function (t) { return /Модельный ряд/i.test(t.textContent); })[0];
+		if (oldTitle) { oldTitle.closest('.sppb-addon-wrapper').classList.add('kdc-range-hide'); }
+
+		var glazed = this.models.map(function (m, i) { return self.glazed(i); });
+		var hasBoth = glazed.indexOf(true) >= 0 && glazed.indexOf(false) >= 0;
+		var block = document.createElement('div');
+		block.className = 'kdc-range-block';
+		block.innerHTML =
+			'<div class="kdc-range-head">' +
+				'<div class="kdc-range-eyebrow">Коллекция</div>' +
+				'<h2 class="kdc-range-title">Модельный ряд</h2>' +
+				'<p class="kdc-range-sub">Эстетика, надёжность и продуманные детали в каждой модели.</p>' +
+			'</div>' +
+			(hasBoth ? '<div class="kdc-range-filter" role="tablist">' +
+				'<button type="button" class="is-on" data-range-filter="all">Все модели</button>' +
+				'<button type="button" data-range-filter="solid">Глухие</button>' +
+				'<button type="button" data-range-filter="glass">Со стеклом</button>' +
+			'</div>' : '') +
+			'<div class="kdc-range">' + this.models.map(function (m, i) {
+				var price = m.price ? '<span class="kdc-range-price">' + Number(m.price).toLocaleString('ru-RU') + ' ₽</span><span class="kdc-range-note">цена за комплект</span>' : '';
+				return '<button type="button" class="kdc-range-item" data-kdc-pick="' + i + '" data-glass="' + (glazed[i] ? 1 : 0) + '" title="Выбрать модель ' + esc(m.name) + '">' +
+					'<span class="kdc-range-pic"><span class="kdc-range-img" data-range="' + i + '"></span></span>' +
+					'<span class="kdc-range-meta"><span class="kdc-range-name">' + esc(m.name) + '</span>' + price + '</span></button>';
+			}).join('') + '</div>';
 		gal.classList.add('kdc-range-on');
-		gal.appendChild(grid);
-		grid.addEventListener('click', function (e) {
+		gal.appendChild(block);
+		var grid = block.querySelector('.kdc-range');
+
+		block.addEventListener('click', function (e) {
+			var f = e.target.closest('[data-range-filter]');
+			if (f) {
+				var v = f.getAttribute('data-range-filter');
+				[].forEach.call(block.querySelectorAll('[data-range-filter]'), function (x) { x.classList.toggle('is-on', x === f); });
+				[].forEach.call(grid.children, function (it) {
+					var g = it.getAttribute('data-glass') === '1';
+					it.hidden = v === 'solid' ? g : v === 'glass' ? !g : false;
+				});
+				return;
+			}
 			var b = e.target.closest('[data-kdc-pick]');
 			if (!b) { return; }
 			self.s.model = +b.getAttribute('data-kdc-pick');
@@ -1625,7 +2315,9 @@
 			var top = self.hero.getBoundingClientRect().top + window.pageYOffset - 100;
 			window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 		});
-		// Картинки - когда блок близко к экрану.
+		// Картинки - когда блок близко к экрану. Лёгкая обрезка по двери
+		// (без полного разбора фото - он тяжёлый); светлый фон снимка
+		// растворяется в карточке через mix-blend-mode: multiply (custom.css).
 		var fill = function () {
 			self.models.forEach(function (m, i) {
 				self.loadCrop(i).then(function (o) {
@@ -1652,7 +2344,7 @@
 		var self = this, s = this.s, color = this.color();
 		if (!this.A[s.model]) { return; }
 		PORTALS.forEach(function (p) {
-			var el = self.panel.querySelector('[data-portal="' + p.id + '"]');
+			var el = self.picker.querySelector('[data-portal="' + p.id + '"]');
 			if (!el || el.firstChild) { return; }
 			var dr = self.door(s.model, color, p.id);
 			// Верхний угол двери крупно - видна ширина наличника.
@@ -1669,7 +2361,8 @@
 	Configurator.prototype.renderStage = function () {
 		var self = this, s = this.s, A = this.A[s.model], st = this.stage;
 		if (!A) {
-			st.classList.toggle('is-loading', A === undefined);
+			if (!this.dr) { st.classList.toggle('is-loading', A === undefined); }
+			if (A === null) { this.setBusy(null); }
 			return;
 		}
 		var color = this.color(), dr = this.door(s.model, color, s.portal);
@@ -1679,10 +2372,14 @@
 			if (token !== self.stageToken) { return; }
 			var img = st.querySelector('.kdc-cfg-door-img');
 			img.src = url;
+			if (self.doorOk) { self.doorOk(); }
+			// Отметка для измерений: performance.getEntriesByName('kdc-door') в консоли.
+			if (window.performance && performance.mark && !self.markedDoor) { self.markedDoor = true; performance.mark('kdc-door'); }
 			self.dr = dr;
 			self.renderGlass();
 			self.layoutStage();
 			st.classList.remove('is-loading');
+			if (self.busy === s.model) { self.setBusy(null); }
 		};
 		this.urls = this.urls || {};
 		if (this.urls[key]) { apply(this.urls[key]); } else {
@@ -1742,14 +2439,18 @@
 	// Дверь по центру на светлом фоне, стоит на линии пола.
 	Configurator.prototype.layoutStage = function () {
 		var st = this.stage, dr = this.dr;
-		if (!st || !dr) { return; }
+		if (!st) { return; }
 		var SW = st.clientWidth, SH = st.clientHeight;
 		if (!SW || !SH) { return; }
+		// Пока дверь не готова, в интерьере уже видна комната и силуэт двери.
+		if (!dr) { if (INTERIOR) { this.layoutGhost(SW, SH); } return; }
 		var scene = st.querySelector('.kdc-cfg-scene'), door = st.querySelector('.kdc-cfg-door');
+		if (INTERIOR) { this.layoutRoom(SW, SH, scene, door); return; }
 		// Дверь по центру сцены; справа колонка «Стена/Пол» - широкая
 		// дверь не должна до неё доставать (поле с обеих сторон).
 		// На телефоне колонка лежит строкой на полу - поле не нужно.
-		var env = st.querySelector('.kdc-cfg-env'), EW = env && env.offsetHeight > env.offsetWidth ? env.offsetWidth + 28 : 16, AW = SW - 2 * EW;
+		// Кружки стены/пола стоят у правого края - дверь держим от них в стороне.
+		var envCur = st.querySelector('.kdc-cfg-env-cur'), EW = envCur ? envCur.offsetWidth + 28 : 16, AW = SW - 2 * EW;
 		var FL = SH * (1 - FLOOR_H), hH = FL - SH * 0.06, hW = hH * dr.CW / dr.CH;
 		if (hW > AW) { hW = AW; hH = hW * dr.CH / dr.CW; }
 		assign(scene.style, { width: hW + 'px', height: hH + 'px', left: (SW - hW) / 2 + 'px', top: FL - hH + 'px' });
@@ -1761,18 +2462,122 @@
 		assign(door.style, { left: '0', top: '0', width: '100%', height: '100%' });
 	};
 
+	/* Блок «Про коллекцию» под первым экраном - один, по центру (custom.css,
+	   .kdc-about-solo); «Палитра без наценки» рядом скрыта: палитра теперь
+	   в выборе цвета. (Кнопку «История» в карточке убрали по просьбе владельца.) */
+	Configurator.prototype.buildStory = function () {
+		var pal = document.querySelector('.kdc-cd-palette'), palCol = pal && pal.closest('.sppb-row-column');
+		if (palCol) { palCol.classList.add('kdc-story-moved'); }
+		var ab = document.querySelector('.kdc-cd-about'), abCol = ab && ab.closest('.sppb-row-column');
+		if (abCol) { abCol.classList.add('kdc-about-solo'); }
+	};
+
+	/* Интерьер: фото заполняет сцену (как cover, но со своей точкой
+	   фокуса - проём держим справа на компьютере и по центру на телефоне),
+	   дверь вписываем в проём: полотно с коробкой закрывает проём целиком,
+	   низ - на линии пола, наличник ложится на стену вокруг. */
+	/* Кадр комнаты в сцене: масштаб и сдвиг фото (общие для двери и
+	   силуэта при загрузке). */
+	Configurator.prototype.roomGeo = function (SW, SH) {
+		var R = INTERIOR, img = this.stage.querySelector('.kdc-cfg-room');
+		var VT = R.top || 0, VH = (R.bottom || R.h) - VT, S = Math.max(SW / R.w, SH / VH), IW = R.w * S, IH = R.h * S;
+		var o = R.open, fx = SW < 768 ? R.focus[1] : R.focus[0];
+		var ox = Math.min(0, Math.max(SW - IW, SW * fx - (o[0] + o[2]) / 2 * S));
+		var oy = Math.min(0, Math.max(SH - VH * S, (SH - VH * S) / 2)) - VT * S;
+		assign(img.style, { left: ox + 'px', top: oy + 'px', width: IW + 'px', height: IH + 'px' });
+		var pull = this.hero.getBoundingClientRect().top + window.pageYOffset;
+		this.hero.style.setProperty('--kdc-room-pull', Math.max(0, Math.round(pull)) + 'px');
+		return { S: S, IW: IW, IH: IH, ox: ox, oy: oy };
+	};
+
+	/* Загрузка: на месте двери - мерцающий силуэт с наличником. */
+	Configurator.prototype.layoutGhost = function (SW, SH) {
+		var g = this.roomGeo(SW, SH), o = INTERIOR.open, gh = this.stage.querySelector('.kdc-cfg-ghost');
+		if (!gh) { return; }
+		var L = g.ox + o[0] * g.S, Rr = g.ox + o[2] * g.S, T = g.oy + o[1] * g.S, B = g.oy + o[3] * g.S, c = (Rr - L) * 0.09;
+		assign(gh.style, { left: L - c + 'px', top: T - c + 'px', width: Rr - L + 2 * c + 'px', height: B - T + c + 'px' });
+	};
+
+	Configurator.prototype.layoutRoom = function (SW, SH, scene, door) {
+		var R = INTERIOR, dr = this.dr, st = this.stage, o = R.open;
+		var g = this.roomGeo(SW, SH), S = g.S, IW = g.IW, IH = g.IH, ox = g.ox, oy = g.oy;
+		// Полотно с коробкой в кадре двери: без наличника - весь кадр.
+		var bx = 0, by = 0, bw = dr.CW, bh = dr.CH;
+		if (dr.lw) { bx = dr.x0 + dr.lw; by = dr.y0 + dr.lw; bw = dr.CW - 2 * bx; bh = dr.CH - by; }
+		var OL = ox + o[0] * S, OR = ox + o[2] * S, OT = oy + o[1] * S, OB = oy + o[3] * S;
+		// Масштаб - только по высоте полотна с коробкой: от наличника он не
+		// зависит, дверь при смене наличника остаётся того же размера.
+		var k = (OB - OT) / bh;
+		var hW = dr.CW * k, hH = dr.CH * k, left = (OL + OR) / 2 - (bx + bw / 2) * k;
+		assign(scene.style, { width: hW + 'px', height: hH + 'px', left: left + 'px', top: OB - hH + 'px' });
+		var sh = st.querySelector('.kdc-cfg-shadow');
+		if (sh) { assign(sh.style, { left: OL - (OR - OL) * 0.06 + 'px', width: (OR - OL) * 1.12 + 'px', top: OB - 5 + 'px' }); }
+		// Просвет под полотном: за дверью продолжается тот же паркет. Полоса
+		// за дверью показывает пол из кадра чуть ниже порога, с тенью от
+		// полотна; видна только сквозь прозрачную щель в картинке двери.
+		var uf = st.querySelector('.kdc-cfg-underfloor');
+		if (uf) {
+			// В ширину по внешним краям наличника: кадр двери шире (запас под
+			// широкий наличник), и за его краем полоса легла бы на плинтус; а
+			// уже наличника - в углах щели между коробкой и наличником
+			// просвечивала бы белая стена. За наличником полосу не видно.
+			var px0 = dr.lw ? dr.x0 : 0;
+			var gh = Math.max(4, Math.round(hH * 0.035)), gt = OB - gh, gl = left + px0 * k;
+			assign(uf.style, {
+				left: gl + 'px', width: (dr.CW - 2 * px0) * k + 'px', top: gt + 'px', height: gh + 1 + 'px',
+				backgroundImage: 'linear-gradient(rgba(40, 26, 12, 0.5), rgba(40, 26, 12, 0.28)), url("' + R.src + '")',
+				backgroundSize: '100% 100%, ' + IW + 'px ' + IH + 'px',
+				backgroundPosition: '0 0, ' + (ox - gl) + 'px ' + (oy - (gh + 2) - gt) + 'px'
+			});
+		}
+		// Свет из окна на двери: тот же кадр комнаты, совмещённый со стеной,
+		// по контуру двери (маска - сама картинка двери). Фильтр делает тень
+		// стены нейтральной для soft-light, светлеют только солнечные полосы.
+		var dImg = door.querySelector('.kdc-cfg-door-img'), light = door.querySelector('.kdc-cfg-light');
+		if (!light) {
+			light = document.createElement('div');
+			light.className = 'kdc-cfg-light';
+			door.appendChild(light);
+		}
+		var mask = dImg && dImg.src ? 'url("' + dImg.src + '")' : 'none';
+		assign(light.style, {
+			backgroundImage: 'url("' + R.src + '")',
+			backgroundSize: IW + 'px ' + IH + 'px',
+			backgroundPosition: (ox - left) + 'px ' + (oy - (OB - hH)) + 'px',
+			webkitMaskImage: mask, maskImage: mask
+		});
+		this.floorGeo = { hH: hH };
+		assign(door.style, { left: '0', top: '0', width: '100%', height: '100%' });
+	};
+
 	/* ------------------------------------------------------------------ */
 	function init() {
 		var hero = document.querySelector('.kdc-cd-hero');
 		if (!hero || hero.classList.contains('kdc-cfg-on')) { return; }
 		var alias = decodeURIComponent(location.pathname.replace(/\/+$/, '').split('/').pop() || '');
-		fetch(BASE + 'models.json?v=' + VERSION, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
+		var getJson = function (u) { return fetch(BASE + u + '?v=' + VERSION, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); };
+		// Модели - файлом своей коллекции (models/<коллекция>.json, 1-5 КБ, их
+		// собирает tools/split-models.php); общий models.json (100 КБ) - запасной.
+		var own = getJson('models/' + encodeURIComponent(alias) + '.json').catch(function () { return getJson('models.json'); });
+		own.then(function (data) {
 			var cfg = data && data.collections && data.collections[alias];
 			if (!cfg || !cfg.models || !cfg.models.length) { return; }
-			new Configurator(hero, cfg);
+			cfg.alias = alias;
+			// Первая модель (или та, что открывает #m=N) - сразу, до сборки панели.
+			var hm = /(?:^#|&)m=(\d+)/.exec(location.hash), first = hm && cfg.models[+hm[1]] ? +hm[1] : 0;
+			if (BAKED) { bakedLoad(alias, first); }
+			var app = new Configurator(hero, cfg);
+			// Каталоги цветов (colors.json, ~70 КБ) нужны только на вкладке
+			// «Цвет»: грузим после того, как собраны выбор и дверь, с низким
+			// приоритетом, чтобы они не задерживали первый показ.
+			var late = function () {
+				fetch(BASE + 'colors.json?v=' + VERSION, { credentials: 'same-origin', priority: 'low' }).then(function (r) { return r.json(); })
+					.then(function (cols) { app.setCatalogs(cols); }).catch(function () {});
+			};
+			if (window.requestIdleCallback) { window.requestIdleCallback(late, { timeout: 1500 }); } else { setTimeout(late, 300); }
 		}).catch(function () {});
 	}
 
-	window.KDCConfigurator = { analyse: analyse, recolor: recolor, compose: compose, init: init };
+	window.KDCConfigurator = { analyse: analyse, recolor: recolor, compose: compose, init: init, bakeDoor: bakeDoor, unbakeDoor: unbakeDoor, bakeSig: bakeSig, loadImg: loadImg, version: function () { return VERSION; } };
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();

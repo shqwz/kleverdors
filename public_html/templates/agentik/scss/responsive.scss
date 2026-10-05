@@ -52,7 +52,7 @@
             margin: 0 50px 0 0;
         }
     }
-    .sppb-addon-wrapper:has(>[class*="infinity-scroller"]) {
+    .sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
         &::before,
         &:after {
             width: 100px;
@@ -75,7 +75,7 @@
         }
     }
     .scroller-wrap2 {
-        .sppb-addon-wrapper:has(>[class*="infinity-scroller"]) {
+        .sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
             [class*="infinity-scroller"] {
                 height: 50px;
                 gap: 15px!important;;  
@@ -380,7 +380,7 @@
             margin-left: -2%;
         }
     }
-    .sppb-addon-wrapper:has(>[class*="infinity-scroller"]) {
+    .sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
         &::before,
         &:after {
             width: 90px;
@@ -722,7 +722,7 @@
         width: 110%!important;
         margin-left: -5%!important;
     }
-    .sppb-addon-wrapper:has(>[class*="infinity-scroller"]) {
+    .sppb-addon-wrapper:has(#{$infinity-scroller-lanes}) {
         &::before,
         &:after {
             width: 90px;

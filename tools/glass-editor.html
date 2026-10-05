@@ -66,6 +66,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			<span class="sp"></span>
 			<label class="muted"><input type="checkbox" id="showRes" checked> результат скрипта</label>
 			<label class="muted"><input type="checkbox" id="showMark" checked> моя разметка</label>
+			<button id="wallTool" title="Рамка «не заливать» (клавиша R): обведите то, что должно остаться дверью (планку креста) - стекла там не будет, свой крест скрипт не рисует">Рамка</button>
 			<button id="check" title="Режим проверки: без разметки и ручек, тонкий контур стёкол, лупа под курсором (клавиша P)">Проверка</button>
 			<a id="open" target="_blank" class="muted">открыть на сайте ↗</a>
 			<span class="status" id="status">сохранено</span>
@@ -74,7 +75,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		<div class="stage" id="stage"><canvas id="cv"></canvas></div><canvas id="loupe" width="440" height="440" hidden></canvas>
 		<div class="bar hint">
 			Тяните по пустому месту — новое стекло · тяните стекло/края — двигать/менять размер · тяните планку — сдвинуть
-			· <kbd>←↑→↓</kbd> сдвиг на 1 px (<kbd>Shift</kbd> — 10) · <kbd>Del</kbd> удалить выбранное · <kbd>⌘Z</kbd> отменить
+			· <kbd>R</kbd> — рамка «не заливать»: обвести планку, она останется дверью; рамку и треугольник крутить — за кружок над ними или <kbd>[</kbd> <kbd>]</kbd> (<kbd>Shift</kbd> — по 15°) · круг с <kbd>Shift</kbd> — ровный · <kbd>←↑→↓</kbd> сдвиг на 1 px (<kbd>Shift</kbd> — 10) · <kbd>Del</kbd> удалить выбранное · <kbd>⌘Z</kbd> отменить
 		</div>
 	</main>
 	<aside class="right">
@@ -89,23 +90,28 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			<select id="blank" style="flex:2"></select>
 		</div>
 		<div class="muted" id="blankNote" hidden style="font-size:12px;margin-top:4px">Стекло берётся из разницы с глухой парой - ручная разметка не нужна.</div>
+		<div class="row" style="margin-top:8px">
+			<button id="addHold" title="Круг, который закрашивает участок двери: там стекло не вырезается, дверь остаётся как на фото. Тяните за углы с Shift - ровный круг">+ Не трогать (круг)</button>
+			<button id="addTri" title="Треугольник посередине кадра. Вершины тянутся, крутить - за кружок над ним или клавишами [ ]. Тип справа: стекло или «не трогать»">+ Треугольник</button>
+		</div>
 		<div class="list" id="panes"></div>
 		<div id="paneBox" hidden>
 			<h2>Выбранное стекло</h2>
-			<div class="grid4">
+			<div class="grid4" id="rBox">
 				<label>x<input type="number" step="0.001" data-r="0"></label>
 				<label>y<input type="number" step="0.001" data-r="1"></label>
 				<label>ширина<input type="number" step="0.001" data-r="2"></label>
 				<label>высота<input type="number" step="0.001" data-r="3"></label>
 			</div>
-			<div class="row" style="margin-top:8px">
+			<div class="row" style="margin-top:8px" id="shapeRow">
 				<label>Форма</label>
 				<select id="shape" style="flex:2">
 					<option value="rect">Прямоугольник</option>
 					<option value="tri">Треугольник</option>
+					<option value="oval">Круг / овал</option>
 				</select>
 			</div>
-			<div class="row" style="margin-top:8px">
+			<div class="row" style="margin-top:8px" id="kindRow">
 				<label>Тип</label>
 				<select id="kind" style="flex:2">
 					<option value="plain">Стекло</option>
@@ -113,7 +119,12 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 					<option value="lines">Латунная решётка</option>
 					<option value="cross">Косой крест</option>
 					<option value="keep">Как на фото (витраж)</option>
+					<option value="hold">Не трогать (дверь как на фото)</option>
+					<option value="wall">Рамка (не заливать стеклом)</option>
 				</select>
+			</div>
+			<div class="row" id="rotRow" hidden>
+				<label>Поворот, ° (ручка над рамкой, клавиши <kbd>[</kbd> <kbd>]</kbd>)<input type="number" step="0.1" id="rot"></label>
 			</div>
 			<div id="gridBox">
 				<div class="row">
@@ -129,7 +140,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 					<button id="toEven">Поровну</button>
 				</div>
 			</div>
-			<div class="row"><label><input type="checkbox" id="snap"> подгонять края к рамке (скрипт сдвинет край по фото)</label></div>
+			<div class="row" id="snapRow"><label><input type="checkbox" id="snap"> подгонять края к рамке (скрипт сдвинет край по фото)</label></div>
 			<div class="row"><button id="dup" title="Копия рядом (⌘D). ⌘C / ⌘V - копировать и вставить, в том числе в другую модель">Копировать стекло</button><button class="danger" id="del">Удалить стекло</button></div>
 		</div>
 		<h2>В models.json</h2>
@@ -169,12 +180,14 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		return (g || []).map(function (f) {
 			if (Array.isArray(f)) { return { r: f.slice(0, 4), kind: 'plain', snap: f[4] !== 0, rest: {} }; }
 			var p = { r: f.r.slice(), snap: f.snap !== false, rest: {} };
-			p.kind = f.keep ? 'keep' : f.cross ? 'cross' : f.lines ? 'lines' : (f.bars || f.barX || f.barY) ? 'bars' : 'plain';
+			p.kind = f.hold ? 'hold' : f.wall ? 'wall' : f.keep ? 'keep' : f.cross ? 'cross' : f.lines ? 'lines' : (f.bars || f.barX || f.barY) ? 'bars' : 'plain';
 			if (f.bars) { p.bars = f.bars.slice(); }
 			if (f.lines) { p.bars = f.lines.slice(); }
 			if (f.barX || f.barY) { p.barX = (f.barX || []).slice(); p.barY = (f.barY || []).slice(); }
 			if (f.tri) { p.tri = f.tri.map(function (v) { return v.slice(); }); }
-			Object.keys(f).forEach(function (k) { if (['r', 'snap', 'keep', 'cross', 'lines', 'bars', 'barX', 'barY', 'tri'].indexOf(k) < 0) { p.rest[k] = f[k]; } });
+			if (f.oval) { p.oval = true; }
+			if (f.rot) { p.rot = f.rot; }
+			Object.keys(f).forEach(function (k) { if (['r', 'snap', 'keep', 'hold', 'wall', 'rot', 'oval', 'cross', 'lines', 'bars', 'barX', 'barY', 'tri'].indexOf(k) < 0) { p.rest[k] = f[k]; } });
 			return p;
 		});
 	}
@@ -182,13 +195,16 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		return ps.map(function (p) {
 			var r = p.r.map(r3), o = { r: r };
 			if (p.kind === 'keep') { o.keep = true; }
+			if (p.kind === 'hold') { o.hold = true; }
+			if (p.kind === 'wall') { o.wall = true; if (p.rot) { o.rot = Math.round(p.rot * 10) / 10; } }
 			if (p.kind === 'cross') { o.cross = true; }
 			if (p.kind === 'lines') { o.lines = p.bars || [1, 1]; }
 			if (p.kind === 'bars') {
 				if (p.barX) { o.barX = p.barX.map(r3); o.barY = p.barY.map(r3); } else { o.bars = p.bars || [1, 1]; }
 			}
 			if (p.tri) { o.tri = p.tri.map(function (v) { return [r3(v[0]), r3(v[1])]; }); }
-			if (!p.snap) { o.snap = false; }
+			if (p.oval) { o.oval = true; }
+			if (!p.snap && p.kind !== 'hold' && p.kind !== 'wall') { o.snap = false; }
 			Object.keys(p.rest).forEach(function (k) { o[k] = p.rest[k]; });
 			return Object.keys(o).length === 1 ? r : o;
 		});
@@ -272,8 +288,9 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 	}
 	if (window.ResizeObserver) { new ResizeObserver(fit).observe($('stage')); } else { window.addEventListener('resize', fit); }
 
-	function shapePath(t, x, y, w, h) {
-		if (t) { cx.moveTo(t[0][0], t[0][1]); cx.lineTo(t[1][0], t[1][1]); cx.lineTo(t[2][0], t[2][1]); cx.closePath(); }
+	function shapePath(t, x, y, w, h, oval) {
+		if (oval) { cx.ellipse(x + w / 2, y + h / 2, Math.abs(w) / 2, Math.abs(h) / 2, 0, 0, Math.PI * 2); }
+		else if (t) { cx.moveTo(t[0][0], t[0][1]); for (var i = 1; i < t.length; i++) { cx.lineTo(t[i][0], t[i][1]); } cx.closePath(); }
 		else { cx.rect(x, y, w, h); }
 	}
 	// Рамка треугольника = его r.
@@ -287,6 +304,32 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		if (!q.tri || !t0) { return; }
 		q.tri = t0.map(function (v) { return [b[0] + (v[0] - a[0]) / (a[2] || 1) * b[2], b[1] + (v[1] - a[1]) / (a[3] || 1) * b[3]]; });
 	}
+	// Рамка с поворотом: середина и полуразмеры в px кадра, угол.
+	function frameGeo(q) {
+		var W = base.w, H = base.h, a = (q.rot || 0) * Math.PI / 180;
+		return { cx: (q.r[0] + q.r[2] / 2) * W, cy: (q.r[1] + q.r[3] / 2) * H, hw: q.r[2] * W / 2, hh: q.r[3] * H / 2, a: a, cs: Math.cos(a), sn: Math.sin(a) };
+	}
+	function toLocal(G, p) { var dx = p[0] - G.cx, dy = p[1] - G.cy; return [dx * G.cs + dy * G.sn, -dx * G.sn + dy * G.cs]; }
+	function toWorld(G, u, v) { return [G.cx + u * G.cs - v * G.sn, G.cy + u * G.sn + v * G.cs]; }
+	var ROT_H = 18; // ручка поворота - столько экранных px над рамкой
+	// Треугольник: середина в px кадра; поворот вершин вокруг неё на deg°.
+	function triCenter(q) {
+		return [(q.tri[0][0] + q.tri[1][0] + q.tri[2][0]) / 3 * base.w, (q.tri[0][1] + q.tri[1][1] + q.tri[2][1]) / 3 * base.h];
+	}
+	function rotTri(t0, c, deg) {
+		var W = base.w, H = base.h, a = deg * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
+		return t0.map(function (v) { var x = v[0] * W - c[0], y = v[1] * H - c[1]; return [(c[0] + x * cs - y * sn) / W, (c[1] + x * sn + y * cs) / H]; });
+	}
+	// Ручка поворота треугольника - над его рамкой посередине.
+	function triHandle(q) { return [(q.r[0] + q.r[2] / 2) * base.w, q.r[1] * base.h - ROT_H / S]; }
+	// Всё, кроме участков «не трогать»: стёкла скрипта рисуем с этим
+	// вырезом - как их увидит сайт.
+	function clipHolds(W, H) {
+		if (!res || !res.holds || !res.holds.length) { return; }
+		cx.beginPath(); cx.rect(-W, -H, 3 * W, 3 * H);
+		res.holds.forEach(function (hd) { shapePath(hd.poly || hd.tri, hd.x0, hd.y0, hd.x1 - hd.x0, hd.y1 - hd.y0, hd.oval); });
+		cx.clip('evenodd');
+	}
 	function draw() {
 		if (!base) { return; }
 		var W = base.w, H = base.h, lw = 1 / S;
@@ -294,8 +337,9 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		cx.drawImage(base.src, 0, 0);
 		if (check) { drawCheck(W, H, lw); return; }
 		if ($('showRes').checked && res) {
+			cx.save(); clipHolds(W, H);
 			res.glass.forEach(function (g) {
-				cx.beginPath(); shapePath(g.tri, g[0], g[1], g[2], g[3]);
+				cx.beginPath(); shapePath(g.tri || g.rc, g[0], g[1], g[2], g[3]);
 				cx.fillStyle = 'rgba(40,140,90,.28)'; cx.fill();
 				cx.strokeStyle = 'rgba(20,110,60,.95)'; cx.lineWidth = 1.5 * lw; cx.stroke();
 				var bw = Math.max(1.5, (res.cr - res.cl) * 0.022);
@@ -316,14 +360,19 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 					cx.moveTo(g[0], g[1]); cx.lineTo(g[0] + g[2], g[1] + g[3]); cx.moveTo(g[0] + g[2], g[1]); cx.lineTo(g[0], g[1] + g[3]); cx.stroke();
 				}
 			});
+			cx.restore();
 		}
 		if ($('showMark').checked && panes) {
 			panes.forEach(function (p, k) {
+				if (p.kind === 'wall') { drawFrame(p, k === sel, k, lw); return; }
 				var x = p.r[0] * W, y = p.r[1] * H, w = p.r[2] * W, h = p.r[3] * H, on = k === sel;
 				cx.strokeStyle = on ? 'rgba(31,111,209,.75)' : 'rgba(31,111,209,.5)'; cx.lineWidth = lw;
 				var tp = p.tri && p.tri.map(function (v) { return [v[0] * W, v[1] * H]; });
-				cx.beginPath(); shapePath(tp, x, y, w, h); cx.stroke();
-				if (tp && on) { cx.setLineDash([2 * lw, 3 * lw]); cx.strokeStyle = 'rgba(31,111,209,.35)'; cx.strokeRect(x, y, w, h); }
+				if (p.kind === 'hold') { cx.strokeStyle = on ? 'rgba(225,29,72,.9)' : 'rgba(225,29,72,.6)'; }
+				if (p.kind === 'wall') { cx.strokeStyle = on ? 'rgba(234,88,12,1)' : 'rgba(234,88,12,.8)'; cx.lineWidth = 1.5 * lw; }
+				cx.beginPath(); shapePath(tp, x, y, w, h, p.oval); cx.stroke();
+				if (p.kind === 'hold') { cx.fillStyle = 'rgba(225,29,72,.14)'; cx.fill(); }
+				if ((tp || p.oval) && on) { cx.setLineDash([2 * lw, 3 * lw]); cx.strokeStyle = 'rgba(31,111,209,.35)'; cx.strokeRect(x, y, w, h); }
 				cx.setLineDash([]);
 				if (p.kind === 'keep') { cx.fillStyle = 'rgba(200,120,40,.18)'; cx.fillRect(x, y, w, h); }
 				if (on) {
@@ -335,6 +384,9 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 					if (tp) {
 						cx.fillStyle = 'rgba(31,111,209,.85)';
 						tp.forEach(function (v) { cx.beginPath(); cx.arc(v[0], v[1], 4 * lw, 0, Math.PI * 2); cx.fill(); });
+						var th = triHandle(p);
+						cx.strokeStyle = 'rgba(31,111,209,.75)'; cx.beginPath(); cx.moveTo(th[0], y); cx.lineTo(th[0], th[1]); cx.stroke();
+						cx.beginPath(); cx.arc(th[0], th[1], 4.5 * lw, 0, Math.PI * 2); cx.fill();
 					}
 				}
 				if (p.barX) {
@@ -347,23 +399,54 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			});
 		}
 	}
+	// Рамка «не заливать»: повёрнутый прямоугольник, у выбранной - ручки
+	// размера и кружок поворота над верхней стороной.
+	function drawFrame(p, on, k, lw) {
+		var G = frameGeo(p);
+		cx.save(); cx.translate(G.cx, G.cy); cx.rotate(G.a);
+		cx.strokeStyle = on ? 'rgba(234,88,12,1)' : 'rgba(234,88,12,.8)'; cx.lineWidth = 1.5 * lw;
+		cx.strokeRect(-G.hw, -G.hh, 2 * G.hw, 2 * G.hh);
+		if (on) {
+			cx.fillStyle = 'rgba(255,255,255,.6)'; cx.lineWidth = lw;
+			[[-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (q) {
+				cx.fillRect(q[0] * G.hw - 3 * lw, q[1] * G.hh - 3 * lw, 6 * lw, 6 * lw); cx.strokeRect(q[0] * G.hw - 3 * lw, q[1] * G.hh - 3 * lw, 6 * lw, 6 * lw);
+			});
+			cx.beginPath(); cx.moveTo(0, -G.hh); cx.lineTo(0, -G.hh - ROT_H * lw); cx.stroke();
+			cx.fillStyle = 'rgba(234,88,12,1)'; cx.beginPath(); cx.arc(0, -G.hh - ROT_H * lw, 4.5 * lw, 0, Math.PI * 2); cx.fill();
+		}
+		cx.fillStyle = 'rgba(234,88,12,.9)'; cx.font = 12 * lw + 'px sans-serif'; cx.fillText(String(k + 1), -G.hw + 3 * lw, -G.hh + 13 * lw);
+		cx.restore();
+	}
 	/* --- режим проверки ---------------------------------------------------- */
 	var check = false, lastPt = null;
 	function drawCheck(W, H, lw) {
 		// Контур в 1 px, бело-чёрный пунктир - виден и на светлом, и на тёмном.
 		var rects = [];
 		(res ? res.glass : []).forEach(function (g) {
-			if (g.tri) { rects.push({ tri: g.tri }); } else { rects.push([g[0], g[1], g[2], g[3]]); }
+			if (g.tri || g.rc) { rects.push({ tri: g.tri || g.rc }); } else { rects.push([g[0], g[1], g[2], g[3]]); }
 			var i, bx = (g.barX || []).slice(), by = (g.barY || []).slice();
 			if (g.bars) { for (i = 1; i < g.bars[0]; i++) { bx.push(g[0] + g[2] * i / g.bars[0]); } for (i = 1; i < g.bars[1]; i++) { by.push(g[1] + g[3] * i / g.bars[1]); } }
 			bx.forEach(function (x) { rects.push([x, g[1], 0, g[3]]); });
 			by.forEach(function (y) { rects.push([g[0], y, g[2], 0]); });
 		});
 		cx.lineWidth = lw;
+		// Край участков «не трогать» внутри стёкол - тоже край стекла.
+		(res && res.holds || []).forEach(function (hd) {
+			(res ? res.glass : []).forEach(function (g) {
+				cx.save(); cx.beginPath(); cx.rect(g[0], g[1], g[2], g[3]); cx.clip();
+				[['rgba(255,255,255,.9)', 0], ['rgba(0,0,0,.9)', 4 * lw]].forEach(function (st) {
+					cx.strokeStyle = st[0]; cx.setLineDash([4 * lw, 4 * lw]); cx.lineDashOffset = st[1];
+					cx.beginPath(); shapePath(hd.poly || hd.tri, hd.x0, hd.y0, hd.x1 - hd.x0, hd.y1 - hd.y0, hd.oval); cx.stroke();
+				});
+				cx.restore();
+			});
+		});
+		cx.save(); clipHolds(W, H);
 		[['rgba(255,255,255,.9)', 0], ['rgba(0,0,0,.9)', 4 * lw]].forEach(function (st) {
 			cx.strokeStyle = st[0]; cx.setLineDash([4 * lw, 4 * lw]); cx.lineDashOffset = st[1];
 			rects.forEach(function (r) { if (r.tri) { cx.beginPath(); shapePath(r.tri); cx.stroke(); return; } cx.beginPath(); cx.moveTo(r[0], r[1]); cx.lineTo(r[0] + r[2], r[1]); if (r[2] && r[3]) { cx.lineTo(r[0] + r[2], r[1] + r[3]); cx.lineTo(r[0], r[1] + r[3]); cx.closePath(); } else { cx.lineTo(r[0] + r[2], r[1] + r[3]); } cx.stroke(); });
 		});
+		cx.restore();
 		cx.setLineDash([]); cx.lineDashOffset = 0;
 		loupe();
 	}
@@ -387,6 +470,10 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		draw(); if (!on) { $('loupe').hidden = true; }
 	}
 	$('check').onclick = function () { setCheck(!check); };
+	// Инструмент «рамка»: тянуть по пустому месту - новая рамка, а не стекло.
+	var wallTool = false;
+	function setWallTool(on) { wallTool = on; $('wallTool').classList.toggle('on', on); }
+	$('wallTool').onclick = function () { setWallTool(!wallTool); };
 	cv.addEventListener('pointermove', function (e) {
 		var p = pt(e); lastPt = { x: p[0], y: p[1], cx: e.clientX, cy: e.clientY };
 		if (check) { loupe(); }
@@ -424,6 +511,16 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 	function hit(p) {
 		if (!panes) { return null; }
 		var W = base.w, H = base.h, t = 7 / S, k, q;
+		// кружок поворота выбранной рамки
+		if (sel >= 0 && panes[sel] && panes[sel].kind === 'wall') {
+			var G0 = frameGeo(panes[sel]), lp0 = toLocal(G0, p);
+			if (Math.hypot(lp0[0], lp0[1] + G0.hh + ROT_H / S) < t) { return { p: sel, rot: true }; }
+		}
+		// кружок поворота выбранного треугольника
+		if (sel >= 0 && panes[sel] && panes[sel].tri) {
+			var th0 = triHandle(panes[sel]);
+			if (Math.hypot(th0[0] - p[0], th0[1] - p[1]) < t) { return { p: sel, trot: true }; }
+		}
 		// планки выбранного (и любого) стекла
 		for (k = panes.length - 1; k >= 0; k--) {
 			q = panes[k];
@@ -438,9 +535,16 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		}
 		var order = panes.map(function (_, i) { return i; });
 		if (sel >= 0) { order.splice(order.indexOf(sel), 1); order.push(sel); }
+		var p00 = p;
 		for (var n = order.length - 1; n >= 0; n--) {
+			p = p00;
 			k = order[n]; q = panes[k];
 			var l = q.r[0] * W, tp = q.r[1] * H, r = l + q.r[2] * W, b = tp + q.r[3] * H;
+			// Рамку проверяем в её собственных (повёрнутых) координатах.
+			if (q.kind === 'wall') {
+				var Gq = frameGeo(q), lq = toLocal(Gq, p);
+				p = [lq[0], lq[1]]; l = -Gq.hw; tp = -Gq.hh; r = Gq.hw; b = Gq.hh;
+			}
 			if (p[0] < l - t || p[0] > r + t || p[1] < tp - t || p[1] > b + t) { continue; }
 			var ed = (Math.abs(p[0] - l) < t ? 'l' : Math.abs(p[0] - r) < t ? 'r' : '') + (Math.abs(p[1] - tp) < t ? 't' : Math.abs(p[1] - b) < t ? 'b' : '');
 			if (ed && k === sel) { return { p: k, edge: ed }; }
@@ -449,28 +553,57 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		}
 		return null;
 	}
+	function hitMode(p) { var h = hit(p); return wallTool && h && panes[h.p].kind !== 'wall' ? null : h; }
 	var CUR = { l: 'ew-resize', r: 'ew-resize', t: 'ns-resize', b: 'ns-resize', lt: 'nwse-resize', rb: 'nwse-resize', rt: 'nesw-resize', lb: 'nesw-resize' };
 	cv.addEventListener('pointermove', function (e) {
 		if (!base) { return; }
 		var p = pt(e);
 		if (!drag) {
-			var h = hit(p);
-			cv.style.cursor = !h ? 'crosshair' : h.line ? (h.line === 'x' ? 'col-resize' : 'row-resize') : h.edge ? CUR[h.edge] : 'move';
+			var h = hitMode(p);
+			cv.style.cursor = !h ? 'crosshair' : h.rot || h.trot ? 'grab' : h.line ? (h.line === 'x' ? 'col-resize' : 'row-resize') : h.edge ? CUR[h.edge] : 'move';
 			return;
 		}
 		var W = base.w, H = base.h, dx = (p[0] - drag.p0[0]) / W, dy = (p[1] - drag.p0[1]) / H, q = panes[drag.k], o = drag.r0;
-		if (drag.type === 'new' || drag.type === 'edge') {
+		if (drag.type === 'trot') {
+			var ta = (Math.atan2(p[1] - drag.c[1], p[0] - drag.c[0]) - drag.ang0) * 180 / Math.PI;
+			if (e.shiftKey) { ta = Math.round(ta / 15) * 15; }
+			q.tri = rotTri(drag.t0, drag.c, ta); triBox(q);
+		} else if (drag.type === 'rot') {
+			var G1 = drag.G, ang = (Math.atan2(p[1] - G1.cy, p[0] - G1.cx) - drag.ang0) * 180 / Math.PI;
+			var nr = drag.rot0 + ang;
+			nr = e.shiftKey ? Math.round(nr / 15) * 15 : Math.round(nr * 10) / 10;
+			q.rot = Math.round((((nr + 540) % 360) - 180) * 10) / 10;
+		} else if (drag.type === 'edge' && q.kind === 'wall') {
+			// Край повёрнутой рамки: сдвиг мыши - в координатах рамки,
+			// противоположный край стоит на месте.
+			var G2 = drag.G, mx = p[0] - drag.p0[0], my = p[1] - drag.p0[1];
+			var lu = mx * G2.cs + my * G2.sn, lv = -mx * G2.sn + my * G2.cs;
+			var el = -G2.hw, er = G2.hw, et = -G2.hh, eb = G2.hh, ed2 = drag.edge;
+			if (ed2.indexOf('l') >= 0) { el = Math.min(er - 2, el + lu); }
+			if (ed2.indexOf('r') >= 0) { er = Math.max(el + 2, er + lu); }
+			if (ed2.indexOf('t') >= 0) { et = Math.min(eb - 2, et + lv); }
+			if (ed2.indexOf('b') >= 0) { eb = Math.max(et + 2, eb + lv); }
+			var c2 = toWorld(G2, (el + er) / 2, (et + eb) / 2), hw2 = (er - el) / 2, hh2 = (eb - et) / 2;
+			q.r = [(c2[0] - hw2) / W, (c2[1] - hh2) / H, 2 * hw2 / W, 2 * hh2 / H];
+		} else if (drag.type === 'new' || drag.type === 'edge') {
 			var l = o[0], t = o[1], r = o[0] + o[2], b = o[1] + o[3];
-			var ed = drag.edge;
+			var ed = drag.edge, cl = q.kind === 'hold' ? function (v) { return v; } : clamp;
 			if (ed.indexOf('l') >= 0) { l = Math.min(r - 0.005, o[0] + dx); }
 			if (ed.indexOf('r') >= 0) { r = Math.max(l + 0.005, o[0] + o[2] + dx); }
 			if (ed.indexOf('t') >= 0) { t = Math.min(b - 0.005, o[1] + dy); }
 			if (ed.indexOf('b') >= 0) { b = Math.max(t + 0.005, o[1] + o[3] + dy); }
-			q.r = [clamp(l), clamp(t), clamp(r) - clamp(l), clamp(b) - clamp(t)];
+			q.r = [cl(l), cl(t), cl(r) - cl(l), cl(b) - cl(t)];
+			// Shift - ровный круг (в пикселях).
+			if (q.oval && e.shiftKey) {
+				var hh = q.r[2] * W / H;
+				if (ed.indexOf('t') >= 0) { q.r[1] += q.r[3] - hh; }
+				q.r[3] = hh;
+			}
 			moveBars(q, drag.bx0, drag.by0, o, q.r);
 			moveTri(q, drag.t0, o, q.r);
 		} else if (drag.type === 'move') {
 			var nx = Math.max(0, Math.min(1 - o[2], o[0] + dx)), ny = Math.max(0, Math.min(1 - o[3], o[1] + dy));
+			if (q.kind === 'hold') { nx = o[0] + dx; ny = o[1] + dy; }
 			q.r = [nx, ny, o[2], o[3]];
 			if (q.barX) { q.barX = drag.bx0.map(function (v) { return v + nx - o[0]; }); q.barY = drag.by0.map(function (v) { return v + ny - o[1]; }); }
 			moveTri(q, drag.t0, o, q.r);
@@ -494,19 +627,23 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 	cv.addEventListener('pointerdown', function (e) {
 		if (!base || check) { return; }
 		cv.setPointerCapture(e.pointerId);
-		var p = pt(e), h = hit(p), snapBefore = JSON.stringify(model().glass === undefined ? null : model().glass);
+		// В режиме «рамка» стёкла не цепляем - рисуем рамку поверх них.
+		var p = pt(e), h = hitMode(p), snapBefore = JSON.stringify(model().glass === undefined ? null : model().glass);
 		if (h) {
 			sel = h.p; var q = panes[sel];
 			selLine = h.line ? { p: sel, a: h.line, j: h.j } : null;
 			drag = { k: sel, p0: p, r0: q.r.slice(), bx0: q.barX && q.barX.slice(), by0: q.barY && q.barY.slice(), t0: q.tri && q.tri.map(function (v) { return v.slice(); }), before: snapBefore };
-			if (h.vert !== undefined) { drag.type = 'vert'; drag.j = h.vert; }
+			if (q.kind === 'wall') { drag.G = frameGeo(q); }
+			if (h.trot) { drag.type = 'trot'; drag.c = triCenter(q); drag.ang0 = Math.atan2(p[1] - drag.c[1], p[0] - drag.c[0]); }
+			else if (h.rot) { drag.type = 'rot'; drag.rot0 = q.rot || 0; drag.ang0 = Math.atan2(p[1] - drag.G.cy, p[0] - drag.G.cx); }
+			else if (h.vert !== undefined) { drag.type = 'vert'; drag.j = h.vert; }
 			else if (h.line) { drag.type = 'line'; drag.line = h.line; drag.j = h.j; drag.v0 = (h.line === 'x' ? q.barX : q.barY)[h.j]; }
 			else if (h.edge) { drag.type = 'edge'; drag.edge = h.edge; }
 			else { drag.type = 'move'; }
 		} else {
 			if (!panes) { panes = []; }
 			var r = [p[0] / base.w, p[1] / base.h, 0, 0];
-			panes.push({ r: r, kind: 'plain', snap: false, rest: {} });
+			panes.push({ r: r, kind: wallTool ? 'wall' : 'plain', snap: wallTool, rest: {} });
 			sel = panes.length - 1; selLine = null;
 			drag = { k: sel, p0: p, r0: r.slice(), type: 'new', edge: 'rb', before: snapBefore };
 		}
@@ -528,6 +665,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') { return; }
 		var mod = e.metaKey || e.ctrlKey;
 		if (!mod && e.code === 'KeyP') { e.preventDefault(); setCheck(!check); return; }
+		if (!mod && e.code === 'KeyR') { e.preventDefault(); setWallTool(!wallTool); return; }
 		if (e.key === 'Escape' && check) { setCheck(false); return; }
 		if (mod && e.code === 'KeyC' && panes && sel >= 0) { e.preventDefault(); clip = clonePane(panes[sel]); $('status').textContent = 'стекло скопировано'; return; }
 		if (mod && e.code === 'KeyV' && clip) { e.preventDefault(); addPane(clonePane(clip)); return; }
@@ -547,6 +685,16 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			e.preventDefault();
 			if (selLine) { (selLine.a === 'x' ? q.barX : q.barY).splice(selLine.j, 1); selLine = null; } else { panes.splice(sel, 1); sel = -1; }
 			commit(); return;
+		}
+		if (q.tri && (e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+			e.preventDefault();
+			q.tri = rotTri(q.tri, triCenter(q), (e.code === 'BracketLeft' ? -1 : 1) * (e.shiftKey ? 5 : 0.5)); triBox(q);
+			q.snap = false; commit(); return;
+		}
+		if (q.kind === 'wall' && (e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+			e.preventDefault();
+			var da = (e.code === 'BracketLeft' ? -1 : 1) * (e.shiftKey ? 5 : 0.5);
+			q.rot = Math.round(((q.rot || 0) + da) * 10) / 10; commit(); return;
 		}
 		var k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
 		if (k) {
@@ -572,8 +720,20 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			if (g.lines) { p.kind = 'lines'; p.bars = g.lines.slice(); }
 			if (g.cross) { p.kind = 'cross'; }
 			return p;
-		}));
+		}).concat((panes || []).filter(function (q) { return q.kind === 'hold' || q.kind === 'wall'; })));
 		sel = panes.length ? 0 : -1; ui();
+	};
+	// Круг «не трогать» посередине кадра - дальше тянуть на место.
+	$('addHold').onclick = function () {
+		if (!base) { return; }
+		var rw = 0.3, rh = rw * base.w / base.h;
+		addPane({ r: [0.5 - rw / 2, 0.5 - rh / 2, rw, rh], kind: 'hold', oval: true, snap: true, rest: {} });
+	};
+	// Треугольник посередине кадра: вершина сверху, основание снизу.
+	$('addTri').onclick = function () {
+		if (!base) { return; }
+		var tw = 0.2, th = tw * base.w / base.h, l = 0.5 - tw / 2, t = 0.5 - th / 2;
+		addPane({ r: [l, t, tw, th], tri: [[l + tw / 2, t], [l + tw, t + th], [l, t + th]], kind: 'plain', snap: false, rest: {} });
 	};
 	$('toAuto').onclick = function () { sel = -1; setGlass(null); };
 	$('toNone').onclick = function () { sel = -1; setGlass([]); };
@@ -590,13 +750,20 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 			// Вершина сверху посередине, основание внизу.
 			q.tri = [[r[0] + r[2] / 2, r[1]], [r[0] + r[2], r[1] + r[3]], [r[0], r[1] + r[3]]];
 			delete q.barX; delete q.barY; if (q.kind === 'bars' || q.kind === 'lines') { q.kind = 'plain'; }
-		} else { delete q.tri; }
+			delete q.oval;
+		} else if (this.value === 'oval') {
+			q.oval = true; delete q.tri;
+			delete q.barX; delete q.barY; if (q.kind === 'bars' || q.kind === 'lines') { q.kind = 'plain'; }
+		} else { delete q.tri; delete q.oval; }
 		q.snap = false; commit();
 	};
 	$('kind').onchange = function () {
 		var q = panes[sel]; q.kind = this.value;
 		if ((q.kind === 'bars' || q.kind === 'lines') && !q.bars && !q.barX) { q.bars = [2, 2]; }
 		if (q.kind !== 'bars') { delete q.barX; delete q.barY; }
+		if (q.kind === 'hold') { q.snap = true; }
+		// Рамка - всегда прямоугольник.
+		if (q.kind === 'wall') { q.snap = true; delete q.tri; delete q.oval; }
 		commit();
 	};
 	$('cols').onchange = $('rows').onchange = function () {
@@ -614,6 +781,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 	$('toEven').onclick = function () { var q = panes[sel]; q.bars = [q.barX.length + 1, q.barY.length + 1]; delete q.barX; delete q.barY; selLine = null; commit(); };
 	$('addV').onclick = function () { var q = panes[sel]; q.barX.push(q.r[0] + q.r[2] / 2); selLine = { p: sel, a: 'x', j: q.barX.length - 1 }; commit(); };
 	$('addH').onclick = function () { var q = panes[sel]; q.barY.push(q.r[1] + q.r[3] / 2); selLine = { p: sel, a: 'y', j: q.barY.length - 1 }; commit(); };
+	$('rot').onchange = function () { var q = panes[sel]; q.rot = Math.round((+this.value || 0) * 10) / 10; if (!q.rot) { delete q.rot; } commit(); };
 	$('snap').onchange = function () { panes[sel].snap = this.checked; commit(); };
 	$('del').onclick = function () { panes.splice(sel, 1); sel = -1; commit(); };
 
@@ -628,7 +796,7 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		var p = panes && panes[sel];
 		if (!light) {
 			$('panes').innerHTML = (panes || []).map(function (q, k) {
-				var t = { plain: 'стекло', bars: 'планки', lines: 'решётка', cross: 'крест', keep: 'как на фото' }[q.kind];
+				var t = { plain: 'стекло', bars: 'планки', lines: 'решётка', cross: 'крест', keep: 'как на фото', hold: 'не трогать', wall: 'рамка (не заливать)' }[q.kind] + (q.oval ? ' (круг)' : '');
 				return '<button data-k="' + k + '" class="' + (k === sel ? 'on' : '') + '">' + (k + 1) + '. ' + t + '</button>';
 			}).join('');
 		}
@@ -636,7 +804,11 @@ button.on{background:#1f6fd1;color:#fff;border-color:#1f6fd1}
 		if (!p) { return; }
 		document.querySelectorAll('[data-r]').forEach(function (inp) { if (document.activeElement !== inp) { inp.value = r3(p.r[+inp.dataset.r]); } });
 		$('kind').value = p.kind;
-		$('shape').value = p.tri ? 'tri' : 'rect';
+		$('shape').value = p.tri ? 'tri' : p.oval ? 'oval' : 'rect';
+		$('snapRow').hidden = p.kind === 'hold' || p.kind === 'wall';
+		$('shapeRow').hidden = p.kind === 'wall';
+		$('rotRow').hidden = p.kind !== 'wall';
+		if (document.activeElement !== $('rot')) { $('rot').value = Math.round((p.rot || 0) * 10) / 10; }
 		$('gridBox').hidden = !(p.kind === 'bars' || p.kind === 'lines');
 		var free = !!p.barX;
 		$('cols').value = free ? p.barX.length + 1 : (p.bars || [1, 1])[0];

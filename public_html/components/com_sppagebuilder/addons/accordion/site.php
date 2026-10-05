@@ -50,7 +50,7 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 				$image = (isset($item->image) && $item->image) ? $item->image : '';
 
 				$output  .= '<div class="sppb-panel sppb-' . $style . '">';
-				$output  .= '<button type="button" class="sppb-reset-button-styles sppb-w-full sppb-panel-heading' . (($key == 0) ? ' active' : '') . ' ' . ($icon_position == 'right' ? 'sppb-accordion-icon-position-right' : '') . '" id="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '" aria-expanded="' . (($key == 0) ? 'true' : 'false') . '" aria-controls="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '">';
+				$output  .= '<button type="button" class="sppb-reset-button-styles sppb-w-full sppb-panel-heading' . '' . ' ' . ($icon_position == 'right' ? 'sppb-accordion-icon-position-right' : '') . '" id="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '" aria-expanded="' . 'false' . '" aria-controls="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '">';
 
 				if($visual_item_type == 'image' && $image) {
 					$image_src = $image->src;
@@ -103,7 +103,7 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 				}
 
 				$output  .= '</button>'; //.sppb-panel-heading
-				$output  .= '<div id="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '" class="sppb-panel-collapse"' . (($key != 0) ? ' style="display: none;"' : '') . ' aria-labelledby="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '">';
+				$output  .= '<div id="sppb-ac-content-' . $this->addon->id . '-key-' . $key . '" class="sppb-panel-collapse"' . ' style="display: none;"' . ' aria-labelledby="sppb-ac-heading-' . $this->addon->id . '-key-' . $key . '">';
 				$output  .= '<div class="sppb-panel-body">';
 				$output  .= isset($item->content) ? $item->content : '';
 				$output  .= '</div>'; //.sppb-panel-body
