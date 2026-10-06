@@ -95,6 +95,12 @@ jQuery(function ($) {
                 $stickyOffset = settings.header.stickyOffset || "100";
             }
 
+            // На главной белый фон закреплённой шапки появляется после небольшой прокрутки.
+            if (document.documentElement.classList.contains("kdc-reference-homepage")) {
+                $stickyOffset = "180";
+                offsetTop = 0;
+            }
+
             // Классы и высоту плейсхолдера трогаем только при смене
             // состояния: раньше они переписывались на каждое событие
             // прокрутки, и браузер пересчитывал стили шапки каждый кадр.

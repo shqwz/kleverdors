@@ -177,7 +177,7 @@ document.addEventListener("lazybeforesizes", function (e) {
 		// preload в <head>; без неё - исходник.
 		var pre = document.getElementById("kdc-cfg-js");
 		var s = document.createElement("script");
-		s.src = pre ? pre.getAttribute("href") : "/templates/agentik/js/kdc-configurator.js?v=151";
+		s.src = pre ? pre.getAttribute("href") : "/templates/agentik/js/kdc-configurator.js?v=159";
 		s.defer = true;
 		document.body.appendChild(s);
 	}
@@ -831,8 +831,14 @@ document.addEventListener("lazybeforesizes", function (e) {
 
 		scrollbarWidth();
 
-		var still =
-			window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		/*
+		 * Настройку «уменьшить движение» не учитываем: в Windows она включается
+		 * сама («Показывать анимацию» выключено, экономия батареи, удалённый
+		 * рабочий стол), и лента на таких компьютерах стояла на месте - снимки
+		 * выглядели обрезанным статичным рядом. Движение тут медленное и
+		 * не мигающее.
+		 */
+		var still = false;
 
 		var belts = [];
 
@@ -1231,6 +1237,15 @@ document.addEventListener("lazybeforesizes", function (e) {
 	 */
 	function initAdaptiveHeader() {
 		var $header = $("#sp-header");
+
+		// В новом hero фон всегда тёмный: сохраняем обычную шапку сайта
+		// и её прежнее светлое оформление поверх фотографии.
+		if ($header.length && document.querySelector(".kdc-reference-hero")) {
+			buildLightLogo();
+			$header.addClass("header-on-dark");
+			return;
+		}
+
 		var stage = document.querySelector(".hero-wrap .sp-slider-outer-stage");
 
 		if (!$header.length || !stage) {

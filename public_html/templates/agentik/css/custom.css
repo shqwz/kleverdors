@@ -325,7 +325,8 @@
  * начинала их перекрывать), но ленту миниатюр убрали - и теперь наезд можно
  * дать заметный, соразмерный самому радиусу в 50px.
  */
-.hero-wrap + .sppb-section.section-radius {
+.hero-wrap + .sppb-section.section-radius,
+.kdc-reference-hero + .sppb-section.section-radius {
 	/*
 	 * !important: конструктор печатает для секции правило по её идентификатору
 	 * (#section-id-...{margin:0 auto}), оно сильнее класса. Перебиваем только
@@ -355,7 +356,8 @@
 
 /* На телефоне радиус мельче (44px) - наезд считаем от него же. */
 @media (max-width: 767px) {
-	.hero-wrap + .sppb-section.section-radius {
+	.hero-wrap + .sppb-section.section-radius,
+.kdc-reference-hero + .sppb-section.section-radius {
 		margin-top: -48px !important;
 	}
 }
@@ -368,13 +370,15 @@
  * Здесь увеличиваем только для секции сразу после hero: у блога ниже, который
  * носит тот же класс, радиус остаётся прежним.
  */
-.hero-wrap + .sppb-section.section-radius::before {
+.hero-wrap + .sppb-section.section-radius::before,
+.kdc-reference-hero + .sppb-section.section-radius::before {
 	border-top-left-radius: 80px;
 	border-top-right-radius: 80px;
 }
 
 @media (max-width: 767px) {
-	.hero-wrap + .sppb-section.section-radius::before {
+	.hero-wrap + .sppb-section.section-radius::before,
+.kdc-reference-hero + .sppb-section.section-radius::before {
 		border-top-left-radius: 44px;
 		border-top-right-radius: 44px;
 	}
@@ -609,12 +613,20 @@
 }
 
 /*
- * Карточка и рисунок должны читаться одним полотном, как в макете: у
- * присланных рисунков фон rgb(250, 248, 242), а карточка была чисто белой -
- * на стыке появлялась полоса. Красим карточку в тот же тон.
+ * Прозрачные иллюстрации лежат на едином фоне карточки.
+ * Белый градиент темы создавал полосу и менял цвет при наведении.
  */
 .sppb-addon-feature.edge-ai {
 	background-color: rgb(250, 248, 242);
+}
+
+.sppb-addon-feature.edge-ai .sppb-img-container::after {
+	display: none;
+}
+
+.sppb-addon-feature.edge-ai .sppb-img-container,
+.sppb-addon-feature.edge-ai .sppb-img-container img {
+	background: transparent;
 }
 
 /*
@@ -900,13 +912,9 @@
  * значений смысла нет.
  * ====================================================================== */
 .scroller-wrap {
-	/*
-	 * Кадр горизонтальный: в ленту поставлены кадры из hero, они широкие
-	 * (1600x818). В вертикальной рамке от такого снимка осталась бы узкая
-	 * полоса из середины - как правило, мимо двери.
-	 */
-	--kdc-w: 320px;
-	--kdc-h: 220px;
+	/* Крупный вертикальный кадр сохраняет дверь целиком на снимках портфолио. */
+	--kdc-w: clamp(217.8px, 17.545vw, 314.6px);
+	--kdc-h: calc(var(--kdc-w) * 4 / 3);
 	--kdc-frame: 0px;
 }
 
@@ -1005,16 +1013,16 @@
 
 @media (max-width: 991px) {
 	.scroller-wrap {
-		--kdc-w: 260px;
-		--kdc-h: 180px;
+		--kdc-w: 205.7px;
+		--kdc-h: calc(var(--kdc-w) * 4 / 3);
 		--kdc-frame: 0px;
 	}
 }
 
 @media (max-width: 767px) {
 	.scroller-wrap {
-		--kdc-w: 200px;
-		--kdc-h: 140px;
+		--kdc-w: 181.5px;
+		--kdc-h: calc(var(--kdc-w) * 4 / 3);
 		--kdc-frame: 0px;
 	}
 }
@@ -2182,20 +2190,10 @@
 	grid-column: span 2;
 }
 
-/*
- * Картинка: снимаем фиксированную высоту 223px из инлайн-стиля аддона -
- * дальше высотой управляет aspect-ratio, единое соотношение сторон внутри
- * каждой из двух групп (крупные / компактные), ширина у аддона и так
- * уже 100% (!important в его собственном правиле).
- */
-#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(-n+4) .sppb-dynamic-content-image-wrapper {
+/* Квадратные интерьерные кадры показываем целиком: наличник и порог не обрезаются. */
+#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item .sppb-dynamic-content-image-wrapper {
 	height: auto !important;
-	aspect-ratio: 4 / 3 !important;
-}
-
-#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(n+5) .sppb-dynamic-content-image-wrapper {
-	height: auto !important;
-	aspect-ratio: 3 / 2 !important;
+	aspect-ratio: 1 / 1 !important;
 }
 
 /* Главные коллекции чуть заметнее - крупнее заголовок, текст тот же. */
@@ -2217,7 +2215,7 @@
 	}
 
 	#sppb-dynamic-content-08cac753-5a37-4c10-a7e3-e9a90ddd53b2 .sppb-dynamic-content-collection__item:nth-child(n+5) .sppb-dynamic-content-image-wrapper {
-		aspect-ratio: 4 / 3 !important;
+		aspect-ratio: 1 / 1 !important;
 	}
 }
 
@@ -6164,20 +6162,22 @@ html.kdc-story-lock body {
  * на 70% ширины сцены (на телефоне - на 50%).
  */
 .kdc-room .kdc-cd-hero-photo::before {
-	--kdc-w: max(100cqw, 224.731cqh);
+	/* Геометрия кадра - переменные страницы (index.php ставит их из room
+	   коллекции); значения по умолчанию - общая комната. */
+	--kdc-w: max(100cqw, calc(var(--kdc-room-wr, 2.247312) * 100cqh));
 	content: "";
 	position: absolute;
 	width: var(--kdc-w);
-	height: calc(var(--kdc-w) * 0.562799);
-	left: clamp(calc(100cqw - var(--kdc-w)), calc(70cqw - var(--kdc-w) * 0.72488), 0px);
-	top: calc((100cqh - var(--kdc-w) * 0.444976) / 2 - var(--kdc-w) * 0.04067);
-	background: url("/images/konfigurator/room-classic-wall.webp") 0 0 / 100% 100% no-repeat;
+	height: calc(var(--kdc-w) * var(--kdc-room-ar, 0.562799));
+	left: clamp(calc(100cqw - var(--kdc-w)), calc(70cqw - var(--kdc-w) * var(--kdc-room-cx, 0.72488)), 0px);
+	top: calc((100cqh - var(--kdc-w) * var(--kdc-room-vh, 0.444976)) / 2 - var(--kdc-w) * var(--kdc-room-vt, 0.04067));
+	background: var(--kdc-room-img, url("/images/konfigurator/room-classic-wall.webp")) 0 0 / 100% 100% no-repeat;
 	pointer-events: none;
 }
 
 @media (max-width: 767px) {
 	.kdc-room .kdc-cd-hero-photo::before {
-		left: clamp(calc(100cqw - var(--kdc-w)), calc(50cqw - var(--kdc-w) * 0.72488), 0px);
+		left: clamp(calc(100cqw - var(--kdc-w)), calc(50cqw - var(--kdc-w) * var(--kdc-room-cx, 0.72488)), 0px);
 	}
 }
 
@@ -6227,4 +6227,198 @@ html.kdc-no-fa .fa-angle-up {
 html.kdc-no-fa .fa-chevron-right {
 	width: 0.625em;
 	--kdc-fa: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath d='M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z'/%3E%3C/svg%3E");
+}
+/* Первый экран: фон, логотип и редактируемый текст отдельными слоями.
+ * Размеры на широком экране пропорциональны исходному макету 1672 × 941.
+ */
+@font-face {
+ font-family: 'Kdc Cormorant';
+ font-style: normal;
+ font-weight: 300 700;
+ font-display: swap;
+ src: url('../fonts/cormorant-garamond/CormorantGaramond-variable.ttf') format('truetype');
+}
+.kdc-reference-homepage #sp-main-body { padding-top: 0 !important; }
+/* Шапка видна сразу; при прокрутке сохраняет штатное закрепление. */
+.kdc-reference-homepage #sp-header {
+ opacity: 1;
+ visibility: visible;
+ pointer-events: auto;
+ transform: translateY(0);
+}
+.kdc-reference-hero {
+ position: relative;
+ width: 100%;
+ aspect-ratio: 1672 / 941;
+ /* Учитываем наезд коллекций: видимая часть hero не ниже 90% первого экрана. */
+ min-height: calc(90svh + 84px);
+ overflow: hidden;
+ background: #252e20;
+ color: #fff;
+ isolation: isolate;
+ container-type: inline-size;
+}
+.kdc-reference-image {
+ position: absolute;
+ inset: 0;
+ display: block;
+ width: 100%;
+ height: 100%;
+ object-fit: cover;
+}
+.kdc-reference-logo { display: flex; align-items: center; }
+.kdc-reference-mark { display: block; height: 100%; width: auto; }
+.kdc-reference-wordmark {
+ display: block;
+ width: 72.5%;
+ height: 66%;
+ overflow: hidden;
+ transform: translateY(1.15cqw);
+ flex-shrink: 0;
+}
+.kdc-reference-brand {
+ position: absolute;
+ left: 5%; top: 18.38%; width: 49.1%; height: 28.05%;
+ justify-content: space-between;
+}
+.kdc-reference-copy { position: absolute; left: 6.5%; top: 51.44%; }
+.kdc-reference-copy h1 {
+ margin: 0;
+ color: #fff;
+ font: 300 5.4cqw/.9 'Kdc Cormorant', 'Times New Roman', serif;
+ letter-spacing: -.04em;
+}
+.kdc-reference-copy p {
+ margin: 1.65cqw 0 0;
+ color: #fff;
+ font: 400 max(1.615cqw, 12px)/1.3 'Times New Roman', Times, serif;
+}
+@media (max-width: 1199px) and (orientation: portrait) {
+ /* Обрезаем только верх исходной сцены, сохраняя масштаб двери. */
+ .kdc-reference-hero {
+  --kdc-mobile-scene: max(840px, 100svh, calc((90svh - 87px) / .68));
+  --kdc-mobile-crop: calc(var(--kdc-mobile-scene) * .32 - 135px);
+  aspect-ratio: auto;
+  height: calc(var(--kdc-mobile-scene) - var(--kdc-mobile-crop));
+  min-height: calc(90svh + 48px);
+ }
+ .kdc-reference-image {
+  top: calc(0px - var(--kdc-mobile-crop));
+  height: var(--kdc-mobile-scene);
+  object-position: calc(50% - 10px) center;
+ }
+ .kdc-reference-hero::after {
+  content: ''; position: absolute; inset: auto 0; top: calc(0px - var(--kdc-mobile-crop)); height: var(--kdc-mobile-scene); z-index: -1;
+  background: linear-gradient(180deg, rgba(20,30,19,.18), transparent 55%, transparent 72%, rgba(20,30,19,.65) 82%);
+ }
+ .kdc-reference-image { z-index: -2; }
+ /* Прежний размер и положение относительно двери; сверху остаётся 25px. */
+ .kdc-reference-brand { left: 50%; top: 25px; transform: translateX(-50%); width: min(75%, 360px); height: auto; aspect-ratio: 821 / 264; }
+ .kdc-reference-brand .kdc-reference-mark { width: 24%; height: auto; }
+ .kdc-reference-brand .kdc-reference-wordmark { width: 72.5%; height: auto; transform: translateY(4px); }
+ /* Поднимаем текст на 75px и учитываем обрезку верхней части сцены. */
+ .kdc-reference-copy { left: 28px; top: calc(var(--kdc-mobile-scene) * .77 - 63px - var(--kdc-mobile-crop)); bottom: auto; right: 20px; }
+ .kdc-reference-copy h1 { font-size: clamp(36px, 10vw, 52px); line-height: .95; }
+ .kdc-reference-copy p { margin-top: 16px; font-size: clamp(13px, 3.85vw, 15px); line-height: 1.4; }
+
+}
+
+/* ======================================================================
+ * Адаптация: touch-цели не меньше ~44px (WCAG 2.5.8 / рекомендации Apple и Google).
+ * Внешний вид не меняется: область нажатия расширена невидимым отступом
+ * (padding + компенсирующий отрицательный margin) или ::after.
+ * ====================================================================== */
+@media (pointer: coarse), (max-width: 1024px) {
+	/* Cookie-плашка: крестик 16px и ссылка 12px были слишком мелкими. */
+	.jt-cookie-close {
+		position: relative;
+	}
+
+	.jt-cookie-close::after {
+		content: "";
+		position: absolute;
+		inset: -14px;
+	}
+
+	.jt-cookie-link {
+		padding-block: 14px;
+	}
+
+	/* Ссылки-подписи: растягиваем нажимаемую область по вертикали. padding и
+	 * отрицательный margin вместе дают нулевой сдвиг вёрстки (оба с !important,
+	 * иначе у части ссылок побеждал только один из них). */
+	.kdc-article-back,
+	.article-info .category-name a,
+	.sppb-addon-header a,
+	.sppb-article-info-wrap h5 a,
+	.sppb-dynamic-content-text__link,
+	.kdc-jh-link {
+		padding-block: 12px !important;
+		margin-block: -12px !important;
+	}
+
+	.kdc-article-back {
+		display: inline-block;
+	}
+
+	/* Вкладки блога - обычная кнопка в 44px, а не просто строка текста. */
+	.sppb-nav-tabs > li > a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+	}
+
+	.kdc-article-nav .btn {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.kdc-cfg-tab {
+		min-height: 44px;
+	}
+
+	.kdc-cfg-sheet-close {
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.offcanvas-toggler-secondary,
+	.close-offcanvas {
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
+/* Hero главной на телефоне: свой большой логотип уже есть на картинке,
+ * поэтому маленький логотип шапки (он налезал на большой) прячем, пока
+ * шапка прозрачная; при прокрутке, когда шапка белая, он возвращается.
+ * Знак чуть уже, чтобы не упираться в кнопку меню на 320px. */
+@media (max-width: 1199px) and (orientation: portrait) {
+	.kdc-reference-brand {
+		width: min(68%, 360px);
+	}
+}
+
+@media (max-width: 991px) and (orientation: portrait) {
+	.kdc-reference-homepage #sp-header:not(.header-sticky) #sp-logo {
+		visibility: hidden;
+	}
+}
+
+/* 992-1199px в портрете (iPad Pro): шапка десктопная, с логотипом и меню -
+ * большой логотип hero опускаем под неё. */
+@media (min-width: 992px) and (max-width: 1199px) and (orientation: portrait) {
+	.kdc-reference-brand {
+		top: 100px;
+	}
+}
+
+/* Страница коллекции на планшете: из-за align-items: flex-start колонка
+ * сжималась по содержимому (≈90% ширины) и справа оставалось пустое поле
+ * шире левого. Дети hero всегда на всю ширину. */
+@media (max-width: 991px) {
+	.kdc-cd-hero > .sppb-addon-wrapper {
+		width: 100%;
+	}
 }

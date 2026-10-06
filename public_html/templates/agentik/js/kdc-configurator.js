@@ -1830,8 +1830,29 @@
 		// грузили и обрабатывали те же 16 картинок второй раз - не строим.
 		// Интерьер: комнату и силуэт двери раскладываем сразу, не дожидаясь
 		// ResizeObserver (он срабатывает кадром позже - мелькал пустой фон).
-		if (INTERIOR) { stage.classList.add('is-loading'); this.layoutStage(); }
+		if (INTERIOR) { stage.classList.add('is-loading'); this.layoutStage(); this.normalizeCard(); }
 		this.update();
+	};
+
+	/* Высота карточки на компьютере не зависит от длины описания: высота
+	   блока - это высота кадра комнаты, а от неё масштаб и место двери.
+	   Описание в две строки делало карточку выше, и дверь у такой
+	   коллекции стояла выше и крупнее, чем у остальных. Лишнюю строку
+	   забираем у списка моделей (он и так прокручивается). */
+	Configurator.prototype.normalizeCard = function () {
+		var sub = this.hero.querySelector('.kdc-cd-hero-sub p') || this.hero.querySelector('.kdc-cd-hero-sub');
+		var body = this.picker && this.picker.querySelector('.kdc-cfg-body');
+		if (!sub || !body || !window.matchMedia) { return; }
+		var mq = window.matchMedia('(min-width: 992px)');
+		var fit = function () {
+			body.style.height = '';
+			if (!mq.matches) { return; }
+			var lh = parseFloat(getComputedStyle(sub).lineHeight) || 27, lines = Math.round(sub.getBoundingClientRect().height / lh);
+			if (lines > 1) { body.style.height = body.getBoundingClientRect().height - (lines - 1) * lh + 'px'; }
+		};
+		fit();
+		if (window.ResizeObserver) { new ResizeObserver(fit).observe(sub); } else { window.addEventListener('resize', fit); }
+		if (document.fonts && document.fonts.ready) { document.fonts.ready.then(fit); }
 	};
 
 	/* Новая вкладка открывается с начала списка. На телефоне список
@@ -2533,7 +2554,10 @@
 		// Свет из окна на двери: тот же кадр комнаты, совмещённый со стеной,
 		// по контуру двери (маска - сама картинка двери). Фильтр делает тень
 		// стены нейтральной для soft-light, светлеют только солнечные полосы.
+		// light: false в room коллекции - без этого слоя (на фото нет солнечных
+		// пятен, а контрастный плинтус «просвечивал» бы сквозь низ двери).
 		var dImg = door.querySelector('.kdc-cfg-door-img'), light = door.querySelector('.kdc-cfg-light');
+		if (R.light === false) { if (light) { light.remove(); } this.floorGeo = { hH: hH }; assign(door.style, { left: '0', top: '0', width: '100%', height: '100%' }); return; }
 		if (!light) {
 			light = document.createElement('div');
 			light.className = 'kdc-cfg-light';
@@ -2563,6 +2587,11 @@
 			var cfg = data && data.collections && data.collections[alias];
 			if (!cfg || !cfg.models || !cfg.models.length) { return; }
 			cfg.alias = alias;
+			// Свой интерьер у коллекции (room в models.json): фото, кадр и место двери.
+			if (cfg.room && cfg.room.src && INTERIOR) {
+				INTERIOR = assign(assign({}, INTERIOR), cfg.room);
+				INTERIOR.src = BASE + cfg.room.src;
+			}
 			// Первая модель (или та, что открывает #m=N) - сразу, до сборки панели.
 			var hm = /(?:^#|&)m=(\d+)/.exec(location.hash), first = hm && cfg.models[+hm[1]] ? +hm[1] : 0;
 			if (BAKED) { bakedLoad(alias, first); }

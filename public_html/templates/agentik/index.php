@@ -284,6 +284,168 @@ if ($app->isClient('site') && $app->input->get('helixMode', '') !== 'edit')
 		);
 
 		/**
+		 * Снимки карточек каталога и блока «Наша коллекция» на главной.
+		 * Общая таблица подмен сохраняет одинаковые фотографии коллекций.
+		 */
+		$kdcCatalogImages = array_combine(
+				['images/modeli/Realta_13.jpg.webp', 'images/modeli/b/vizual/f2742c4c-3d48-4c95-a0bb-949a66f9c10d.webp',
+					'images/modeli/m01/visual/ca670454-5a32-41fa-96de-d1e7df3249d5.webp', 'images/modeli/shpon/525abe58-1c00-418b-99e9-b893c7e1c3e5.webp',
+					'images/modeli/21vek/vizual/40d62c7b-3eeb-4229-be29-ecdadfddc060.webp', 'images/modeli/lite/vizual/c7ed2df0-5dba-403c-b0d9-7775680743e0.webp',
+					'images/modeli/martin/vizual/53d8e058-5b72-467c-9671-48e069a10d6d.webp', 'images/modeli/art/vizual/bd610ac3-171f-4d1f-96f0-5b3a97fecc3d.webp'],
+				['images/modeli/catalog/realta.webp', 'images/modeli/catalog/provans.webp',
+					'images/modeli/catalog/m01.webp', 'images/modeli/catalog/shpon.webp',
+					'images/modeli/catalog/21vek.webp', 'images/modeli/catalog/lajt.webp',
+					'images/modeli/catalog/martin.webp', 'images/modeli/catalog/art-kraft.webp']
+			);
+		if (rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/') === '/katalogproduktsii')
+		{
+			$body = strtr($body, $kdcCatalogImages);
+		}
+		elseif (strpos($body, 'hero-wrap') !== false)
+		{
+			// На главной меняем только фотографии ссылок-карточек коллекций.
+			$body = preg_replace_callback(
+				'~<a\b[^>]*\bclass="[^"]*\bsppb-dynamic-content-image-wrapper\b[^"]*"[^>]*>.*?</a>~s',
+				static function ($m) use ($kdcCatalogImages) {
+					return strtr($m[0], $kdcCatalogImages);
+				},
+				$body
+			);
+		}
+
+		// Обновлённые иллюстрации «Индивидуальных решений» с прозрачным фоном.
+		// Новые имена обходят длительный кэш картинок на хостинге.
+		if (strpos($body, 'hero-wrap') !== false)
+		{
+			$kdcSolutionImages = [
+				'images/2026/forsait/reshenie-2.webp' => 'images/solutions/sketch-20261006.webp',
+				'images/2026/forsait/reshenie-3.webp' => 'images/solutions/opening-20261006.webp',
+				'images/2026/forsait/reshenie-1.webp' => 'images/solutions/dimensions-2100-700-20261006.webp',
+			];
+			$body = preg_replace_callback('~<img\b[^>]*>~i', static function ($m) use ($kdcSolutionImages) {
+				foreach ($kdcSolutionImages as $old => $new)
+				{
+					if (strpos($m[0], $old) === false || !is_file(JPATH_ROOT . '/' . $new))
+					{
+						continue;
+					}
+					$tag = str_replace($old, $new, $m[0]);
+					$size = getimagesize(JPATH_ROOT . '/' . $new);
+					if ($size)
+					{
+						$tag = preg_replace('~\s(?:width|height)="[^"]*"~i', '', $tag);
+						$tag = preg_replace('~<img\b~i', '<img width="' . $size[0] . '" height="' . $size[1] . '"', $tag, 1);
+					}
+					return $tag;
+				}
+				return $m[0];
+			}, $body);
+		}
+
+		// Две независимые подборки портфолио: один снимок попадает только в один ряд.
+		if (strpos($body, 'hero-wrap') !== false)
+		{
+			$kdcPortfolioPhotos = [
+				'images/modeli/21vek/portfolio/H11-1.jpg.webp',
+				'images/modeli/art/portfolio/A-6_0-1.jpg.webp',
+				'images/modeli/b/portfolio/V2-1.jpg.webp',
+				'images/modeli/e/portfolio/E-po-eskizu.jpg.webp',
+				'images/modeli/line/portfolio/20ba5c90-8482-4fbf-96ce-3177b1a1be5a.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-1-provans-1.jpg.webp',
+				'images/modeli/m01/portfolio/M01-moldingi.jpeg.webp',
+				'images/modeli/neoklassika/portfolio/S1-1.jpg.webp',
+				'images/modeli/p/portfolio/P10-dverki-garderob.webp',
+				'images/modeli/realta/portfolio/Realta-1-1.jpg.webp',
+				'images/modeli/21vek/portfolio/H11-2.jpg.webp',
+				'images/modeli/art/portfolio/A-6_0-2.jpg.webp',
+				'images/modeli/b/portfolio/V2-2.jpg.webp',
+				'images/modeli/e/portfolio/E1-belyj.jpg.webp',
+				'images/modeli/line/portfolio/3eaa5a22-2bd5-4484-a59b-4fa655798e23.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-1-provans-2.jpg.webp',
+				'images/modeli/m01/portfolio/h_bknsftsvkzpv-etrzx6lynwapafr7liigmcxemahcli1wbtdktbjzi4zhrdbpaa76qbucnq8v9tjbbiorsiutk.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S1-framuga.jpg.webp',
+				'images/modeli/p/portfolio/P10.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-1-2.jpg.webp',
+				'images/modeli/21vek/portfolio/H11-3.jpg.webp',
+				'images/modeli/art/portfolio/A-6_0-3.jpg.webp',
+				'images/modeli/b/portfolio/V2-3.jpg.webp',
+				'images/modeli/e/portfolio/E1-diz-morilka.jpeg.webp',
+				'images/modeli/line/portfolio/4d9ef051-4a56-4535-bcc0-5ca5d12aeb00.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-1-provans.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S1-kapitel-21-vek.jpg.webp',
+				'images/modeli/p/portfolio/P19-1.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-1-framuga.webp',
+				'images/modeli/21vek/portfolio/H11-4.jpg.webp',
+				'images/modeli/art/portfolio/A-6_0.jpg.webp',
+				'images/modeli/b/portfolio/V2-4.jpg.webp',
+				'images/modeli/e/portfolio/E1-figurnaa-filenka.jpg.webp',
+				'images/modeli/line/portfolio/77d3a9b1-8ff8-4945-98d7-19e3b591df2c.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-13-zerkalo.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S1-kapitel.jpg.webp',
+				'images/modeli/p/portfolio/P19.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-1.jpeg.webp',
+				'images/modeli/21vek/portfolio/H11.jpg.webp',
+				'images/modeli/art/portfolio/detrojt-1.jpg.webp',
+				'images/modeli/b/portfolio/V2-5.jpg.webp',
+				'images/modeli/e/portfolio/E1-panel.jpg.webp',
+				'images/modeli/line/portfolio/93991a60-de2c-4b99-a402-895c243a67b2.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-13.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S1-obramlenia.jpg.webp',
+				'images/modeli/p/portfolio/P2-1.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-1.jpg.webp',
+				'images/modeli/21vek/portfolio/H21.jpg.webp',
+				'images/modeli/art/portfolio/detrojt.jpg.webp',
+				'images/modeli/b/portfolio/V2-6.jpg.webp',
+				'images/modeli/e/portfolio/E1-zelenyj.jpg.webp',
+				'images/modeli/line/portfolio/9f691bde-eb55-47b6-8488-d0b2772ba98c.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-3-skladnaa-.webp',
+				'images/modeli/neoklassika/portfolio/S1.jpg.webp',
+				'images/modeli/p/portfolio/P2-2.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-11-1.jpg.webp',
+				'images/modeli/21vek/portfolio/H22-zerkalo.jpeg.webp',
+				'images/modeli/art/portfolio/img_2530.jpg.webp',
+				'images/modeli/b/portfolio/V2-7.jpg.webp',
+				'images/modeli/e/portfolio/E1.jpg.webp',
+				'images/modeli/line/portfolio/Lajn-eskiz-1.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-3.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S2-framuga.jpg.webp',
+				'images/modeli/p/portfolio/P2-2500.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-11.jpg.webp',
+				'images/modeli/21vek/portfolio/H22.jpeg.webp',
+				'images/modeli/art/portfolio/img_2534.jpg.webp',
+				'images/modeli/b/portfolio/V2-falspanel.jpg.webp',
+				'images/modeli/e/portfolio/E11-2300-2500.jpg.webp',
+				'images/modeli/line/portfolio/Lajn-eskiz-molding-1.jpg.webp',
+				'images/modeli/lite/portfolio/Lajt-9-komplanar-1.jpg.webp',
+				'images/modeli/neoklassika/portfolio/S3-1.jpg.webp',
+				'images/modeli/p/portfolio/P2-3.jpg.webp',
+				'images/modeli/realta/portfolio/Realta-13.jpg.webp',
+			];
+			preg_match_all('~<div\b[^>]*class="[^"]*\b(?:rtl|ltr)-infinity-scroller-kdc\b[^"]*"[^>]*>~i', $body, $kdcLanes, PREG_OFFSET_CAPTURE);
+			foreach (array_reverse($kdcLanes[0], true) as $laneIndex => $lane)
+			{
+				$start = $lane[1] + strlen($lane[0]);
+				$depth = 1;
+				preg_match_all('~</?div\b[^>]*>~i', substr($body, $start), $divs, PREG_OFFSET_CAPTURE);
+				foreach ($divs[0] as $div)
+				{
+					$depth += stripos($div[0], '</div') === 0 ? -1 : 1;
+					if ($depth !== 0) { continue; }
+					$cards = '';
+					foreach ($kdcPortfolioPhotos as $photoIndex => $photo)
+					{
+						if ($photoIndex % 2 !== $laneIndex % 2) { continue; }
+						$size = getimagesize(JPATH_ROOT . '/' . $photo);
+						if (!$size) { continue; }
+						$cards .= '<div class="sppb-addon-wrapper addon-root-image"><div class="sppb-addon-single-image-container"><img class="sppb-img-responsive lazyload" data-src="/' . htmlspecialchars($photo, ENT_QUOTES) . '" width="' . $size[0] . '" height="' . $size[1] . '" alt="Дверь из портфолио КЛЕВЕРДОРС" decoding="async"></div></div>';
+					}
+					$body = substr_replace($body, $cards, $start, $div[1]);
+					break;
+				}
+			}
+		}
+
+		/**
 		 * Уменьшенные копии: к большим снимкам рядом лежат <файл>.w480/.w800/
 		 * .w1200.webp. Картинки грузит lazysizes (data-src), поэтому отдаём ему
 		 * data-srcset + data-sizes="auto": он подставит реальную ширину
@@ -457,7 +619,25 @@ if ($app->isClient('site') && $app->input->get('helixMode', '') !== 'edit')
 		{
 			// Версии - из начала файлов, целиком их читать не нужно (128 + 57 КБ на каждый запрос).
 			$kdcJs  = (string) @file_get_contents(JPATH_THEMES . '/agentik/js/custom.js', false, null, 0, 16000);
-			$kdcPre = '<link rel="preload" as="image" href="/images/konfigurator/room-classic-wall.webp" fetchpriority="high">';
+			// Свой интерьер коллекции (room в models.json) или общая комната.
+			$kdcRoomCfg = $kdcModels['collections'][$kdcAlias]['room'] ?? null;
+			$kdcRoomSrc = '/images/konfigurator/room-classic-wall.webp';
+			$kdcRoomCss = '';
+
+			if (is_array($kdcRoomCfg) && !empty($kdcRoomCfg['src']) && !empty($kdcRoomCfg['open']) && !empty($kdcRoomCfg['w']))
+			{
+				$kw = (float) $kdcRoomCfg['w'];
+				$kh = (float) $kdcRoomCfg['h'];
+				$kt = (float) ($kdcRoomCfg['top'] ?? 0);
+				$kb = (float) ($kdcRoomCfg['bottom'] ?? $kh);
+				$kx = ($kdcRoomCfg['open'][0] + $kdcRoomCfg['open'][2]) / 2;
+				$kdcRoomSrc = '/images/konfigurator/' . rawurlencode($kdcRoomCfg['src']);
+				$kdcRoomCss = '<style>:root{--kdc-room-img:url("' . $kdcRoomSrc . '");--kdc-room-wr:' . round($kw / ($kb - $kt), 6)
+					. ';--kdc-room-ar:' . round($kh / $kw, 6) . ';--kdc-room-vh:' . round(($kb - $kt) / $kw, 6)
+					. ';--kdc-room-vt:' . round($kt / $kw, 6) . ';--kdc-room-cx:' . round($kx / $kw, 6) . '}</style>';
+			}
+
+			$kdcPre = '<link rel="preload" as="image" href="' . $kdcRoomSrc . '" fetchpriority="high">' . $kdcRoomCss;
 
 			if (preg_match('~/templates/agentik/js/kdc-configurator\.js\?v=\d+~', $kdcJs, $kdcSrc))
 			{
@@ -512,6 +692,30 @@ if ($app->isClient('site') && $app->input->get('helixMode', '') !== 'edit')
 		$body = preg_replace_callback('~\x01kdcmeta(\d+)\x01~', static function ($m) use ($metas) {
 			return $metas[(int) $m[1]];
 		}, $body);
+
+		/* Заменяем только hero главной. Остальные блоки остаются в Page Builder.
+		 * Считаем вложенные div, чтобы не обрезать соседнюю секцию регуляркой.
+		 * Фон, фирменный логотип и HTML-текст выведены отдельными слоями.
+		 */
+		if (preg_match('~<div\b[^>]*\bclass="[^"]*\bhero-wrap\b[^"]*"[^>]*>~', $body, $kdcHeroStart, PREG_OFFSET_CAPTURE))
+		{
+			$kdcHeroOffset = $kdcHeroStart[0][1];
+			$kdcHeroDepth = 0;
+			preg_match_all('~</?div\b[^>]*>~i', substr($body, $kdcHeroOffset), $kdcHeroTags, PREG_OFFSET_CAPTURE);
+
+			foreach ($kdcHeroTags[0] as $kdcHeroTag)
+			{
+				$kdcHeroDepth += stripos($kdcHeroTag[0], '</div') === 0 ? -1 : 1;
+
+				if ($kdcHeroDepth === 0)
+				{
+					$kdcHeroLength = $kdcHeroTag[1] + strlen($kdcHeroTag[0]);
+					$body = substr_replace($body, require __DIR__ . '/hero-reference.php', $kdcHeroOffset, $kdcHeroLength);
+					$body = $kdcHtmlClass($body, 'kdc-reference-homepage');
+					break;
+				}
+			}
+		}
 
 		$app->setBody($body);
 	});
