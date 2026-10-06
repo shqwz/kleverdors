@@ -287,16 +287,28 @@ if ($app->isClient('site') && $app->input->get('helixMode', '') !== 'edit')
 		 * Снимки карточек каталога и блока «Наша коллекция» на главной.
 		 * Общая таблица подмен сохраняет одинаковые фотографии коллекций.
 		 */
-		$kdcCatalogImages = array_combine(
-				['images/modeli/Realta_13.jpg.webp', 'images/modeli/b/vizual/f2742c4c-3d48-4c95-a0bb-949a66f9c10d.webp',
-					'images/modeli/m01/visual/ca670454-5a32-41fa-96de-d1e7df3249d5.webp', 'images/modeli/shpon/525abe58-1c00-418b-99e9-b893c7e1c3e5.webp',
-					'images/modeli/21vek/vizual/40d62c7b-3eeb-4229-be29-ecdadfddc060.webp', 'images/modeli/lite/vizual/c7ed2df0-5dba-403c-b0d9-7775680743e0.webp',
-					'images/modeli/martin/vizual/53d8e058-5b72-467c-9671-48e069a10d6d.webp', 'images/modeli/art/vizual/bd610ac3-171f-4d1f-96f0-5b3a97fecc3d.webp'],
-				['images/modeli/catalog/realta.webp', 'images/modeli/catalog/provans.webp',
-					'images/modeli/catalog/m01.webp', 'images/modeli/catalog/shpon.webp',
-					'images/modeli/catalog/21vek.webp', 'images/modeli/catalog/lajt.webp',
-					'images/modeli/catalog/martin.webp', 'images/modeli/catalog/art-kraft.webp']
-			);
+		$kdcCatalogImages = [
+			'images/modeli/P-6.jpeg.webp' => 'images/modeli/catalog/interiors-20261006/classic-p.webp',
+			'images/modeli/catalog/realta.webp' => 'images/modeli/catalog/realta.webp',
+			'images/modeli/catalog/provans.webp' => 'images/modeli/catalog/provans.webp',
+			'images/modeli/catalog/lajt.webp' => 'images/modeli/catalog/interiors-20261006/lajt.webp',
+			'images/modeli/catalog/21vek.webp' => 'images/modeli/catalog/interiors-20261006/21vek.webp',
+			'images/modeli/line/vizual/ddfee7d1-edb8-4475-b3d8-1005e4449f87.webp' => 'images/modeli/catalog/interiors-20261006/line.webp',
+			'images/modeli/neoklassika/vizual/6a287f56-5e5d-4ee3-a46d-ca16ff60ffe5.webp' => 'images/modeli/catalog/interiors-20261006/neoklassika.webp',
+			'images/modeli/catalog/martin.webp' => 'images/modeli/catalog/interiors-20261006/martin.webp',
+			'images/modeli/catalog/art-kraft.webp' => 'images/modeli/catalog/interiors-20261006/art-kraft.webp',
+			'images/modeli/catalog/m01.webp' => 'images/modeli/catalog/m01.webp',
+			'images/modeli/catalog/shpon.webp' => 'images/modeli/catalog/shpon.webp',
+			'images/modeli/bigproem/P2-sirina-4-m-1.jpg.webp' => 'images/modeli/catalog/interiors-20261006/bigproem.webp',
+			'images/modeli/Realta_13.jpg.webp' => 'images/modeli/catalog/realta.webp',
+			'images/modeli/b/vizual/f2742c4c-3d48-4c95-a0bb-949a66f9c10d.webp' => 'images/modeli/catalog/provans.webp',
+			'images/modeli/m01/visual/ca670454-5a32-41fa-96de-d1e7df3249d5.webp' => 'images/modeli/catalog/m01.webp',
+			'images/modeli/shpon/525abe58-1c00-418b-99e9-b893c7e1c3e5.webp' => 'images/modeli/catalog/shpon.webp',
+			'images/modeli/21vek/vizual/40d62c7b-3eeb-4229-be29-ecdadfddc060.webp' => 'images/modeli/catalog/interiors-20261006/21vek.webp',
+			'images/modeli/lite/vizual/c7ed2df0-5dba-403c-b0d9-7775680743e0.webp' => 'images/modeli/catalog/interiors-20261006/lajt.webp',
+			'images/modeli/martin/vizual/53d8e058-5b72-467c-9671-48e069a10d6d.webp' => 'images/modeli/catalog/interiors-20261006/martin.webp',
+			'images/modeli/art/vizual/bd610ac3-171f-4d1f-96f0-5b3a97fecc3d.webp' => 'images/modeli/catalog/interiors-20261006/art-kraft.webp',
+		];
 		if (rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/') === '/katalogproduktsii')
 		{
 			$body = strtr($body, $kdcCatalogImages);

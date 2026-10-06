@@ -177,7 +177,7 @@ document.addEventListener("lazybeforesizes", function (e) {
 		// preload в <head>; без неё - исходник.
 		var pre = document.getElementById("kdc-cfg-js");
 		var s = document.createElement("script");
-		s.src = pre ? pre.getAttribute("href") : "/templates/agentik/js/kdc-configurator.js?v=159";
+		s.src = pre ? pre.getAttribute("href") : "/templates/agentik/js/kdc-configurator.js?v=160";
 		s.defer = true;
 		document.body.appendChild(s);
 	}

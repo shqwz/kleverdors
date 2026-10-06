@@ -1,11 +1,107 @@
-RewriteEngine On
-RewriteCond %{QUERY_STRING} plugin=helixultimate [NC]
-RewriteRule .* - [F,L]
+## ===================================================================
+## КЛЕВЕРДОРС - .htaccess (Apache, Timeweb)
+## ===================================================================
+
+## --- Защита --------------------------------------------------------
+
+## Без списка файлов в папках без index.
+Options -Indexes
+
+## Служебные и опасные файлы не отдаются по HTTP: бэкапы конфигурации,
+## дампы, архивы, логи, ini, а также дистрибутивные txt Joomla.
+## robots.txt при этом доступен.
+<FilesMatch "(\.(sql|bak|old|orig|swp|zip|tar|gz|tgz|rar|7z|log|ini|sh|dist)$|^configuration\.php.+|^(htaccess|web\.config)\.txt$|^(LICENSE|README)\.txt$)">
+	<IfModule mod_authz_core.c>
+		Require all denied
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+		Order allow,deny
+		Deny from all
+	</IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-RewriteRule ^index.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . index.php [L]
+	RewriteEngine On
+	RewriteBase /
+
+	## Уязвимость в старых версиях Helix Ultimate (было в прежнем .htaccess).
+	RewriteCond %{QUERY_STRING} plugin=helixultimate [NC]
+	RewriteRule .* - [F,L]
+
+	## Главная защита от повторного заражения: PHP напрямую запускается
+	## только через входные точки Joomla. Подброшенный файл вида
+	## /images/xxx.php или /media/abc/wp.php отдаст 403, даже если его
+	## успеют залить. Всё остальное Joomla грузит изнутри index.php.
+	RewriteCond %{REQUEST_URI} \.(php[0-9]?|phtml|phar)$ [NC]
+	RewriteCond %{REQUEST_URI} !^/index\.php$ [NC]
+	RewriteCond %{REQUEST_URI} !^/administrator/index\.php$ [NC]
+	RewriteCond %{REQUEST_URI} !^/api/index\.php$ [NC]
+	RewriteRule .* - [F,L]
+
+	## Типовые попытки внедрения через строку запроса.
+	RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+	RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+	RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+	RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+	RewriteRule .* - [F,L]
+
+	## --- Лёгкие картинки --------------------------------------------
+	## Рядом с каждым фото лежит сжатая копия <файл>.webp. Браузеру,
+	## который понимает WebP (почти все), по тому же адресу отдаём её -
+	## ссылки на сайте и в базе менять не нужно.
+	## ?kdc - исходник для конфигуратора двери (он размечает дверь по
+	## пикселям, подменять на сжатую копию нельзя).
+	RewriteCond %{HTTP_ACCEPT} image/webp
+	RewriteCond %{QUERY_STRING} !(^|&)kdc [NC]
+	RewriteCond %{REQUEST_URI} ^/images/.+\.(jpe?g|png)$ [NC]
+	RewriteCond %{REQUEST_FILENAME}.webp -f
+	RewriteRule ^(.+)$ $1.webp [T=image/webp,E=KDC_WEBP:1,L]
+
+	## --- Joomla SEF ------------------------------------------------
+	RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+	RewriteRule ^index\.php$ - [L]
+	RewriteCond %{REQUEST_URI} !^/index\.php
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule .* index.php [L]
+</IfModule>
+
+## --- Заголовки безопасности --------------------------------------
+<IfModule mod_headers.c>
+	Header always set X-Content-Type-Options "nosniff"
+	Header always set X-Frame-Options "SAMEORIGIN"
+	Header always set Referrer-Policy "strict-origin-when-cross-origin"
+	Header always unset X-Powered-By
+</IfModule>
+
+## --- Кэш картинок, шрифтов, стилей и скриптов в браузере ---------
+<IfModule mod_mime.c>
+	AddType image/webp .webp
+</IfModule>
+
+<IfModule mod_headers.c>
+	## Один адрес - две версии (WebP и исходник): кэши должны это знать.
+	<FilesMatch "\.(jpe?g|png|webp)$">
+		Header append Vary Accept
+	</FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+	ExpiresActive On
+	ExpiresByType image/jpeg "access plus 30 days"
+	ExpiresByType image/png "access plus 30 days"
+	ExpiresByType image/webp "access plus 30 days"
+	ExpiresByType image/svg+xml "access plus 30 days"
+	ExpiresByType image/gif "access plus 30 days"
+	ExpiresByType image/x-icon "access plus 30 days"
+	ExpiresByType font/woff2 "access plus 1 year"
+	ExpiresByType font/woff "access plus 1 year"
+	ExpiresByType text/css "access plus 7 days"
+	ExpiresByType application/javascript "access plus 7 days"
+	ExpiresByType text/javascript "access plus 7 days"
+</IfModule>
+
+## Сжатие текста (HTML, стили, скрипты) при передаче.
+<IfModule mod_deflate.c>
+	AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/xml application/javascript text/javascript application/json image/svg+xml
 </IfModule>

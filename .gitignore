@@ -14,3 +14,16 @@ public_html/administrator/logs/
 public_html/configuration.php
 public_html/configuration.php.prod.bak
 public_html/configuration.php.*.bak
+
+# Пакеты для выгрузки (внутри configuration.php с паролем базы и дамп базы)
+# и карантин с вирусными файлами - в репозиторий не кладём.
+_deploy/2026-09-25/
+_quarantine_evidence/2026-09-25/
+_image_originals_2026-09-27/
+
+# Локальные резервные копии, дампы базы и архивы выгрузки
+/_backups/
+/deploy/
+/_*.sql
+/_*.json
+/_*_before*.php

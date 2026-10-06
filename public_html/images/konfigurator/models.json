@@ -1113,7 +1113,25 @@
                     ],
                     "glazed": true
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-seriya-p-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 775,
+                "open": [
+                    1073,
+                    170,
+                    1307,
+                    723
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "realta-2": {
             "models": [
@@ -1175,7 +1193,25 @@
                     "price": 33630,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-realta-2-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 777,
+                "open": [
+                    1073,
+                    172,
+                    1307,
+                    725
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "provans": {
             "models": [
@@ -2081,7 +2117,25 @@
                     "price": 42795,
                     "glazed": true
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-provans-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 778,
+                "open": [
+                    1073,
+                    173,
+                    1307,
+                    726
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "lajt": {
             "models": [
@@ -2236,7 +2290,25 @@
                     "price": 31670,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-lajt-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 774,
+                "open": [
+                    1073,
+                    169,
+                    1307,
+                    722
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "21-vek": {
             "models": [
@@ -2316,7 +2388,25 @@
                     ],
                     "glazed": true
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-21-vek-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 777,
+                "open": [
+                    1073,
+                    172,
+                    1307,
+                    725
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "neoklassika": {
             "models": [
@@ -2384,7 +2474,25 @@
                     "price": 40220,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-neoklassika-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 778,
+                "open": [
+                    1073,
+                    173,
+                    1307,
+                    726
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "martin": {
             "models": [
@@ -2418,7 +2526,25 @@
                     "price": 39880,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-martin-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 777,
+                "open": [
+                    1073,
+                    172,
+                    1307,
+                    725
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "lajn": {
             "models": [
@@ -2476,7 +2602,25 @@
                     "price": null,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-lajn-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 761,
+                "open": [
+                    1073,
+                    156,
+                    1307,
+                    709
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "art-kraft": {
             "models": [
@@ -2849,7 +2993,25 @@
                     "glazed": true
                 }
             ],
-            "glass": "keep"
+            "glass": "keep",
+            "room": {
+                "src": "room-art-kraft-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 771,
+                "open": [
+                    1073,
+                    166,
+                    1307,
+                    719
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "gladkie-m01": {
             "models": [
@@ -2859,7 +3021,25 @@
                     "price": null,
                     "glazed": false
                 }
-            ]
+            ],
+            "room": {
+                "src": "room-gladkie-m01-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 752,
+                "open": [
+                    1073,
+                    147,
+                    1307,
+                    700
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "shponirovannye": {
             "materials": [
@@ -2913,7 +3093,25 @@
                 }
             ],
             "glass": "none",
-            "detectMetal": false
+            "detectMetal": false,
+            "room": {
+                "src": "room-shponirovannye-20261006.webp",
+                "w": 1672,
+                "h": 941,
+                "top": 77,
+                "bottom": 769,
+                "open": [
+                    1073,
+                    164,
+                    1307,
+                    717
+                ],
+                "focus": [
+                    0.7,
+                    0.5
+                ],
+                "light": false
+            }
         },
         "bolshie-proemy": {
             "models": []
